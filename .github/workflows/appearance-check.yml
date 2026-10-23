@@ -17,3 +17,5 @@ jobs:
           mkdir -p /tmp/ult-appearance-classes
           javac -d /tmp/ult-appearance-classes appearance/src/com/yooshastan/ultmessenger/appearance/UltAppearancePreset.java appearance/tests/UltAppearancePresetTest.java
           java -cp /tmp/ult-appearance-classes UltAppearancePresetTest
+      - name: Verify guarded upstream integration
+        run: python3 -m unittest discover -s appearance/tests -p 'test_*.py' -v
