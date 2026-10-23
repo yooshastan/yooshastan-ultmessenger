@@ -5,7 +5,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import TestCase, main
 
-MODULE = Path(__file__).resolve().parents[1] / "scripts/integrate-appearance.py"
+MODULE = Path(__file__).resolve().parents[2] / "scripts/integrate-appearance.py"
 spec = importlib.util.spec_from_file_location("ult_appearance_integration", MODULE)
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
