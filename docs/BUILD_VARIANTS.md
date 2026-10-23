@@ -21,3 +21,11 @@ The Firebase-compatible variant additionally requires project-specific Google co
 ## Build requirements
 Telegram: SDK 36, NDK 27.2.12479018, CMake 3.22.1, JDK as required by pinned Gradle toolchain.
 Mercurygram: JDK 17, Ninja, Meson, nasm, make, cmake, pkg-config, gperf, Python, Rust/WASI tooling provisioned by upstream build scripts. Native library compilation can exceed standard CI time, disk, and memory budgets.
+
+## Notification compatibility target
+
+Do **not** require microG for the entire app. It can serve as an optional Firebase Cloud Messaging compatibility provider on supported Android installations, but still uses Google's messaging service infrastructure. A compatible Firebase client must also have its app registration configured correctly.
+
+For the FOSS variant, favor UnifiedPush with a user-selected distributor, then Telegram's keep-alive/background connection as fallback. Existing Mercurygram mechanisms are reference implementations; they must be tested and rebranded rather than assumed to work unchanged.
+
+GrapheneOS users may alternatively opt into sandboxed official Google Play services. microG does not solve Google Messages RCS provisioning or give third-party clients a general-purpose RCS API.
