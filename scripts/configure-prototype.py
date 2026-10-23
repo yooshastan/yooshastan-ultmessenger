@@ -49,7 +49,7 @@ def main() -> int:
     # Only touch application labels, not labels for activities/services.
     for manifest in sorted((source / "TMessagesProj/config").glob("*/AndroidManifest*.xml")):
         data = manifest.read_text(encoding="utf-8")
-        pattern = r"(<application\\b[^>]*?)android:label=\\\"@string/AppName(?:Beta)?\\\""
+        pattern = r'(<application\b[^>]*?)android:label="@string/AppName(?:Beta)?"'
         updated, count = re.subn(pattern, lambda m: m.group(1) + 'android:label="' + APP_NAME + '"',
                                  data, count=1, flags=re.DOTALL)
         if count:
