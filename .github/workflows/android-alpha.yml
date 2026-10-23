@@ -1,0 +1,95 @@
+name: Android Alpha 0.1 build experiments
+
+on:
+  push:
+    branches: [feature/alpha01-bootstrap]
+    paths:
+      - '.github/workflows/android-alpha.yml'
+      - 'scripts/configure-foss.py'
+      - 'scripts/apply-branding.py'
+      - 'upstream/mercurygram.sha'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.variant }} debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [firebase, foss]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Check Firebase prerequisite
+        id: firebase
+        env:
+          FIREBASE_JSON_B64: ${{ secrets.ULT_FIREBASE_JSON_B64 }}
+        run: |
+          if [[ "${{ matrix.variant }}" == "foss" || -n "$FIREBASE_JSON_B64" ]]; then
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+            echo '::warning::Firebase variant needs ULT_FIREBASE_JSON_B64; not compiling this variant yet.'
+          fi
+      - name: Install Android toolchain and native prerequisites
+        if: steps.firebase.outputs.ready == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build meson nasm gperf pkg-config make cmake python3 curl
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager --install 'platforms;android-36' 'build-tools;36.0.0' 'ndk;27.2.12479018' 'cmake;3.22.1'
+      - name: Fetch independently pinned source
+        if: steps.firebase.outputs.ready == 'true'
+        run: |
+          if [[ "${{ matrix.variant }}" == "foss" ]]; then
+            bash scripts/fetch-foss.sh
+          else
+            bash scripts/fetch-upstream.sh
+          fi
+      - name: Configure identity and custom launcher
+        if: steps.firebase.outputs.ready == 'true'
+        env:
+          ULT_TELEGRAM_API_ID: ${{ secrets.ULT_TELEGRAM_API_ID }}
+          ULT_TELEGRAM_API_HASH: ${{ secrets.ULT_TELEGRAM_API_HASH }}
+          FIREBASE_JSON_B64: ${{ secrets.ULT_FIREBASE_JSON_B64 }}
+        run: |
+          set -euo pipefail
+          set +x
+          if [[ "${{ matrix.variant }}" == "foss" ]]; then
+            source_dir=".work/mercurygram-upstream"
+            python3 scripts/configure-foss.py "$source_dir"
+          else
+            source_dir=".work/telegram-upstream"
+            python3 scripts/configure-prototype.py "$source_dir"
+            printf '%s' "$FIREBASE_JSON_B64" | base64 -d > "$source_dir/TMessagesProj/google-services.json"
+            python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); ps={a["client_info"]["android_client_info"]["package_name"] for a in d["client"]}; needed={"com.yooshastan.ultmessenger","com.yooshastan.ultmessenger.beta"}; assert needed.issubset(ps), "Firebase app registration missing package IDs"' "$source_dir/TMessagesProj/google-services.json"
+          fi
+          python3 scripts/apply-branding.py "$source_dir"
+      - name: Compile debug APK
+        if: steps.firebase.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          if [[ "${{ matrix.variant }}" == "foss" ]]; then
+            source_dir=".work/mercurygram-upstream"
+          else
+            source_dir=".work/telegram-upstream"
+          fi
+          cd "$source_dir"
+          ./gradlew :TMessagesProj_App:assembleAfatDebug --no-daemon --stacktrace
+      - name: Upload internal prototype APK
+        if: steps.firebase.outputs.ready == 'true' && success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ult-alpha01-${{ matrix.variant }}
+          path: .work/*/TMessagesProj_App/build/outputs/apk/**/*.apk
+          if-no-files-found: error
+          retention-days: 7
