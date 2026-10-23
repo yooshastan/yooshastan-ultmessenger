@@ -1,4 +1,4 @@
-name: Upstream source probe
+name: Upstream identity probe
 
 on:
   push:
@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/upstream-probe.yml'
       - 'scripts/fetch-upstream.sh'
+      - 'scripts/configure-prototype.py'
       - 'upstream/telegram.sha'
   workflow_dispatch:
 
@@ -15,7 +16,7 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - name: Fetch pinned official Telegram source
@@ -26,6 +27,16 @@ jobs:
           test -f .work/telegram-upstream/settings.gradle
           test -x .work/telegram-upstream/gradlew
           git -C .work/telegram-upstream rev-parse HEAD
-          sed -n '1,100p' .work/telegram-upstream/settings.gradle
+      - name: Apply private application identity
+        env:
+          ULT_TELEGRAM_API_ID: ${{ secrets.ULT_TELEGRAM_API_ID }}
+          ULT_TELEGRAM_API_HASH: ${{ secrets.ULT_TELEGRAM_API_HASH }}
+        run: |
+          set -euo pipefail
+          set +x
+          python3 scripts/configure-prototype.py .work/telegram-upstream
+          grep -q '^APP_PACKAGE=com.yooshastan.ultmessenger$' .work/telegram-upstream/gradle.properties
+          ! grep -q 'public static int APP_ID = 4;' .work/telegram-upstream/TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java
+          echo 'Identity configured (credentials not printed).'
       - name: Probe status
-        run: echo "Source checkout verified. APK compilation and rebranding are separate next milestones."
+        run: echo "Source and identity configuration verified. APK compilation is still pending Firebase, signing, and independent icon setup."
