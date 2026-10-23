@@ -1,22 +1,22 @@
 # Phase 2 — Nullgram-inspired ULT appearance
 
-**Scope:** Bring customizable appearance into ULT Messenger after the first Android APK builds.
+This is a staged feature for Yooshastan ULT Messenger Alpha 0.1.
 
-## First increment (this branch)
-- Five immutable palette presets with an explicit system fallback.
-- Store preset names, not ordinal indexes, to preserve settings across upgrades.
-- Pure-Java unit tests for stable preset decoding.
-- Separate Yooshastan styling from Nullgram's copyrighted assets and artwork.
+## Built on the appearance branch
+- Five immutable palette presets with safe fallback to SYSTEM.
+- Stable enum names saved in Android SharedPreferences.
+- A guarded source integration script that adds **ULT Presets** to Chat Settings' overflow menu in the pinned Mercurygram Android source.
+- A native single-choice dialog displaying the five presets and persisting selection.
+- Pure-Java preset tests and Python integration smoke tests.
 
-## Planned UI integration
-1. Examine Nullgram's theme and navigation customization at a pinned, GPL-compliant revision.
-2. Add a *Yooshastan Appearance* settings entry inside Telegram's existing settings navigation.
-3. Persist selected preset per Android app install; future extension may permit per-account/per-chat choices.
-4. Apply colors through Telegram's Theme engine, never by rewriting Telegram protocol or message handling.
-5. Keep standard Telegram themes selectable, and provide a reset-to-system option.
-6. Test light/dark, OLED contrast, dynamic font scaling, RTL, emoji/sticker views, chats, and calls.
+## Integration steps after the Android baseline builds
+1. Fetch the pinned Mercurygram Android tree using the bootstrap branch helper.
+2. From the combined repository checkout, run `python3 scripts/integrate-appearance.py .work/mercurygram` (replace the destination with the actual checked-out Android source path).
+3. Compile the Android debug APK and verify that **Settings → Chat Settings → ⋮ → ULT Presets** displays the choices.
+4. Connect saved selection to Telegram's theme engine for actual app-wide color application.
+5. Test switching and persistence across restart, system light/dark transitions, OLED contrast, RTL, emoji, chat media, and calls.
 
-## UX palette sketches
+## Presets
 | Preset | Accent | Background | Mode |
 |---|---|---|---|
 | System | #1976D2 | #F5F6FA | Follow system |
@@ -25,4 +25,4 @@
 | Neon Stage | #5DF1E6 | #11182A | Dark |
 | Minimal | #727B8A | #F7F8FA | Light |
 
-This branch contains a working, build-independent preset model **but no integrated Telegram settings screen yet**. Do not claim these are usable in the APK until wired to the actual theme engine.
+**Current limitation:** The dialog saves a preference but does not yet recolor Telegram. It is not included in the Alpha APK workflow until the appearance and bootstrap branches are integrated and tested. The injection script fails if upstream anchors change, rather than silently patching an incompatible version. Preserve upstream GPL license and attribution.
