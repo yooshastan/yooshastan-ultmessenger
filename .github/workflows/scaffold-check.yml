@@ -1,0 +1,22 @@
+name: Scaffold checks
+
+on:
+  push:
+    branches: [main, develop, 'feature/**', 'research/**']
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate project scaffold
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s README.md
+          test -s docs/ARCHITECTURE.md
+          test -s docs/FEATURE_MATRIX.md
+          test -s docs/ALPHA_0_1.md
+          grep -q 'Yooshastan ULT Messenger' docs/ARCHITECTURE.md
+          echo 'Scaffold present. Android source build is not yet configured.'
