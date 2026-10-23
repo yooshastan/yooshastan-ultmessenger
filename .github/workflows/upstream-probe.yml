@@ -1,6 +1,12 @@
 name: Upstream source probe
 
 on:
+  push:
+    branches: [feature/alpha01-bootstrap]
+    paths:
+      - '.github/workflows/upstream-probe.yml'
+      - 'scripts/fetch-upstream.sh'
+      - 'upstream/telegram.sha'
   workflow_dispatch:
 
 permissions:
