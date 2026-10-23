@@ -1,0 +1,14 @@
+.work/
+.gradle/
+.idea/
+local.properties
+*.keystore
+*.jks
+*.p12
+google-services.json
+**/google-services.json
+build/
+**/build/
+*.apk
+*.aab
+.DS_Store
