@@ -1,0 +1,25 @@
+name: Upstream source probe
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch pinned official Telegram source
+        run: bash scripts/fetch-upstream.sh
+      - name: Inspect checked-out upstream
+        run: |
+          set -euo pipefail
+          test -f .work/telegram-upstream/settings.gradle
+          test -x .work/telegram-upstream/gradlew
+          git -C .work/telegram-upstream rev-parse HEAD
+          sed -n '1,100p' .work/telegram-upstream/settings.gradle
+      - name: Probe status
+        run: echo "Source checkout verified. APK compilation and rebranding are separate next milestones."
