@@ -1,4 +1,4 @@
-name: Android Alpha 0.1 downloadable APK
+name: Android Alpha 0.1.1 downloadable APK
 
 on:
   push:
@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/android-alpha.yml'
       - 'scripts/**'
+      - 'tests/**'
       - 'appearance/**'
       - 'assets/**'
       - 'upstream/**'
@@ -50,6 +51,9 @@ jobs:
           fi
       - uses: android-actions/setup-android@v4
         if: steps.prerequisites.outputs.ready == 'true'
+      - name: Verify pinned locale patch invariants
+        if: steps.prerequisites.outputs.ready == 'true'
+        run: python3 -m unittest discover -s tests -p 'test_patch_locale_background.py'
       - name: Install Android native build tools
         if: steps.prerequisites.outputs.ready == 'true'
         shell: bash
@@ -90,6 +94,7 @@ jobs:
           python3 scripts/apply-branding.py "$source_dir"
           if [[ "${{ matrix.variant }}" == 'foss' ]]; then
             python3 scripts/integrate-appearance.py "$source_dir"
+            python3 scripts/patch_locale_background.py "$source_dir"
           fi
       - name: Compile Pixel-compatible ARM64 debug APK
         if: steps.prerequisites.outputs.ready == 'true'
@@ -114,13 +119,14 @@ jobs:
             echo "::error::Expected one compiled APK, found ${#apks[@]}"
             exit 1
           fi
-          cp -- "${apks[0]}" "artifacts/ult-alpha01-${{ matrix.variant }}-arm64-debug.apk"
+          cp -- "${apks[0]}" "artifacts/ult-alpha011-${{ matrix.variant }}-arm64-debug.apk"
           ls -lh artifacts/*.apk
+          sha256sum artifacts/*.apk
       - name: Upload installable internal test APK
         if: steps.prerequisites.outputs.ready == 'true' && success()
         uses: actions/upload-artifact@v4
         with:
-          name: ult-alpha01-${{ matrix.variant }}-android
+          name: ult-alpha011-${{ matrix.variant }}-android
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 14
