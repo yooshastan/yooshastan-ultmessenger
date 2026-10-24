@@ -63,6 +63,17 @@ public final class UltAppearanceThemeAdapter {
         colors.put(Theme.key_windowBackgroundGray, preset.backgroundArgb);
         colors.put(Theme.key_windowBackgroundWhiteBlackText, preset.textArgb);
         colors.put(Theme.key_windowBackgroundWhiteBlueText, preset.accentArgb);
+        // ULT 0.7: carry the chosen palette into conversation and chat-list UI,
+        // not only the toolbar. Telegram's existing theme engine remains in control.
+        colors.put(Theme.key_windowBackgroundWhiteGrayText,
+                preset.dark ? 0xFFB9B4D0 : 0xFF747786);
+        colors.put(Theme.key_chats_name, preset.textArgb);
+        colors.put(Theme.key_chats_message,
+                preset.dark ? 0xFFB9B4D0 : 0xFF747786);
+        colors.put(Theme.key_chat_inBubble, preset.incomingBubbleArgb);
+        colors.put(Theme.key_chat_outBubble, preset.outgoingBubbleArgb);
+        colors.put(Theme.key_chat_messageTextIn, preset.textArgb);
+        colors.put(Theme.key_chat_messageTextOut, preset.textArgb);
         colors.put(Theme.key_dialogButton, preset.accentArgb);
 
         StringBuilder body = new StringBuilder(64_000);
