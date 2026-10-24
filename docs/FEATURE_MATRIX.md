@@ -24,7 +24,7 @@
 
 | Priority | Feature | Influence / desired result | Scope and acceptance criteria | Proposed milestone |
 | --- | --- | --- | --- | --- |
-| **P0** | Per-chat automatic translation | Nekogram-like convenience | Language detection; target language; enable/disable for each chat; original/translation toggle; caching; no message-content upload without explicit consent; test Google-free/offline engine availability | **Alpha 0.9** |
+| **P0** | Per-chat automatic translation | Nekogram-like convenience | **Alpha 0.9 CI preview:** ULT per-chat language/start/stop menu, remote translation consent, strict offline provider failure with no HTTP fallback, secret-chat gate. Still verify Pixel/GrapheneOS behavior, installable offline provider, inherited translation controls, other languages and caching | **Alpha 0.9 preview** |
 | **P0** | Tabs, chat categories and advanced sorting | Plus Messenger / Nullgram | Sort unread/pinned/recent, folders, separate groups/channels/bots, optional hidden tabs; never reorder authoritative Telegram account data merely to change presentation | **Alpha 0.9–0.10** |
 | **P0** | Proxy diagnostics and connection controls | Nekogram / privacy focus | Show active SOCKS5/MTProto profile, connection tests, proxy failover policy, TLS/MTProto trust explanation, opt-in switch and persistent state | **Alpha 0.10** |
 | **P0** | DNS privacy / DoQ audit | Requested QUIC DNS | Inventory every DNS path (app Java/native MTProto, proxy and media); evaluate DoQ (RFC 9250), DoH3 and strict no-plaintext-fallback mode only when routing can actually be enforced | **Alpha 0.10 / research** |
@@ -70,5 +70,5 @@ For an actual port, record **exact immutable revision, files, license, modified 
 ## Release gates
 
 - **Current review stack:** Alpha 0.6 and 0.7 still need clear device sign-off; Alpha 0.8 FOSS CI produced an APK, but archive-specific field tests have not been explicitly confirmed.
-- **Alpha 0.9 goal:** A usable per-chat translation flow with clear privacy boundaries and Google-free behavior, followed by a downloadable APK and device tests.
+- **Alpha 0.9 progress:** Guarded patch includes per-chat controls and strict offline-only dispatch. FOSS APK build and Pixel/GrapheneOS device tests remain release gates; provider availability must be disclosed. The inherited Mercurygram translation bar still has its own cloud settings and entry points.
 - **Beta goal:** Signed, repeatably buildable FOSS release with a feature matrix matching actual behavior, permission review, and a tested download link.
