@@ -56,6 +56,30 @@ class ThemeStateContractTest(TestCase):
         self.assertIn('Theme.applyTheme(oldDay);', text)
         self.assertIn('Build.VERSION_CODES.Q', text)
 
+    def test_manual_sun_moon_switch_uses_ult_companion_keys_and_restores_originals(self):
+        text = ADAPTER.read_text(encoding="utf-8")
+        self.assertIn('getSharedPreferences("themeconfig", Context.MODE_PRIVATE)', text)
+        self.assertIn('togglePrefs.contains("lastDayTheme")', text)
+        self.assertIn('togglePrefs.contains("lastDarkTheme")', text)
+        self.assertIn('editor.putBoolean(PREVIOUS_TOGGLE_DAY_PRESENT, present)', text)
+        self.assertIn('editor.putBoolean(PREVIOUS_TOGGLE_NIGHT_PRESENT, present)', text)
+        self.assertIn('.putString("lastDayTheme", pairedDay.getKey())', text)
+        self.assertIn('.putString("lastDarkTheme", pairedNight.getKey())', text)
+        self.assertIn('restoreManualToggleTargets(prefs, togglePrefs);', text)
+        self.assertIn('editor.remove("lastDayTheme");', text)
+        self.assertIn('editor.remove("lastDarkTheme");', text)
+        # Each stored old key must be cleared on System, not after each mode change.
+        system_branch = text[text.index("if (preset == UltAppearancePreset.SYSTEM) {"):
+                             text.index("if (followSystem && Build.VERSION.SDK_INT")]
+        for field in ("PREVIOUS_TOGGLE_DAY", "PREVIOUS_TOGGLE_NIGHT",
+                      "PREVIOUS_TOGGLE_DAY_PRESENT", "PREVIOUS_TOGGLE_NIGHT_PRESENT"):
+            self.assertIn(".remove(" + field + ")", system_branch)
+        paired_start = text.index('Theme.setCurrentNightTheme(pairedNight);')
+        toggle_update = text.index('.putString("lastDayTheme", pairedDay.getKey())')
+        auto_mode = text.index('Theme.selectedAutoNightType = Theme.AUTO_NIGHT_TYPE_SYSTEM;')
+        self.assertLess(paired_start, toggle_update)
+        self.assertLess(toggle_update, auto_mode)
+
     def test_chooser_preserves_options_and_refreshes_visible_fragment(self):
         spec = importlib.util.spec_from_file_location("ult_appearance_integration", INTEGRATOR)
         integration = importlib.util.module_from_spec(spec)
