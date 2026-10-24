@@ -42,7 +42,7 @@ FIELDS = """
             values.add(UltChatTools.numericId(topicId));
         }
         if (currentEncryptedChat == null) {
-            String publicName = currentChat != null ? currentChat.username
+            String publicName = currentChat != null ? ChatObject.getPublicUsername(currentChat)
                     : (currentUser != null ? currentUser.username : null);
             String publicLink = UltChatTools.publicLink(publicName);
             if (publicLink != null) {
