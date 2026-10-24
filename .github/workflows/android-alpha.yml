@@ -1,8 +1,8 @@
-name: Android Alpha 0.6 message tools preview
+name: Android Alpha 0.7 visual identity preview
 
 on:
   push:
-    branches: [feature/alpha01-bootstrap, feature/alpha02-native-themes, feature/alpha03-proxy-profiles, feature/alpha04-chat-layouts, feature/alpha05-chat-tools, feature/alpha06-message-tools]
+    branches: [feature/alpha01-bootstrap, feature/alpha02-native-themes, feature/alpha03-proxy-profiles, feature/alpha04-chat-layouts, feature/alpha05-chat-tools, feature/alpha06-message-tools, feature/alpha07-visual-identity]
     paths:
       - '.github/workflows/android-alpha.yml'
       - 'scripts/**'
@@ -57,7 +57,11 @@ jobs:
         if: steps.prerequisites.outputs.ready == 'true'
         run: |
           python3 -m unittest discover -s tests -p 'test_patch_locale_background.py'
+          python3 -m unittest discover -s tests -p 'test_branding.py'
           python3 -m unittest discover -s appearance/tests -p 'test_integration.py'
+          mkdir -p /tmp/ult-appearance-classes
+          javac -d /tmp/ult-appearance-classes appearance/src/com/yooshastan/ultmessenger/appearance/UltAppearancePreset.java appearance/tests/UltAppearancePresetTest.java
+          java -cp /tmp/ult-appearance-classes UltAppearancePresetTest
           python3 -m unittest discover -s proxy/tests -p 'test_integration.py'
           mkdir -p /tmp/ult-proxy-classes
           javac -d /tmp/ult-proxy-classes proxy/src/com/yooshastan/ultmessenger/proxy/UltProxyLabels.java proxy/tests/UltProxyLabelsTest.java
@@ -139,14 +143,14 @@ jobs:
             echo "::error::Expected one compiled APK, found ${#apks[@]}"
             exit 1
           fi
-          cp -- "${apks[0]}" "artifacts/ult-alpha06-preview-${{ matrix.variant }}-arm64-debug.apk"
+          cp -- "${apks[0]}" "artifacts/ult-alpha07-preview-${{ matrix.variant }}-arm64-debug.apk"
           ls -lh artifacts/*.apk
           sha256sum artifacts/*.apk
       - name: Upload installable internal test APK
         if: steps.prerequisites.outputs.ready == 'true' && success()
         uses: actions/upload-artifact@v4
         with:
-          name: ult-alpha06-preview-${{ matrix.variant }}-android
+          name: ult-alpha07-preview-${{ matrix.variant }}-android
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 14
