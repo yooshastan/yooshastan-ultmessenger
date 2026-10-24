@@ -1,0 +1,132 @@
+name: Android Alpha 0.1.1 downloadable APK
+
+on:
+  push:
+    branches: [feature/alpha01-bootstrap]
+    paths:
+      - '.github/workflows/android-alpha.yml'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'appearance/**'
+      - 'assets/**'
+      - 'upstream/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.variant }} ARM64 debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [foss, firebase]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Check credentials without exposing values
+        id: prerequisites
+        env:
+          API_ID: ${{ secrets.ULT_TELEGRAM_API_ID || secrets.API_ID }}
+          API_HASH: ${{ secrets.ULT_TELEGRAM_API_HASH || secrets.API_HASH }}
+          FIREBASE_JSON_B64: ${{ secrets.ULT_FIREBASE_JSON_B64 }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$API_ID" || -z "$API_HASH" ]]; then
+            echo '::error::Missing Telegram API secrets. Provide ULT_TELEGRAM_API_ID / ULT_TELEGRAM_API_HASH (or API_ID / API_HASH) as repository Actions secrets.'
+            exit 1
+          fi
+          if [[ "${{ matrix.variant }}" == 'firebase' && -z "$FIREBASE_JSON_B64" ]]; then
+            echo '::notice::Firebase variant skipped until ULT_FIREBASE_JSON_B64 is configured.'
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
+          fi
+      - uses: android-actions/setup-android@v4
+        if: steps.prerequisites.outputs.ready == 'true'
+      - name: Verify pinned locale patch invariants
+        if: steps.prerequisites.outputs.ready == 'true'
+        run: python3 -m unittest discover -s tests -p 'test_patch_locale_background.py'
+      - name: Install Android native build tools
+        if: steps.prerequisites.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y ninja-build meson nasm gperf pkg-config make cmake python3 curl
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager --install 'platforms;android-36' 'build-tools;36.0.0' 'ndk;27.2.12479018' 'cmake;3.22.1'
+      - name: Fetch pinned Android source
+        if: steps.prerequisites.outputs.ready == 'true'
+        shell: bash
+        run: |
+          if [[ "${{ matrix.variant }}" == 'foss' ]]; then
+            bash scripts/fetch-foss.sh
+          else
+            bash scripts/fetch-upstream.sh
+          fi
+      - name: Configure private API credentials and ULT branding
+        if: steps.prerequisites.outputs.ready == 'true'
+        shell: bash
+        env:
+          ULT_TELEGRAM_API_ID: ${{ secrets.ULT_TELEGRAM_API_ID || secrets.API_ID }}
+          ULT_TELEGRAM_API_HASH: ${{ secrets.ULT_TELEGRAM_API_HASH || secrets.API_HASH }}
+          FIREBASE_JSON_B64: ${{ secrets.ULT_FIREBASE_JSON_B64 }}
+        run: |
+          set -euo pipefail
+          set +x
+          if [[ "${{ matrix.variant }}" == 'foss' ]]; then
+            source_dir=".work/mercurygram-upstream"
+            python3 scripts/configure-foss.py "$source_dir"
+          else
+            source_dir=".work/telegram-upstream"
+            python3 scripts/configure-prototype.py "$source_dir"
+            printf '%s' "$FIREBASE_JSON_B64" | base64 -d > "$source_dir/TMessagesProj/google-services.json"
+            python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); ps={a["client_info"]["android_client_info"]["package_name"] for a in d["client"]}; needed={"com.yooshastan.ultmessenger","com.yooshastan.ultmessenger.beta"}; assert needed.issubset(ps), "Firebase app registration missing package IDs"' "$source_dir/TMessagesProj/google-services.json"
+          fi
+          python3 scripts/apply-branding.py "$source_dir"
+          if [[ "${{ matrix.variant }}" == 'foss' ]]; then
+            python3 scripts/integrate-appearance.py "$source_dir"
+            python3 scripts/patch_locale_background.py "$source_dir"
+          fi
+      - name: Compile Pixel-compatible ARM64 debug APK
+        if: steps.prerequisites.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ matrix.variant }}" == 'foss' ]]; then
+            cd .work/mercurygram-upstream
+            ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug -PMG_BUILD_TAG=13.0.3.0.1 --no-daemon --console=plain
+          else
+            cd .work/telegram-upstream
+            ./gradlew :TMessagesProj_App:assembleAfatDebug --no-daemon --console=plain
+          fi
+      - name: Stage the compiled APK for download
+        if: steps.prerequisites.outputs.ready == 'true' && success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          mapfile -d '' apks < <(find .work -type f -name '*.apk' -path '*/TMessagesProj_App/build/outputs/apk/*' -print0)
+          if (( ${#apks[@]} != 1 )); then
+            echo "::error::Expected one compiled APK, found ${#apks[@]}"
+            exit 1
+          fi
+          cp -- "${apks[0]}" "artifacts/ult-alpha011-${{ matrix.variant }}-arm64-debug.apk"
+          ls -lh artifacts/*.apk
+          sha256sum artifacts/*.apk
+      - name: Upload installable internal test APK
+        if: steps.prerequisites.outputs.ready == 'true' && success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ult-alpha011-${{ matrix.variant }}-android
+          path: artifacts/*.apk
+          if-no-files-found: error
+          retention-days: 14

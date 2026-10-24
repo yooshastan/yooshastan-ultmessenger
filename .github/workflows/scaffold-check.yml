@@ -20,3 +20,10 @@ jobs:
           test -s docs/ALPHA_0_1.md
           grep -q 'Yooshastan ULT Messenger' docs/ARCHITECTURE.md
           echo 'Scaffold present. Android source build is not yet configured.'
+      - name: Validate downloadable Android Studio bootstrap
+        run: |
+          bash -n scripts/prepare-android-studio.sh
+          python3 -m py_compile scripts/integrate-appearance.py
+          test -s docs/ANDROID_STUDIO.md
+      - name: Test prototype configuration helper
+        run: python3 -m unittest discover -s tests -v

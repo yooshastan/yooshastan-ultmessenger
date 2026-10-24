@@ -4,7 +4,7 @@
 
 An experimental, independent Android messaging project from Yooshastan Studios. Inspired by K-pop's *ultimate bias* and the flexibility of alternative Telegram clients.
 
-> **Alpha 0.1 bootstrap:** This repository currently contains project scaffolding and documentation, not a working APK or Telegram source fork.
+> **Alpha 0.1:** Download this branch and run the [Android Studio preparation guide](docs/ANDROID_STUDIO.md) to fetch the pinned Android source, apply ULT identity and the appearance selector, then open the generated Gradle project. The ZIP itself is a bootstrap, not yet a compiled APK.
 
 ## Goals
 - Telegram Android compatibility based on the official GPL-2.0 client.
