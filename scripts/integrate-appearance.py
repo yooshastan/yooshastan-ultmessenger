@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Inject the ULT preset chooser into pinned Telegram/Mercurygram Chat Settings.
+"""Inject working ULT palette presets into pinned Mercurygram Chat Settings.
 
 This integration is intentionally fail-closed: updated upstream menu anchors
 must be reviewed instead of silently creating broken source.
@@ -12,7 +12,8 @@ IMPORT_ANCHOR = "import org.telegram.ui.ActionBar.Theme;\n"
 CLASS_ANCHOR = "public class ThemeActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {\n"
 MENU_ANCHOR = '            menuItem.addSubItem(reset_settings, R.drawable.msg_reset, getString("ThemeResetToDefaults", R.string.ThemeResetToDefaults));\n'
 CLICK_ANCHOR = "                } else if (id == create_theme) {\n"
-IMPORT = "import com.yooshastan.ultmessenger.appearance.UltAppearancePreset;\n"
+IMPORT = ("import com.yooshastan.ultmessenger.appearance.UltAppearancePreset;\n"
+          "import com.yooshastan.ultmessenger.appearance.UltAppearanceThemeAdapter;\n")
 FIELDS = """
     private static final int ULT_PRESET_MENU_ID = 0x554C54;
     private static final String ULT_PRESET_PREFERENCES = "ult_appearance";
@@ -34,14 +35,21 @@ FIELDS = """
         new android.app.AlertDialog.Builder(activity)
                 .setTitle("ULT Appearance — presets")
                 .setSingleChoiceItems(labels, current.ordinal(), (dialog, selected) -> {
-                    activity.getSharedPreferences(ULT_PRESET_PREFERENCES, Context.MODE_PRIVATE)
-                            .edit().putString(ULT_PRESET_KEY, presets[selected].name()).apply();
                     dialog.dismiss();
-                    new android.app.AlertDialog.Builder(activity)
-                            .setMessage("Saved " + presets[selected].displayName
-                                    + ". Theme-engine application is coming in the next build.")
-                            .setPositiveButton(android.R.string.ok, null)
-                            .show();
+                    try {
+                        if (UltAppearanceThemeAdapter.apply(activity, presets[selected])) {
+                            android.widget.Toast.makeText(activity, "Applied " + presets[selected].displayName,
+                                    android.widget.Toast.LENGTH_SHORT).show();
+                        } else {
+                            new android.app.AlertDialog.Builder(activity)
+                                    .setMessage("Couldn't apply this preset. The existing theme was kept.")
+                                    .setPositiveButton(android.R.string.ok, null).show();
+                        }
+                    } catch (java.io.IOException exception) {
+                        new android.app.AlertDialog.Builder(activity)
+                                .setMessage("Couldn't save the ULT theme file.")
+                                .setPositiveButton(android.R.string.ok, null).show();
+                    }
                 })
                 .setNegativeButton(android.R.string.cancel, null)
                 .show();
@@ -66,10 +74,11 @@ def integrate(root: Path) -> Path:
         "                } else if (id == ULT_PRESET_MENU_ID) {\n"
         "                    showUltPresetChooser();\n" + CLICK_ANCHOR)
     target.write_text(source, encoding="utf-8")
-    model_src = Path(__file__).resolve().parents[1] / "appearance/src/com/yooshastan/ultmessenger/appearance/UltAppearancePreset.java"
-    model_dst = root / "TMessagesProj/src/main/java/com/yooshastan/ultmessenger/appearance/UltAppearancePreset.java"
-    model_dst.parent.mkdir(parents=True, exist_ok=True)
-    model_dst.write_bytes(model_src.read_bytes())
+    for filename in ("UltAppearancePreset.java", "UltAppearanceThemeAdapter.java"):
+        model_src = Path(__file__).resolve().parents[1] / "appearance/src/com/yooshastan/ultmessenger/appearance" / filename
+        model_dst = root / "TMessagesProj/src/main/java/com/yooshastan/ultmessenger/appearance" / filename
+        model_dst.parent.mkdir(parents=True, exist_ok=True)
+        model_dst.write_bytes(model_src.read_bytes())
     return target
 
 if __name__ == "__main__":
