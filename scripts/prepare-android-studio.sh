@@ -53,6 +53,7 @@ if [[ "$variant" == "foss" ]]; then
   python3 "$project_root/scripts/patch_locale_background.py" "$source_dir"
   python3 "$project_root/scripts/integrate-proxy.py" "$source_dir"
   python3 "$project_root/scripts/integrate-chat-layouts.py" "$source_dir"
+  python3 "$project_root/scripts/integrate-chat-tools.py" "$source_dir"
 else
   install -m 600 "$ULT_FIREBASE_JSON_PATH" "$source_dir/TMessagesProj/google-services.json"
 fi
