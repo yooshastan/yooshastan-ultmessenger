@@ -1,8 +1,8 @@
-name: Android Alpha 0.5 chat tools preview
+name: Android Alpha 0.6 message tools preview
 
 on:
   push:
-    branches: [feature/alpha01-bootstrap, feature/alpha02-native-themes, feature/alpha03-proxy-profiles, feature/alpha04-chat-layouts, feature/alpha05-chat-tools]
+    branches: [feature/alpha01-bootstrap, feature/alpha02-native-themes, feature/alpha03-proxy-profiles, feature/alpha04-chat-layouts, feature/alpha05-chat-tools, feature/alpha06-message-tools]
     paths:
       - '.github/workflows/android-alpha.yml'
       - 'scripts/**'
@@ -67,6 +67,7 @@ jobs:
           javac -d /tmp/ult-chat-classes chat/src/com/yooshastan/ultmessenger/chat/UltChatLayoutPreset.java chat/tests/UltChatLayoutPresetTest.java
           java -cp /tmp/ult-chat-classes UltChatLayoutPresetTest
           python3 -m unittest discover -s chat/tests -p 'test_tools_integration.py'
+          python3 -m unittest discover -s chat/tests -p 'test_message_tools_integration.py'
           javac -d /tmp/ult-chat-classes chat/src/com/yooshastan/ultmessenger/chat/UltChatTools.java chat/tests/UltChatToolsTest.java
           java -cp /tmp/ult-chat-classes UltChatToolsTest
       - name: Install Android native build tools
@@ -113,6 +114,7 @@ jobs:
             python3 scripts/integrate-proxy.py "$source_dir"
             python3 scripts/integrate-chat-layouts.py "$source_dir"
             python3 scripts/integrate-chat-tools.py "$source_dir"
+            python3 scripts/integrate-message-tools.py "$source_dir"
           fi
       - name: Compile Pixel-compatible ARM64 debug APK
         if: steps.prerequisites.outputs.ready == 'true'
@@ -137,14 +139,14 @@ jobs:
             echo "::error::Expected one compiled APK, found ${#apks[@]}"
             exit 1
           fi
-          cp -- "${apks[0]}" "artifacts/ult-alpha05-preview-${{ matrix.variant }}-arm64-debug.apk"
+          cp -- "${apks[0]}" "artifacts/ult-alpha06-preview-${{ matrix.variant }}-arm64-debug.apk"
           ls -lh artifacts/*.apk
           sha256sum artifacts/*.apk
       - name: Upload installable internal test APK
         if: steps.prerequisites.outputs.ready == 'true' && success()
         uses: actions/upload-artifact@v4
         with:
-          name: ult-alpha05-preview-${{ matrix.variant }}-android
+          name: ult-alpha06-preview-${{ matrix.variant }}-android
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 14
