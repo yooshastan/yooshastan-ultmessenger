@@ -1,15 +1,25 @@
-# Ultgram Alpha 0.5 preview — device test checklist
+# Ultgram Alpha 0.6 preview — device test checklist
 
 ## Download the APK
 
-1. Open [Android Alpha 0.5 chat tools preview](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha05-chat-tools).
-2. Choose a successful run on `feature/alpha05-chat-tools`.
-3. Download `ult-alpha05-preview-foss-android` under **Artifacts**, extract its ARM64 debug APK and verify that it came from your Yooshastan repository.
+1. Open [Android Alpha 0.6 message tools preview](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha06-message-tools).
+2. Choose a successful run on `feature/alpha06-message-tools`.
+3. Download `ult-alpha06-preview-foss-android` under **Artifacts**, extract its ARM64 debug APK and verify that it came from your Yooshastan repository.
 4. Install on your Pixel 8a or Samsung test device.
 
 Debug artifacts expire in 14 days. CI debug signing keys may differ from your previous install; **do not uninstall a working messenger without planning for reauthentication and any local data**.
 
-## Alpha 0.5 — ULT Chat Tools
+## Alpha 0.6 — ULT Message Tools (new)
+
+1. Long-press a normal text or media message in a private conversation and select **ULT: Copy message ID**. Verify the clipboard holds a numeric ID, not the message text.
+2. Long-press an incoming group message and select **ULT: Copy sender peer ID**. Telegram uses signed peer IDs: negative IDs can represent channels/chats, and the ID is not a phone number.
+3. Test your own outgoing message, a channel post, a forum-topic message, and a media caption. Verify menu entries appear where Telegram exposes metadata.
+4. Check a sponsored message: the added message-ID entries should not appear there.
+5. Cancel the long-press menu: the clipboard should remain unchanged. Neither action should send, forward, delete, or edit anything.
+6. Verify sender-peer copy is not offered when upstream reports no sender peer (`0`), and note that some imported/special messages may expose different identities.
+7. Test once in a secret chat if you use one. IDs are local metadata; they are not public links and may differ across devices.
+
+## Alpha 0.5 — ULT Chat Tools (regression)
 
 1. Open a private conversation and choose **⋮ → ULT Chat Tools**.
 2. Use **Copy dialog ID** and **Copy user ID**; verify values are copied only when tapped.
@@ -34,16 +44,16 @@ These are read-only utilities. They don't forward messages, bypass Premium, expo
 
 ```bash
 adb devices -l
-adb install -r /absolute/path/to/ult-alpha05-preview-foss-arm64-debug.apk
+adb install -r /absolute/path/to/ult-alpha06-preview-foss-arm64-debug.apk
 adb logcat -c
-adb logcat -v threadtime -s AndroidRuntime:E ActivityManager:I > ult-alpha05-debug.log
+adb logcat -v threadtime -s AndroidRuntime:E ActivityManager:I > ult-alpha06-debug.log
 ```
 
 Stop logging with Ctrl+C. Review logs for private messages, IDs, phone numbers and proxy endpoints before sharing.
 
 ## Still planned
 
-- A fuller message-specific tools menu (e.g. copy message ID) requires separate interaction tests.
-- Advanced proxy fail-closed routing and SMS/MMS/RCS companion are not part of Alpha 0.5.
+- Per-message actions are limited to local ID copying; advanced message diagnostics remain future work.
+- Advanced proxy fail-closed routing and SMS/MMS/RCS companion are not part of Alpha 0.6.
 - Firebase-compatible variant requires optional `ULT_FIREBASE_JSON_B64`.
 - ULT adds no analytics or advertising; upstream sponsored Telegram content may still exist.
