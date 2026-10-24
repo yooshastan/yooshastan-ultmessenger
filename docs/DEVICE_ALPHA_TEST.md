@@ -1,15 +1,28 @@
-# Ultgram Alpha 0.8 preview — archive visibility device test checklist
+# Ultgram Alpha 0.9 preview — per-chat translation device test checklist
 
 ## Download the APK
 
-1. Open [Android Alpha 0.8 archive visibility preview](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha08-archive-visibility).
-2. Choose a successful run on `feature/alpha08-archive-visibility`.
-3. Download `ult-alpha08-preview-foss-android` under **Artifacts**, extract its ARM64 debug APK and verify that it came from your Yooshastan repository.
+1. Open [Android Alpha 0.9 translation preview](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha08-archive-visibility).
+2. Choose a successful run on `feature/alpha09-translation`.
+3. Download `ult-alpha09-preview-foss-android` under **Artifacts**, extract its ARM64 debug APK and verify that it came from your Yooshastan repository.
 4. Install on your Pixel 8a or Samsung test device.
 
 Debug artifacts expire in 14 days. CI debug signing keys may differ from your previous install; **do not uninstall a working messenger without planning for reauthentication and any local data**.
 
-## Alpha 0.8 — Hide Archive row (new)
+## Alpha 0.9 — ULT Chat Translation (new)
+
+1. In a chat with messages, open **⋮ → ULT Chat Translation**. Choose **Translate to Korean**, English or another language and verify the built-in translate bar appears. Use the bar to switch between original and translated text. Check a non-English incoming message.
+2. If the translation engine is **Telegram default/cloud** or **Alternative HTTP**, expect a confirmation explaining that text leaves the device. Tap **Cancel**: no new translation should start. Repeat and opt in to verify that translation starts.
+3. Select **Stop translating this chat**, confirm original text returns, then reopen the chat. Verify the chat-level choice persists appropriately.
+4. Test two separate chats: enabling one should not enable the other. Change the target language in one chat and confirm it takes effect.
+5. In the Mercurygram translation settings, select **Offline** with **no usable AIDL provider**. Translation should fail closed, clearly report missing local provider, and **never send text through alternative HTTP**, even when the upstream auto-fallback option is enabled.
+6. With an installed/bindable offline AIDL provider, confirm offline translation works, and simulate provider failure if possible; no network fallback should occur.
+7. Open a **secret chat**: network engines must be blocked, and the offline mode should only work with a usable local provider. Do not share real secret-chat contents in test logs.
+8. Verify the Google-free FOSS APK works with no Play Services/microG, including in GrapheneOS. Repeat standard messaging, proxy and archive visibility regressions.
+
+**Privacy caveat:** The new ULT menu requires explicit confirmation for remote engines; the inherited upstream translation controls remain available and can have different disclosure flows. No offline translation model is bundled with this fork. Choosing **Offline** now means strict device-only behavior, which may show unavailable until a compatible provider is installed.
+
+## Alpha 0.8 — Hide Archive row (regression)
 
 1. Open **Chats → ⋮ → ULT: Hide Archive row**. Its checkmark should initially be off.
 2. Enable it. The Archive folder row should disappear from the **All Chats** list immediately. Existing chats and their archive state must not change.
@@ -67,9 +80,9 @@ These are read-only utilities. They don't forward messages, bypass Premium, expo
 
 ```bash
 adb devices -l
-adb install -r /absolute/path/to/ult-alpha08-preview-foss-arm64-debug.apk
+adb install -r /absolute/path/to/ult-alpha09-preview-foss-arm64-debug.apk
 adb logcat -c
-adb logcat -v threadtime -s AndroidRuntime:E ActivityManager:I > ult-alpha08-debug.log
+adb logcat -v threadtime -s AndroidRuntime:E ActivityManager:I > ult-alpha09-debug.log
 ```
 
 Stop logging with Ctrl+C. Review logs for private messages, IDs, phone numbers and proxy endpoints before sharing.
@@ -77,6 +90,6 @@ Stop logging with Ctrl+C. Review logs for private messages, IDs, phone numbers a
 ## Still planned
 
 - Per-message actions are limited to local ID copying; advanced message diagnostics remain future work.
-- Advanced proxy fail-closed routing, translation and SMS/MMS/RCS companion are not part of Alpha 0.8.
+- Advanced proxy fail-closed routing, on-device provider packaging and SMS/MMS/RCS companion remain future work; Alpha 0.9 adds per-chat translation UI and strict offline fallback policy.
 - Firebase-compatible variant requires optional `ULT_FIREBASE_JSON_B64`.
 - ULT adds no analytics or advertising; upstream sponsored Telegram content may still exist.
