@@ -3,6 +3,7 @@ package com.yooshastan.ultmessenger.appearance;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.os.Build;
 import android.util.SparseIntArray;
 
 import org.telegram.ui.ActionBar.Theme;
@@ -28,7 +29,14 @@ public final class UltAppearanceThemeAdapter {
 
     private UltAppearanceThemeAdapter() {}
 
+    /** Preserves the Alpha 0.10a API: existing callers choose a fixed theme. */
     public static boolean apply(Context context, UltAppearancePreset preset) throws IOException {
+        return apply(context, preset, false);
+    }
+
+    /** Select either the tested fixed theme or a paired day/night system theme. */
+    public static boolean apply(Context context, UltAppearancePreset preset,
+                                boolean followSystem) throws IOException {
         SharedPreferences prefs = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE);
         if (preset == UltAppearancePreset.SYSTEM) {
             if (!prefs.contains(PREVIOUS_THEME)) {
@@ -52,7 +60,6 @@ public final class UltAppearanceThemeAdapter {
             if (previousNight != null) {
                 Theme.setCurrentNightTheme(previousNight);
             }
-            // Reestablish the original day theme before restoring auto-night.
             Theme.applyTheme(previousDay);
             if (prefs.contains(PREVIOUS_AUTO_NIGHT)) {
                 Theme.selectedAutoNightType = prefs.getInt(
@@ -68,62 +75,60 @@ public final class UltAppearanceThemeAdapter {
             return true;
         }
 
-        Theme.ThemeInfo base = Theme.getTheme(preset.dark ? "Night" : "Day");
-        if (base == null || base.assetName == null) {
-            return false;
+        if (followSystem && Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            return false; // Android-wide dark mode arrived with Android 10.
         }
 
-        // Snapshot before applyThemeFile: it always installs into Telegram's
-        // day-theme slot, even if the selected ULT palette is a dark theme.
+        // Snapshot before importing anything. Theme.applyThemeFile always
+        // changes Telegram's DAY slot, even when the theme is dark.
         Theme.ThemeInfo oldDay = Theme.getCurrentTheme();
         Theme.ThemeInfo oldNight = Theme.getCurrentNightTheme();
         int oldAutoNight = Theme.selectedAutoNightType;
 
-        SparseIntArray colors = Theme.getThemeFileValues(null, base.assetName, null);
-        int[] defaults = ThemeColors.createDefaultColors();
-        int headerText = Color.luminance(preset.accentArgb) > 0.179 ? Color.BLACK : Color.WHITE;
-        colors.put(Theme.key_actionBarDefault, preset.accentArgb);
-        colors.put(Theme.key_actionBarDefaultTitle, headerText);
-        colors.put(Theme.key_actionBarDefaultSubtitle, headerText);
-        colors.put(Theme.key_actionBarDefaultIcon, headerText);
-        colors.put(Theme.key_windowBackgroundWhite, preset.backgroundArgb);
-        colors.put(Theme.key_windowBackgroundGray, preset.backgroundArgb);
-        colors.put(Theme.key_windowBackgroundWhiteBlackText, preset.textArgb);
-        colors.put(Theme.key_windowBackgroundWhiteBlueText, preset.accentArgb);
-        colors.put(Theme.key_windowBackgroundWhiteGrayText,
-                preset.dark ? 0xFFB9B4D0 : 0xFF747786);
-        colors.put(Theme.key_chats_name, preset.textArgb);
-        colors.put(Theme.key_chats_message,
-                preset.dark ? 0xFFB9B4D0 : 0xFF747786);
-        colors.put(Theme.key_chat_inBubble, preset.incomingBubbleArgb);
-        colors.put(Theme.key_chat_outBubble, preset.outgoingBubbleArgb);
-        colors.put(Theme.key_chat_messageTextIn, preset.textArgb);
-        colors.put(Theme.key_chat_messageTextOut, preset.textArgb);
-        colors.put(Theme.key_dialogButton, preset.accentArgb);
+        Theme.ThemeInfo pairedDay = null;
+        Theme.ThemeInfo pairedNight = null;
+        Theme.ThemeInfo installed = null;
 
-        StringBuilder body = new StringBuilder(64_000);
-        for (int key = 0; key < Theme.colorsCount; key++) {
-            String name = ThemeColors.getStringName(key);
-            if (name == null || key == Theme.key_wallpaperFileOffset) {
-                continue;
+        if (followSystem) {
+            // Write both complete files before modifying Telegram state. Their
+            // stable, separate names avoid replacing the Alpha 0.10a fixed file.
+            File dayFile = writeThemeFile(context, preset, preset.forMode(false), "-day");
+            File nightFile = writeThemeFile(context, preset, preset.forMode(true), "-night");
+            if (dayFile == null || nightFile == null) {
+                return false;
             }
-            int color = colors.get(key, key < defaults.length ? defaults[key] : 0);
-            body.append(name).append('=').append(color).append('\n');
+            pairedDay = Theme.applyThemeFile(dayFile,
+                    "ULT " + preset.name() + " Light", null, false);
+            if (pairedDay == null) {
+                return false;
+            }
+            pairedNight = Theme.applyThemeFile(nightFile,
+                    "ULT " + preset.name() + " Dark", null, false);
+            if (pairedNight == null) {
+                // The first import changed the day slot; restore it on failure.
+                if (oldDay != null) {
+                    Theme.applyTheme(oldDay);
+                }
+                return false;
+            }
+        } else {
+            // The original fixed palette remains available for users who do
+            // not want Telegram/Android to automatically change the colors.
+            UltAppearancePreset.Palette fixed = new UltAppearancePreset.Palette(
+                    preset.accentArgb, preset.textArgb, preset.backgroundArgb,
+                    preset.incomingBubbleArgb, preset.outgoingBubbleArgb, preset.dark);
+            File file = writeThemeFile(context, preset, fixed, "");
+            if (file == null) {
+                return false;
+            }
+            Theme.ThemeInfo installedTheme = Theme.applyThemeFile(
+                    file, preset.displayName, null, false);
+            if (installedTheme == null) {
+                return false;
+            }
+            installed = installedTheme;
         }
 
-        File temp = new File(context.getCacheDir(),
-                "ult-" + preset.name().toLowerCase(Locale.ROOT) + ".attheme");
-        try (FileOutputStream stream = new FileOutputStream(temp)) {
-            stream.write(body.toString().getBytes(StandardCharsets.UTF_8));
-        }
-        Theme.ThemeInfo installed = Theme.applyThemeFile(temp, preset.displayName, null, false);
-        if (installed == null) {
-            return false;
-        }
-
-        // Selecting a fixed palette must not be silently overridden by Samsung/
-        // Android system dark mode, Telegram scheduled night, or a brightness
-        // sensor. Capture original settings once so System can restore them.
         SharedPreferences.Editor editor = prefs.edit();
         if (!prefs.contains(PREVIOUS_THEME)) {
             editor.putString(PREVIOUS_THEME, oldDay != null ? oldDay.getKey() : "Blue");
@@ -136,11 +141,69 @@ public final class UltAppearanceThemeAdapter {
         }
         editor.putString(SELECTED, preset.name()).apply();
 
-        Theme.selectedAutoNightType = Theme.AUTO_NIGHT_TYPE_NONE;
-        Theme.saveAutoNightThemeConfig();
-        Theme.cancelAutoNightThemeCallbacks();
-        Theme.applyTheme(installed);
+        if (followSystem) {
+            // The second import was temporarily put in the day slot. Assign
+            // it to the night slot, restore our light day slot, then allow
+            // native Android 10+ system dark-mode detection to control both.
+            Theme.setCurrentNightTheme(pairedNight);
+            Theme.applyTheme(pairedDay);
+            Theme.selectedAutoNightType = Theme.AUTO_NIGHT_TYPE_SYSTEM;
+            Theme.saveAutoNightThemeConfig(); // includes the night theme key
+            Theme.checkAutoNightThemeConditions(true);
+        } else {
+            Theme.selectedAutoNightType = Theme.AUTO_NIGHT_TYPE_NONE;
+            Theme.saveAutoNightThemeConfig();
+            Theme.cancelAutoNightThemeCallbacks();
+            Theme.applyTheme(installed);
+        }
         return true;
+    }
+
+    private static File writeThemeFile(Context context, UltAppearancePreset preset,
+                                       UltAppearancePreset.Palette palette,
+                                       String suffix) throws IOException {
+        Theme.ThemeInfo base = Theme.getTheme(palette.dark ? "Night" : "Day");
+        if (base == null || base.assetName == null) {
+            return null;
+        }
+        SparseIntArray colors = Theme.getThemeFileValues(null, base.assetName, null);
+        int[] defaults = ThemeColors.createDefaultColors();
+        int headerText = Color.luminance(palette.accentArgb) > 0.179 ? Color.BLACK : Color.WHITE;
+        colors.put(Theme.key_actionBarDefault, palette.accentArgb);
+        colors.put(Theme.key_actionBarDefaultTitle, headerText);
+        colors.put(Theme.key_actionBarDefaultSubtitle, headerText);
+        colors.put(Theme.key_actionBarDefaultIcon, headerText);
+        colors.put(Theme.key_windowBackgroundWhite, palette.backgroundArgb);
+        colors.put(Theme.key_windowBackgroundGray, palette.backgroundArgb);
+        colors.put(Theme.key_windowBackgroundWhiteBlackText, palette.textArgb);
+        colors.put(Theme.key_windowBackgroundWhiteBlueText, palette.accentArgb);
+        colors.put(Theme.key_windowBackgroundWhiteGrayText,
+                palette.dark ? 0xFFB9B4D0 : 0xFF747786);
+        colors.put(Theme.key_chats_name, palette.textArgb);
+        colors.put(Theme.key_chats_message,
+                palette.dark ? 0xFFB9B4D0 : 0xFF747786);
+        colors.put(Theme.key_chat_inBubble, palette.incomingBubbleArgb);
+        colors.put(Theme.key_chat_outBubble, palette.outgoingBubbleArgb);
+        colors.put(Theme.key_chat_messageTextIn, palette.textArgb);
+        colors.put(Theme.key_chat_messageTextOut, palette.textArgb);
+        colors.put(Theme.key_dialogButton, palette.accentArgb);
+
+        StringBuilder body = new StringBuilder(64_000);
+        for (int key = 0; key < Theme.colorsCount; key++) {
+            String name = ThemeColors.getStringName(key);
+            if (name == null || key == Theme.key_wallpaperFileOffset) {
+                continue;
+            }
+            int color = colors.get(key, key < defaults.length ? defaults[key] : 0);
+            body.append(name).append('=').append(color).append('\n');
+        }
+
+        File temp = new File(context.getCacheDir(),
+                "ult-" + preset.name().toLowerCase(Locale.ROOT) + suffix + ".attheme");
+        try (FileOutputStream stream = new FileOutputStream(temp)) {
+            stream.write(body.toString().getBytes(StandardCharsets.UTF_8));
+        }
+        return temp;
     }
 
 }
