@@ -10,6 +10,8 @@
 - **Privacy with accurate threat modeling.** A proxy, encrypted DNS, scrubbed media metadata, local names and UI obfuscation each address different leaks; none makes a Telegram account anonymous or changes the identity Telegram sends to other users.
 - **No challenge bypass.** Help users navigate bot verification and provide standard Android Autofill where available, but do not silently solve group CAPTCHAs or circumvent administrator anti-spam controls.
 
+For a complete audit of the original Nullgram, Nekogram, Goregram, Plus Messenger, proxy, Premium-style, translation, SMS/RCS and release requests, see the [master feature inventory](FEATURE_MATRIX.md). It distinguishes device-tested features from CI-only work and research.
+
 ## Roadmap (small independently testable alpha slices)
 
 | Priority | Milestone | Scope | Exit criteria |
