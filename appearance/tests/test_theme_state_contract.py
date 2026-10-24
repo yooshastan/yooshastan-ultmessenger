@@ -1,0 +1,63 @@
+#!/usr/bin/env python3
+"""Regression guard for fixed ULT presets on system-night Android devices.
+
+The Android Gradle job compiles the actual adapter. These source-contract checks
+catch accidental loss of the snapshot/restore order or UI refresh integration.
+"""
+import importlib.util
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest import TestCase, main
+
+ROOT = Path(__file__).resolve().parents[2]
+ADAPTER = ROOT / "appearance/src/com/yooshastan/ultmessenger/appearance/UltAppearanceThemeAdapter.java"
+INTEGRATOR = ROOT / "scripts/integrate-appearance.py"
+
+
+class ThemeStateContractTest(TestCase):
+    def test_snapshot_precedes_install_and_auto_night_is_paused_after_success(self):
+        text = ADAPTER.read_text(encoding="utf-8")
+        before_import = text.index("Theme.ThemeInfo oldDay = Theme.getCurrentTheme();")
+        import_theme = text.index("Theme.ThemeInfo installed = Theme.applyThemeFile(")
+        persist_state = text.index("editor.putInt(PREVIOUS_AUTO_NIGHT, oldAutoNight);")
+        pause_night = text.index("Theme.selectedAutoNightType = Theme.AUTO_NIGHT_TYPE_NONE;", import_theme)
+        self.assertLess(before_import, import_theme)
+        self.assertLess(import_theme, persist_state)
+        self.assertLess(persist_state, pause_night)
+        self.assertIn("Theme.cancelAutoNightThemeCallbacks();", text)
+        self.assertIn("Theme.applyTheme(installed);", text)
+        self.assertIn("if (installed == null) {", text)
+
+    def test_system_restores_day_night_and_auto_night_without_resetting_unset(self):
+        text = ADAPTER.read_text(encoding="utf-8")
+        system_branch = text[text.index("if (preset == UltAppearancePreset.SYSTEM) {"):
+                             text.index("Theme.ThemeInfo base =")]
+        self.assertIn("if (!prefs.contains(PREVIOUS_THEME))", system_branch)
+        self.assertIn("Theme.setCurrentNightTheme(previousNight);", system_branch)
+        self.assertLess(system_branch.index("Theme.applyTheme(previousDay);"),
+                        system_branch.index("Theme.checkAutoNightThemeConditions(true);"))
+        self.assertIn("Theme.saveAutoNightThemeConfig();", system_branch)
+        for field in ("PREVIOUS_THEME", "PREVIOUS_NIGHT_THEME", "PREVIOUS_AUTO_NIGHT"):
+            self.assertIn(".remove(" + field + ")", system_branch)
+
+    def test_chooser_preserves_options_and_refreshes_visible_fragment(self):
+        spec = importlib.util.spec_from_file_location("ult_appearance_integration", INTEGRATOR)
+        integration = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(integration)
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = root / integration.TARGET
+            target.parent.mkdir(parents=True)
+            target.write_text(integration.IMPORT_ANCHOR + integration.CLASS_ANCHOR +
+                              integration.MENU_ANCHOR + integration.CLICK_ANCHOR,
+                              encoding="utf-8")
+            integration.integrate(root)
+            result = target.read_text(encoding="utf-8")
+            self.assertIn(".setSingleChoiceItems(labels, current.ordinal()", result)
+            self.assertIn(".setNeutralButton(\"Theme behavior\"", result)
+            self.assertIn("parentLayout.rebuildAllFragmentViews(true, true);", result)
+            self.assertIn("Choose System to restore", result)
+
+
+if __name__ == "__main__":
+    main()
