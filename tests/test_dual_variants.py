@@ -35,8 +35,9 @@ class DualVariantTests(unittest.TestCase):
             b = subprocess.run([sys.executable, str(checkout_root / "scripts/apply-branding.py"), str(root)],
                                text=True, capture_output=True)
             self.assertEqual(b.returncode, 0, b.stderr)
-            self.assertIn("@drawable/ult_launcher", manifest.read_text())
-            self.assertTrue((root / "TMessagesProj/src/main/res/drawable/ult_launcher.xml").is_file())
+            self.assertIn("@mipmap/ult_launcher", manifest.read_text())
+            self.assertTrue((root / "TMessagesProj/src/main/res/mipmap-anydpi/ult_launcher.xml").is_file())
+            self.assertTrue((root / "TMessagesProj/src/main/res/mipmap-anydpi-v26/ult_launcher.xml").is_file())
 
 
 if __name__ == "__main__":
