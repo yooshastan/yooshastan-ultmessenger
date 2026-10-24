@@ -165,13 +165,13 @@ def integrate(root: Path) -> tuple[Path, Path]:
 """ + CREDIT)
 
     # Keep upstream documentation aligned with the strict local-only behavior.
-    old_explanation = (" * <p>Privacy invariant: the {@code \"offline\"} mode NEVER silently\\n"
-                       " * falls back to Telegram cloud. When the AIDL provider is missing or\\n"
-                       " * fails, the fallback is Alternative HTTP (gated by\\n"
-                       " * {@link SharedConfig#mg_translateAutoFallback}) — a user who picked\\n"
-                       " * offline did not pick Telegram-mediated translation.")
-    new_explanation = (" * <p>ULT strict offline: offline AIDL failures never fall back to any\\n"
-                       " * network service. Alternative HTTP remains an explicit, separate mode.")
+    old_explanation = """ * <p>Privacy invariant: the {@code "offline"} mode NEVER silently
+ * falls back to Telegram cloud. When the AIDL provider is missing or
+ * fails, the fallback is Alternative HTTP (gated by
+ * {@link SharedConfig#mg_translateAutoFallback}) — a user who picked
+ * offline did not pick Telegram-mediated translation."""
+    new_explanation = """ * <p>ULT strict offline: offline AIDL failures never fall back to any
+ * network service. Alternative HTTP remains an explicit, separate mode."""
     if old_explanation in dispatch:
         dispatch = once(dispatch, old_explanation, new_explanation)
 
