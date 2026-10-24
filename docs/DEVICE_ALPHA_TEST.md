@@ -1,8 +1,22 @@
 # Ultgram Alpha 0.10a preview — local chat-view device test checklist
 
+## Samsung A36 theme regression fix (new preview)
+
+This branch is a **candidate fix, not yet device-confirmed**. Telegram's theme importer installs a ULT palette into the **day** slot even if it is dark; Samsung/Android system dark mode may immediately replace it with Telegram's separate **night** slot. The ULT chooser previously did not rebuild existing fragment views after import.
+
+1. Download the successful FOSS artifact from [Samsung A36 theme fix builds](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afix%2Fsamsung-a36-ult-themes): `ult-alpha10a-themefix-preview-foss-android`. It contains `ult-alpha10a-themefix-preview-foss-arm64-debug.apk`.
+2. On **Samsung A36**, enable Android **Settings → Display → Dark mode**. Note your Telegram **Settings → Chat Settings → Auto-Night Mode** and existing day/night themes.
+3. Open **Settings → Chat Settings → ⋮ → ULT Presets**. Confirm the choices and the **Theme behavior** explanation. Choose **ULT Aurora**, then **ULT Obsidian**. Each should recolor the chat list and conversation immediately.
+4. Restart Ultgram. The preset should remain. Toggle Samsung dark mode off/on; the fixed preset should **not** be replaced. Test a light preset such as Candy Pink while Samsung dark mode is on.
+5. Choose **System**. Verify the previous Telegram **day theme, night theme and auto-night setting** return; Android dark-mode changes should again switch Telegram themes where configured.
+6. Repeat on **Pixel 8a/GrapheneOS**. If possible, test scheduled/brightness auto-night too. Selecting multiple ULT presets should not overwrite the original snapshot.
+7. Confirm Telegram native theme chooser, dialogs, media and notifications. If a toast says Applied but the theme does not change, record **preset, Android light/dark, Telegram Auto-Night Mode, and a redacted screenshot**.
+
+**Important:** A chosen ULT preset pauses Telegram's **in-app** automatic day/night switching; **System** restores the previous configuration. Samsung's OS-wide dark mode is not modified.
+
 ## Download the APK
 
-1. Open [Android Alpha 0.10a chat views preview](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha08-archive-visibility).
+1. Open [Android Alpha 0.10a chat views preview](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha10-chat-view-presets).
 2. Choose a successful run on `feature/alpha10-chat-view-presets`.
 3. Download `ult-alpha10a-preview-foss-android` under **Artifacts**, extract its ARM64 debug APK and verify that it came from your Yooshastan repository.
 4. Install on your Pixel 8a or Samsung test device.
