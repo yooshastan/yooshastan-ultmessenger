@@ -11,7 +11,7 @@
 | Native Telegram login, chats, media, calls (official client / Mercurygram base) | **Device-tested baseline** | Pinned Telegram-compatible Android client; account login and messaging tested | Regressions on Pixel 8a, GrapheneOS and Samsung; upstream security updates |
 | Google-free FOSS ARM64 build | **CI shipped + previous device tests** | FOSS flavor, optional-Google architecture, GitHub Actions APK artifact | Release signing, long-running notification/battery tests, distribution |
 | Firebase-compatible build | **Partial** | Optional Firebase flavor and CI job supported by scripts | Supply compatible Firebase project config/secret, actually compile and test; current success can mean a **skipped** build |
-| Nullgram-inspired appearance | **Partial, Alpha 0.2/0.7 CI** | Midnight, Candy Pink, Neon Stage, Aurora, Obsidian, Minimal and System fallback | More cohesive headers, typography, spacing, surfaces, dynamic colors, accessibility, screenshot review |
+| Nullgram-inspired appearance | **A36 fixed presets device-tested; Alpha 0.10b paired modes CI preview** | Midnight, Candy Pink, Neon Stage, Aurora, Obsidian and Minimal; original paired light/dark palettes, optional fixed mode, System restore | Verify paired system switching/restart on A36 and Pixel; cohesive headers, typography, spacing, accessibility and theme previews |
 | Original Ultgram launcher icon | **Alpha 0.7 CI shipped** | Violet/silver folded-wing U, Android adaptive and legacy vector paths | Mask/size visual testing, branding consistency, app/notification/shortcut images |
 | Chat layout options | **Device-tested foundation, Alpha 0.4** | Compact, Comfortable and Minimal Bubbles settings with original-value restore | Per-chat overrides, more spacing/navigation controls |
 | Proxy manager / Nekogram-like controls | **Device-tested foundation, Alpha 0.3** | Native SOCKS5/MTProto support with named-profile UI | Connection diagnostics, strict routing audit, testing Tor/proxy trust and leakage paths |
@@ -34,7 +34,7 @@
 | **P1** | More local Premium-like features | Goregram-inspired conveniences | Custom icon switcher, enhanced navigation, editor tools, local download-management UX, theme options; explicitly separate local UI from server entitlements | **Alpha 0.12+** |
 | **P1** | Expanded multi-account tools | Goregram-inspired | Convenient switching, local identity aliases, account-order/layout controls; research resource/security impact before raising account limits | **Later** |
 | **P1** | Message and media utilities | Nekogram / Goregram inspiration | Additional context actions, save-as/export for content user may save, link handling, player/file viewer choices, display options; review content protection and attribution rules before copying fork patches | **Later** |
-| **P1** | More Nullgram visual polish | Nullgram design inspiration | Distinct themes, chat list/card density, emoji/typography, navigation, accessibility, dark/light mode consistency; use original assets | **Iterative** |
+| **P1** | More Nullgram visual polish | Nullgram design inspiration | **Alpha 0.10b preview:** paired ULT light/dark modes. Still needed: chat list density, emoji/typography, navigation, accessibility, theme previews and editable colors; use original assets | **Iterative** |
 | **P2** | Built-in SMS/MMS manager | Unified-messenger ambition | Opt-in SMS/MMS UI; request **Android default SMS role** before write/receive integration; consent, contact handling, privacy separation from Telegram | **Research / separate companion module** |
 | **P2** | RCS companion (hybrid approach) | Preserve native RCS conversations | Use supported Android handoff/intents and optional companion entry points; do not promise access to Google Messages private RCS database or root-based entitlement bypass | **Research** |
 | **P2** | Group join verification assistance | Faster onboarding | Show verification instructions, supported standard Android Autofill, accessible prompts; **do not automatically solve CAPTCHAs or bypass anti-spam challenges** | **Research** |
@@ -68,6 +68,8 @@ These are candidate source references for **selective, audited feature design**,
 For an actual port, record **exact immutable revision, files, license, modified code, build result, and device verification**. Reimplement UX when copying creates unsafe forks or merge conflicts.
 
 ## Release gates
+
+- **Appearance update:** Fixed ULT themes were reported working on Samsung A36 (theme switching, persistence and dark-mode interaction); Pixel 8a also improved. Alpha 0.10b paired mode awaits its own build and device tests. No claim that true OS-mode pairing is field-verified yet.
 
 - **Current review stack:** Alpha 0.6 and 0.7 still need clear device sign-off; Alpha 0.8 FOSS CI produced an APK, but archive-specific field tests have not been explicitly confirmed.
 - **Alpha 0.9 progress (device reported working):** Guarded patch includes per-chat controls and strict offline-only dispatch. FOSS APK and English per-chat translation on a device were reported successful; local offline provider and secret-chat QA remain release gates; provider availability must be disclosed. The inherited Mercurygram translation bar still has its own cloud settings and entry points.

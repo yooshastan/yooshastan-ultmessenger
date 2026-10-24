@@ -19,6 +19,33 @@ FIELDS = """
     private static final String ULT_PRESET_PREFERENCES = "ult_appearance";
     private static final String ULT_PRESET_KEY = "selected_preset";
 
+    private void applyUltPreset(android.app.Activity activity,
+                                UltAppearancePreset preset, boolean followSystem) {
+        try {
+            if (UltAppearanceThemeAdapter.apply(activity, preset, followSystem)) {
+                String label = preset.displayName;
+                if (preset != UltAppearancePreset.SYSTEM) {
+                    label += followSystem ? " — follow phone" : " — fixed";
+                }
+                android.widget.Toast.makeText(activity, "Applied " + label,
+                        android.widget.Toast.LENGTH_SHORT).show();
+                // The native theme engine updates the palette, but existing
+                // fragments need an immediate rebuild on Samsung and Pixel.
+                if (parentLayout != null) {
+                    parentLayout.rebuildAllFragmentViews(true, true);
+                }
+            } else {
+                new android.app.AlertDialog.Builder(activity)
+                        .setMessage("Couldn't apply this ULT preset. The current theme was kept.")
+                        .setPositiveButton(android.R.string.ok, null).show();
+            }
+        } catch (java.io.IOException exception) {
+            new android.app.AlertDialog.Builder(activity)
+                    .setMessage("Couldn't save the ULT theme files.")
+                    .setPositiveButton(android.R.string.ok, null).show();
+        }
+    }
+
     private void showUltPresetChooser() {
         final android.app.Activity activity = getParentActivity();
         if (activity == null) {
@@ -36,35 +63,33 @@ FIELDS = """
                 .setTitle("ULT Appearance — presets")
                 .setSingleChoiceItems(labels, current.ordinal(), (dialog, selected) -> {
                     dialog.dismiss();
-                    try {
-                        if (UltAppearanceThemeAdapter.apply(activity, presets[selected])) {
-                            android.widget.Toast.makeText(activity, "Applied " + presets[selected].displayName,
-                                    android.widget.Toast.LENGTH_SHORT).show();
-                            // Imported themes update native palette state; rebuild visible
-                            // fragment views so Samsung One UI reflects it immediately.
-                            if (parentLayout != null) {
-                                parentLayout.rebuildAllFragmentViews(true, true);
-                            }
-                        } else {
-                            new android.app.AlertDialog.Builder(activity)
-                                    .setMessage("Couldn't apply this preset. The existing theme was kept.")
-                                    .setPositiveButton(android.R.string.ok, null).show();
-                        }
-                    } catch (java.io.IOException exception) {
-                        new android.app.AlertDialog.Builder(activity)
-                                .setMessage("Couldn't save the ULT theme file.")
-                                .setPositiveButton(android.R.string.ok, null).show();
+                    final UltAppearancePreset preset = presets[selected];
+                    if (preset == UltAppearancePreset.SYSTEM) {
+                        applyUltPreset(activity, preset, false);
+                        return;
                     }
+                    boolean canFollowDevice = android.os.Build.VERSION.SDK_INT >=
+                            android.os.Build.VERSION_CODES.Q;
+                    final String[] options = canFollowDevice
+                            ? new String[]{"Follow phone light/dark", "Keep fixed colors"}
+                            : new String[]{"Keep fixed colors"};
+                    new android.app.AlertDialog.Builder(activity)
+                            .setTitle(preset.displayName + " — choose mode")
+                            .setItems(options, (modeDialog, choice) ->
+                                    applyUltPreset(activity, preset, canFollowDevice && choice == 0))
+                            .setNegativeButton(android.R.string.cancel, null)
+                            .show();
                 })
                 .setNeutralButton("Theme behavior", (dialog, ignored) ->
                         new android.app.AlertDialog.Builder(activity)
-                                .setTitle("ULT fixed themes")
-                                .setMessage("Choosing a ULT preset pauses Telegram's automatic day/night switching so Samsung/Android system dark mode cannot replace it. Choose System to restore your prior day theme, night theme and auto-night preference.")
+                                .setTitle("ULT theme modes")
+                                .setMessage("Follow phone light/dark: separate original ULT palettes track Android system mode (Android 10+). Keep fixed colors: a single palette ignores Telegram automatic night switching. System restores the original day theme, night theme, and auto-night preference.")
                                 .setPositiveButton(android.R.string.ok, null)
                                 .show())
                 .setNegativeButton(android.R.string.cancel, null)
                 .show();
     }
+
 """
 def replace_once(source: str, anchor: str, replacement: str) -> str:
     count = source.count(anchor)

@@ -18,7 +18,45 @@ public final class UltAppearancePresetTest {
         }
         require(UltAppearancePreset.AURORA.dark && UltAppearancePreset.OBSIDIAN.dark,
                 "new high-contrast palettes must use native Night base");
+        for (UltAppearancePreset preset : UltAppearancePreset.values()) {
+            if (preset == UltAppearancePreset.SYSTEM) {
+                continue;
+            }
+            UltAppearancePreset.Palette day = preset.forMode(false);
+            UltAppearancePreset.Palette night = preset.forMode(true);
+            require(!day.dark && night.dark, "paired mode flags must match " + preset);
+            require(day.backgroundArgb != night.backgroundArgb,
+                    "day/night colors must differ for " + preset);
+            for (UltAppearancePreset.Palette palette : new UltAppearancePreset.Palette[]{day, night}) {
+                require((palette.backgroundArgb >>> 24) == 0xFF,
+                        "paired background opacity: " + preset);
+                require((palette.accentArgb >>> 24) == 0xFF,
+                        "paired accent opacity: " + preset);
+                require(contrast(palette.textArgb, palette.backgroundArgb) >= 4.5,
+                        "paired text/background contrast: " + preset);
+                require(contrast(palette.textArgb, palette.incomingBubbleArgb) >= 4.5,
+                        "paired incoming-bubble contrast: " + preset);
+                require(contrast(palette.textArgb, palette.outgoingBubbleArgb) >= 4.5,
+                        "paired outgoing-bubble contrast: " + preset);
+            }
+        }
         System.out.println("ULT visual palette checks passed");
+    }
+
+    private static double contrast(int a, int b) {
+        double x = luminance(a), y = luminance(b);
+        return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+    }
+
+    private static double luminance(int rgb) {
+        return 0.2126 * channel((rgb >>> 16) & 255)
+                + 0.7152 * channel((rgb >>> 8) & 255)
+                + 0.0722 * channel(rgb & 255);
+    }
+
+    private static double channel(int value) {
+        double x = value / 255.0;
+        return x <= 0.04045 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
     }
 
     private static void require(boolean condition, String description) {
