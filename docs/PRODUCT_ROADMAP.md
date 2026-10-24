@@ -16,8 +16,8 @@
 | --- | --- | --- | --- |
 | Shipped, device-tested | 0.1.1–0.5 | Stable native client, themes, named proxy profiles, chat layouts, chat-level IDs | Pixel/GrapheneOS smoke tests pass |
 | In review | **0.6 Message tools** | Long-press: copy message ID and sender peer ID. No content access/upload | Native FOSS ARM64 CI and device tests pass |
-| Next | **0.7 Visual identity** | Distinct Ultgram launcher icon; Nullgram-inspired *original* color/spacing/surfaces; light and dark variants; retain Android dynamic color fallback | Adaptive icon safe zone, high/low density assets and screenshots verified |
-| Next | **0.8 Conversation organization** | Hide/archive-free chat-list presentation toggle (archived chats remain intact); clean tabs and advanced sorting | No chat deleted or unarchived just by changing visibility |
+| In review / CI preview | **0.7 Visual identity** | Distinct Ultgram launcher icon; Nullgram-inspired *original* color/spacing/surfaces; light and dark variants; retain Android dynamic color fallback | Adaptive icon safe zone, high/low density assets and screenshots verified |
+| In implementation / device test pending | **0.8 Conversation organization** | Hide/archive-free chat-list presentation toggle (archived chats remain intact); clean tabs and advanced sorting | No chat deleted or unarchived just by changing visibility |
 | Next | **0.9 Translation** | Per-chat automatic translation toggle, language selectors, on-device/offline preference and explicit opt-in to remote engines | Secret chats do not leave device; tests in several languages; clear download/data cost |
 | Later | **0.10 Proxy & DNS** | Expand named SOCKS5/MTProto profiles; connection diagnostics; audit app DNS paths, then optional encrypted DNS (DoH3/DoQ only if compatible) | No plaintext fallback when explicit strict mode is requested; clear proxy trust warnings |
 | Later | **0.11 Privacy/identity controls** | Local account alias/masking in screenshots and UI; media metadata stripping where safe; direct-peer connection settings; privacy audit | No claim of spoofing Telegram account identity or anonymity; account/network traffic tests |
@@ -35,3 +35,4 @@ A futuristic ultraviolet/pink/silver **folded-wing U** with a central message/pl
 - Continue the Google-free ARM64 build. Firebase build may be skipped when registration/config is absent and should be reported as such.
 - Keep the pinned upstream source and guarded patches; never commit Telegram API hashes, phone numbers, private chats, user content or production signing keys.
 - Change the visible app name/icon only through a tested branding patch and verify launcher, recents, share sheet and Android Auto behaviors.
+- The Alpha 0.8 setting is per-account and defaults off. It filters only the **displayed** Archive row in All Chats, not the underlying archive, pinned state, search, notifications or folder contents; provide an explicit **Open Archive** menu entry when hidden.
