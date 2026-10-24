@@ -26,6 +26,10 @@ public final class UltAppearanceThemeAdapter {
     private static final String PREVIOUS_THEME = "previous_theme_key";
     private static final String PREVIOUS_NIGHT_THEME = "previous_night_theme_key";
     private static final String PREVIOUS_AUTO_NIGHT = "previous_auto_night_type";
+    private static final String PREVIOUS_TOGGLE_DAY = "previous_toggle_day_key";
+    private static final String PREVIOUS_TOGGLE_NIGHT = "previous_toggle_night_key";
+    private static final String PREVIOUS_TOGGLE_DAY_PRESENT = "previous_toggle_day_present";
+    private static final String PREVIOUS_TOGGLE_NIGHT_PRESENT = "previous_toggle_night_present";
 
     private UltAppearanceThemeAdapter() {}
 
@@ -38,6 +42,9 @@ public final class UltAppearanceThemeAdapter {
     public static boolean apply(Context context, UltAppearancePreset preset,
                                 boolean followSystem) throws IOException {
         SharedPreferences prefs = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE);
+        // Telegram's in-app sun/moon toggle reads these legacy targets, not
+        // getCurrentTheme()/getCurrentNightTheme() or the auto-night settings.
+        SharedPreferences togglePrefs = context.getSharedPreferences("themeconfig", Context.MODE_PRIVATE);
         if (preset == UltAppearancePreset.SYSTEM) {
             if (!prefs.contains(PREVIOUS_THEME)) {
                 // Nothing to undo; do not reset a user's existing Telegram theme.
@@ -67,10 +74,13 @@ public final class UltAppearanceThemeAdapter {
                 Theme.saveAutoNightThemeConfig();
             }
             Theme.checkAutoNightThemeConditions(true);
+            restoreManualToggleTargets(prefs, togglePrefs);
             prefs.edit().putString(SELECTED, preset.name())
                     .remove(PREVIOUS_THEME)
                     .remove(PREVIOUS_NIGHT_THEME)
                     .remove(PREVIOUS_AUTO_NIGHT)
+                    .remove(PREVIOUS_TOGGLE_DAY).remove(PREVIOUS_TOGGLE_NIGHT)
+                    .remove(PREVIOUS_TOGGLE_DAY_PRESENT).remove(PREVIOUS_TOGGLE_NIGHT_PRESENT)
                     .apply();
             return true;
         }
@@ -139,6 +149,20 @@ public final class UltAppearanceThemeAdapter {
         if (!prefs.contains(PREVIOUS_AUTO_NIGHT)) {
             editor.putInt(PREVIOUS_AUTO_NIGHT, oldAutoNight);
         }
+        if (!prefs.contains(PREVIOUS_TOGGLE_DAY_PRESENT)) {
+            boolean present = togglePrefs.contains("lastDayTheme");
+            editor.putBoolean(PREVIOUS_TOGGLE_DAY_PRESENT, present);
+            if (present) {
+                editor.putString(PREVIOUS_TOGGLE_DAY, togglePrefs.getString("lastDayTheme", "Blue"));
+            }
+        }
+        if (!prefs.contains(PREVIOUS_TOGGLE_NIGHT_PRESENT)) {
+            boolean present = togglePrefs.contains("lastDarkTheme");
+            editor.putBoolean(PREVIOUS_TOGGLE_NIGHT_PRESENT, present);
+            if (present) {
+                editor.putString(PREVIOUS_TOGGLE_NIGHT, togglePrefs.getString("lastDarkTheme", "Dark Blue"));
+            }
+        }
         editor.putString(SELECTED, preset.name()).apply();
 
         if (followSystem) {
@@ -147,6 +171,13 @@ public final class UltAppearanceThemeAdapter {
             // native Android 10+ system dark-mode detection to control both.
             Theme.setCurrentNightTheme(pairedNight);
             Theme.applyTheme(pairedDay);
+            // Both upstream manual Night Mode buttons use themeconfig's
+            // lastDayTheme/lastDarkTheme, NOT currentDayTheme/currentNightTheme.
+            // Store our companion keys there so sun/moon toggles stay ULT.
+            togglePrefs.edit()
+                    .putString("lastDayTheme", pairedDay.getKey())
+                    .putString("lastDarkTheme", pairedNight.getKey())
+                    .apply();
             Theme.selectedAutoNightType = Theme.AUTO_NIGHT_TYPE_SYSTEM;
             Theme.saveAutoNightThemeConfig(); // includes the night theme key
             Theme.checkAutoNightThemeConditions(true);
@@ -154,9 +185,34 @@ public final class UltAppearanceThemeAdapter {
             Theme.selectedAutoNightType = Theme.AUTO_NIGHT_TYPE_NONE;
             Theme.saveAutoNightThemeConfig();
             Theme.cancelAutoNightThemeCallbacks();
+            restoreManualToggleTargets(prefs, togglePrefs);
             Theme.applyTheme(installed);
         }
         return true;
+    }
+
+    /**
+     * Restore the exact prior in-app sun/moon theme targets. An absent key must
+     * remain absent so Telegram's own Blue/Dark Blue fallbacks still work.
+     */
+    private static void restoreManualToggleTargets(SharedPreferences prefs,
+                                                   SharedPreferences togglePrefs) {
+        SharedPreferences.Editor editor = togglePrefs.edit();
+        if (prefs.contains(PREVIOUS_TOGGLE_DAY_PRESENT)) {
+            if (prefs.getBoolean(PREVIOUS_TOGGLE_DAY_PRESENT, false)) {
+                editor.putString("lastDayTheme", prefs.getString(PREVIOUS_TOGGLE_DAY, "Blue"));
+            } else {
+                editor.remove("lastDayTheme");
+            }
+        }
+        if (prefs.contains(PREVIOUS_TOGGLE_NIGHT_PRESENT)) {
+            if (prefs.getBoolean(PREVIOUS_TOGGLE_NIGHT_PRESENT, false)) {
+                editor.putString("lastDarkTheme", prefs.getString(PREVIOUS_TOGGLE_NIGHT, "Dark Blue"));
+            } else {
+                editor.remove("lastDarkTheme");
+            }
+        }
+        editor.apply();
     }
 
     private static File writeThemeFile(Context context, UltAppearancePreset preset,

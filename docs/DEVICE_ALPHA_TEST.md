@@ -1,5 +1,17 @@
 # Ultgram Alpha 0.10a preview — local chat-view device test checklist
 
+## Alpha 0.10b.1 — in-app Night Mode regression (new)
+
+1. After a **successful** [FOSS build on this fix branch](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afix%2Falpha10b-inapp-night-toggle), download `ult-alpha10b-nightfix-preview-foss-android` and extract/install the ARM64 debug APK. Debug signatures can differ; do not uninstall a functioning messenger without preserving local data and access.
+2. On A36 or Pixel 8a, choose **Candy Pink → Follow phone light/dark** from Ultgram **Settings → Chat Settings → ⋮ → ULT Presets**.
+3. In Ultgram **itself** (not Android Display settings), use the built-in sun/moon **Night Mode** button. The resulting dark appearance must retain **deep pink accents and pink-tinted incoming/outgoing bubbles** instead of reverting to stock Telegram blue/black.
+4. Tap the same in-app Night Mode button again. Candy Pink's light palette should return; repeat twice to verify the button toggles between the paired ULT targets. Restart and repeat once.
+5. As a separate check, reselect **Candy Pink → Follow phone light/dark** (native manual switching can disable auto-night). Toggle **Android system dark mode** and confirm that the paired palettes also follow the phone.
+6. Choose **Candy Pink → Keep fixed colors** and verify that Android system dark mode still does not replace it. Switching explicitly with Telegram's manual sun/moon button is a separate action and may change the active theme.
+7. Choose **System**. Verify your original Telegram day/night palettes, automatic night choice, and original **in-app sun/moon targets** return. Repeat after Aurora/Obsidian paired mode. Also check chats, translation, proxies and native folders.
+
+**Cause addressed:** Pinned Mercurygram's two manual Night Mode controls look up `themeconfig.lastDayTheme` and `themeconfig.lastDarkTheme`; initial 0.10b only configured the automatic day/night theme slots. This build saves/restores both kinds of theme state.
+
 ## Alpha 0.10b — paired ULT themes (new preview)
 
 1. From a **successful** run of [Alpha 0.10b FOSS ARM64 workflow](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha10b-paired-ult-themes), download artifact `ult-alpha10b-preview-foss-android`, unzip and install its `ult-alpha10b-preview-foss-arm64-debug.apk`. Do not uninstall existing Ultgram without preserving local data; CI debug keys can differ.
