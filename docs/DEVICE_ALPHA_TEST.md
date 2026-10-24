@@ -1,17 +1,17 @@
-# Ultgram Alpha 0.9 preview — per-chat translation device test checklist
+# Ultgram Alpha 0.9.1 preview — per-chat translation device test checklist
 
 ## Download the APK
 
 1. Open [Android Alpha 0.9 translation preview](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha08-archive-visibility).
 2. Choose a successful run on `feature/alpha09-translation`.
-3. Download `ult-alpha09-preview-foss-android` under **Artifacts**, extract its ARM64 debug APK and verify that it came from your Yooshastan repository.
+3. Download `ult-alpha09-1-preview-foss-android` under **Artifacts**, extract its ARM64 debug APK and verify that it came from your Yooshastan repository.
 4. Install on your Pixel 8a or Samsung test device.
 
 Debug artifacts expire in 14 days. CI debug signing keys may differ from your previous install; **do not uninstall a working messenger without planning for reauthentication and any local data**.
 
-## Alpha 0.9 — ULT Chat Translation (new)
+## Alpha 0.9.1 — ULT Chat Translation (chooser fix + regression)
 
-1. In a chat with messages, open **⋮ → ULT Chat Translation**. Choose **Translate to Korean**, English or another language and verify the built-in translate bar appears. Use the bar to switch between original and translated text. Check a non-English incoming message.
+1. In a chat with messages, open **⋮ → ULT Chat Translation**. The language-choice list **must be visible** (previous Alpha 0.9 showed only the engine explanation and Cancel). Tap **Engine info** to see the engine disclosure, then reopen the menu. Choose **Translate to Korean**, English or another language and verify the built-in translate bar appears. Use the bar to switch between original and translated text. Check a non-English incoming message.
 2. If the translation engine is **Telegram default/cloud** or **Alternative HTTP**, expect a confirmation explaining that text leaves the device. Tap **Cancel**: no new translation should start. Repeat and opt in to verify that translation starts.
 3. Select **Stop translating this chat**, confirm original text returns, then reopen the chat. Verify the chat-level choice persists appropriately.
 4. Test two separate chats: enabling one should not enable the other. Change the target language in one chat and confirm it takes effect.
@@ -80,9 +80,9 @@ These are read-only utilities. They don't forward messages, bypass Premium, expo
 
 ```bash
 adb devices -l
-adb install -r /absolute/path/to/ult-alpha09-preview-foss-arm64-debug.apk
+adb install -r /absolute/path/to/ult-alpha09-1-preview-foss-arm64-debug.apk
 adb logcat -c
-adb logcat -v threadtime -s AndroidRuntime:E ActivityManager:I > ult-alpha09-debug.log
+adb logcat -v threadtime -s AndroidRuntime:E ActivityManager:I > ult-alpha09-1-debug.log
 ```
 
 Stop logging with Ctrl+C. Review logs for private messages, IDs, phone numbers and proxy endpoints before sharing.
