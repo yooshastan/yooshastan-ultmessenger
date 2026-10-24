@@ -24,6 +24,7 @@ class ChatViewIntegrationTest(TestCase):
         adapter.write_text("".join((
             integration.ADAPTER_IMPORT, integration.ADAPTER_CLASS,
             integration.ADAPTER_HINT, integration.ADAPTER_MOVE,
+            '            fromIndex = dialogs.indexOf(source);\n',
             integration.ADAPTER_ARCHIVE, integration.ADAPTER_ARRAY,
         )), encoding="utf-8")
         return activity, adapter
