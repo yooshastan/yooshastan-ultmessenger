@@ -1,8 +1,8 @@
-name: Android Alpha 0.8 archive visibility preview
+name: Android Alpha 0.9 per-chat translation preview
 
 on:
   push:
-    branches: [feature/alpha01-bootstrap, feature/alpha02-native-themes, feature/alpha03-proxy-profiles, feature/alpha04-chat-layouts, feature/alpha05-chat-tools, feature/alpha06-message-tools, feature/alpha07-visual-identity, feature/alpha08-archive-visibility]
+    branches: [feature/alpha01-bootstrap, feature/alpha02-native-themes, feature/alpha03-proxy-profiles, feature/alpha04-chat-layouts, feature/alpha05-chat-tools, feature/alpha06-message-tools, feature/alpha07-visual-identity, feature/alpha08-archive-visibility, feature/alpha09-translation]
     paths:
       - '.github/workflows/android-alpha.yml'
       - 'scripts/**'
@@ -11,6 +11,7 @@ on:
       - 'proxy/**'
       - 'chat/**'
       - 'conversation/**'
+      - 'translation/**'
       - 'assets/**'
       - 'upstream/**'
   workflow_dispatch:
@@ -79,6 +80,10 @@ jobs:
           mkdir -p /tmp/ult-conversation-classes
           javac -d /tmp/ult-conversation-classes conversation/src/com/yooshastan/ultmessenger/conversation/UltArchiveVisibility.java conversation/tests/UltArchiveVisibilityTest.java
           java -cp /tmp/ult-conversation-classes UltArchiveVisibilityTest
+          python3 -m unittest discover -s translation/tests -p 'test_integration.py'
+          mkdir -p /tmp/ult-translation-classes
+          javac -d /tmp/ult-translation-classes translation/src/com/yooshastan/ultmessenger/translation/UltTranslationPolicy.java translation/tests/UltTranslationPolicyTest.java
+          java -cp /tmp/ult-translation-classes UltTranslationPolicyTest
       - name: Install Android native build tools
         if: steps.prerequisites.outputs.ready == 'true'
         shell: bash
@@ -125,6 +130,7 @@ jobs:
             python3 scripts/integrate-chat-tools.py "$source_dir"
             python3 scripts/integrate-message-tools.py "$source_dir"
             python3 scripts/integrate-archive-visibility.py "$source_dir"
+            python3 scripts/integrate-translation.py "$source_dir"
           fi
       - name: Compile Pixel-compatible ARM64 debug APK
         if: steps.prerequisites.outputs.ready == 'true'
@@ -149,14 +155,14 @@ jobs:
             echo "::error::Expected one compiled APK, found ${#apks[@]}"
             exit 1
           fi
-          cp -- "${apks[0]}" "artifacts/ult-alpha08-preview-${{ matrix.variant }}-arm64-debug.apk"
+          cp -- "${apks[0]}" "artifacts/ult-alpha09-preview-${{ matrix.variant }}-arm64-debug.apk"
           ls -lh artifacts/*.apk
           sha256sum artifacts/*.apk
       - name: Upload installable internal test APK
         if: steps.prerequisites.outputs.ready == 'true' && success()
         uses: actions/upload-artifact@v4
         with:
-          name: ult-alpha08-preview-${{ matrix.variant }}-android
+          name: ult-alpha09-preview-${{ matrix.variant }}-android
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 14
