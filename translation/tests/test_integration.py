@@ -32,6 +32,12 @@ class TranslationIntegrationTest(TestCase):
             c = chat.read_text(encoding="utf-8")
             d = dispatch.read_text(encoding="utf-8")
             self.assertIn("ULT Chat Translation", c)
+            # Regression: setMessage and setItems on one Android AlertDialog
+            # causes the explanation to replace the language-choice list.
+            start = c.index('.setTitle("ULT Chat Translation")')
+            items = c.index(".setItems(options,", start)
+            self.assertNotIn(".setMessage(", c[start:items])
+            self.assertIn('.setNeutralButton("Engine info"', c)
             self.assertIn("Stop translating this chat", c)
             self.assertIn('"Korean"', c)
             self.assertIn('"Translate to " + languageNames[i]', c)
