@@ -1,8 +1,8 @@
-name: Android Alpha 0.7 visual identity preview
+name: Android Alpha 0.8 archive visibility preview
 
 on:
   push:
-    branches: [feature/alpha01-bootstrap, feature/alpha02-native-themes, feature/alpha03-proxy-profiles, feature/alpha04-chat-layouts, feature/alpha05-chat-tools, feature/alpha06-message-tools, feature/alpha07-visual-identity]
+    branches: [feature/alpha01-bootstrap, feature/alpha02-native-themes, feature/alpha03-proxy-profiles, feature/alpha04-chat-layouts, feature/alpha05-chat-tools, feature/alpha06-message-tools, feature/alpha07-visual-identity, feature/alpha08-archive-visibility]
     paths:
       - '.github/workflows/android-alpha.yml'
       - 'scripts/**'
@@ -10,6 +10,7 @@ on:
       - 'appearance/**'
       - 'proxy/**'
       - 'chat/**'
+      - 'conversation/**'
       - 'assets/**'
       - 'upstream/**'
   workflow_dispatch:
@@ -74,6 +75,10 @@ jobs:
           python3 -m unittest discover -s chat/tests -p 'test_message_tools_integration.py'
           javac -d /tmp/ult-chat-classes chat/src/com/yooshastan/ultmessenger/chat/UltChatTools.java chat/tests/UltChatToolsTest.java
           java -cp /tmp/ult-chat-classes UltChatToolsTest
+          python3 -m unittest discover -s conversation/tests -p 'test_integration.py'
+          mkdir -p /tmp/ult-conversation-classes
+          javac -d /tmp/ult-conversation-classes conversation/src/com/yooshastan/ultmessenger/conversation/UltArchiveVisibility.java conversation/tests/UltArchiveVisibilityTest.java
+          java -cp /tmp/ult-conversation-classes UltArchiveVisibilityTest
       - name: Install Android native build tools
         if: steps.prerequisites.outputs.ready == 'true'
         shell: bash
@@ -119,6 +124,7 @@ jobs:
             python3 scripts/integrate-chat-layouts.py "$source_dir"
             python3 scripts/integrate-chat-tools.py "$source_dir"
             python3 scripts/integrate-message-tools.py "$source_dir"
+            python3 scripts/integrate-archive-visibility.py "$source_dir"
           fi
       - name: Compile Pixel-compatible ARM64 debug APK
         if: steps.prerequisites.outputs.ready == 'true'
@@ -143,14 +149,14 @@ jobs:
             echo "::error::Expected one compiled APK, found ${#apks[@]}"
             exit 1
           fi
-          cp -- "${apks[0]}" "artifacts/ult-alpha07-preview-${{ matrix.variant }}-arm64-debug.apk"
+          cp -- "${apks[0]}" "artifacts/ult-alpha08-preview-${{ matrix.variant }}-arm64-debug.apk"
           ls -lh artifacts/*.apk
           sha256sum artifacts/*.apk
       - name: Upload installable internal test APK
         if: steps.prerequisites.outputs.ready == 'true' && success()
         uses: actions/upload-artifact@v4
         with:
-          name: ult-alpha07-preview-${{ matrix.variant }}-android
+          name: ult-alpha08-preview-${{ matrix.variant }}-android
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 14

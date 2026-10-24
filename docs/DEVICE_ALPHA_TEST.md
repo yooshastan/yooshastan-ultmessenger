@@ -1,15 +1,28 @@
-# Ultgram Alpha 0.7 preview — visual identity device test checklist
+# Ultgram Alpha 0.8 preview — archive visibility device test checklist
 
 ## Download the APK
 
-1. Open [Android Alpha 0.7 visual identity preview](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha07-visual-identity).
-2. Choose a successful run on `feature/alpha07-visual-identity`.
-3. Download `ult-alpha07-preview-foss-android` under **Artifacts**, extract its ARM64 debug APK and verify that it came from your Yooshastan repository.
+1. Open [Android Alpha 0.8 archive visibility preview](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha08-archive-visibility).
+2. Choose a successful run on `feature/alpha08-archive-visibility`.
+3. Download `ult-alpha08-preview-foss-android` under **Artifacts**, extract its ARM64 debug APK and verify that it came from your Yooshastan repository.
 4. Install on your Pixel 8a or Samsung test device.
 
 Debug artifacts expire in 14 days. CI debug signing keys may differ from your previous install; **do not uninstall a working messenger without planning for reauthentication and any local data**.
 
-## Alpha 0.7 — Ultgram visual identity (new)
+## Alpha 0.8 — Hide Archive row (new)
+
+1. Open **Chats → ⋮ → ULT: Hide Archive row**. Its checkmark should initially be off.
+2. Enable it. The Archive folder row should disappear from the **All Chats** list immediately. Existing chats and their archive state must not change.
+3. Reopen **Chats → ⋮**. Choose **ULT: Open Archive**; verify archived conversations and unread messages are still there.
+4. Return to All Chats. Verify archived chats have **not** been unarchived, and new messages/notifications still behave normally.
+5. Repeat on a second account (if available); the preference must remain independent per account.
+6. Restart the app. The preference must persist and the Archive row must remain hidden on that account.
+7. Disable **ULT: Hide Archive row** and verify the Archive row returns to the normal list; reopen it and verify contents unchanged.
+8. Test custom folders, forwarding/select-chat pickers, search, swipe gestures and pin reordering with both toggle states. The setting should affect only the main All Chats row, not these other workflows.
+
+This is a **local visibility preference**, not an archive deletion, privacy feature or message-security boundary. Archived conversations remain accessible via the menu.
+
+## Alpha 0.7 — Ultgram visual identity (regression)
 
 1. Inspect the launcher icon on the Pixel 8a home screen and app drawer in both light and dark modes. Confirm the violet folded-wing U, central plane and small stars are recognizable at 48dp, and the outer halo is not clipped by circular masks.
 2. Confirm the updated icon appears in Android App Info, Settings and recents; test a second device/launcher if available. Adaptive and legacy variants must both load.
@@ -54,9 +67,9 @@ These are read-only utilities. They don't forward messages, bypass Premium, expo
 
 ```bash
 adb devices -l
-adb install -r /absolute/path/to/ult-alpha07-preview-foss-arm64-debug.apk
+adb install -r /absolute/path/to/ult-alpha08-preview-foss-arm64-debug.apk
 adb logcat -c
-adb logcat -v threadtime -s AndroidRuntime:E ActivityManager:I > ult-alpha07-debug.log
+adb logcat -v threadtime -s AndroidRuntime:E ActivityManager:I > ult-alpha08-debug.log
 ```
 
 Stop logging with Ctrl+C. Review logs for private messages, IDs, phone numbers and proxy endpoints before sharing.
@@ -64,6 +77,6 @@ Stop logging with Ctrl+C. Review logs for private messages, IDs, phone numbers a
 ## Still planned
 
 - Per-message actions are limited to local ID copying; advanced message diagnostics remain future work.
-- Advanced proxy fail-closed routing and SMS/MMS/RCS companion are not part of Alpha 0.7.
+- Advanced proxy fail-closed routing, translation and SMS/MMS/RCS companion are not part of Alpha 0.8.
 - Firebase-compatible variant requires optional `ULT_FIREBASE_JSON_B64`.
 - ULT adds no analytics or advertising; upstream sponsored Telegram content may still exist.
