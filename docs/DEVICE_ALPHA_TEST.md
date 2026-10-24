@@ -1,13 +1,26 @@
-# Ultgram Alpha 0.9.1 preview — per-chat translation device test checklist
+# Ultgram Alpha 0.10a preview — local chat-view device test checklist
 
 ## Download the APK
 
-1. Open [Android Alpha 0.9 translation preview](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha08-archive-visibility).
-2. Choose a successful run on `feature/alpha09-translation`.
-3. Download `ult-alpha09-1-preview-foss-android` under **Artifacts**, extract its ARM64 debug APK and verify that it came from your Yooshastan repository.
+1. Open [Android Alpha 0.10a chat views preview](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha08-archive-visibility).
+2. Choose a successful run on `feature/alpha10-chat-view-presets`.
+3. Download `ult-alpha10a-preview-foss-android` under **Artifacts**, extract its ARM64 debug APK and verify that it came from your Yooshastan repository.
 4. Install on your Pixel 8a or Samsung test device.
 
 Debug artifacts expire in 14 days. CI debug signing keys may differ from your previous install; **do not uninstall a working messenger without planning for reauthentication and any local data**.
+
+## Alpha 0.10a — ULT Chat Views (new)
+
+1. In **Chats → ⋮ → ULT: Chat Views**, verify the single-choice list contains **All**, **Unread**, **Groups**, **Channels**, **Bots**, **Unread First**. Default should be **All**.
+2. Select **Unread only**. Chats with unread messages or manual unread marks should remain; read conversations should not. Confirm the original order returns after selecting **All**.
+3. Select **Groups only** and verify normal groups and megagroups appear but broadcast channels do not. **Channels only** should show broadcast channels; **Bots only** should show bot conversations.
+4. Select **Unread first**. Unread conversations should appear ahead of other unpinned chats while the Archive entry and already-pinned chats remain above the rest. Return to All and verify Telegram's normal order.
+5. **Archive regression:** enable Alpha 0.8's **Hide Archive row**, cycle through the six views, and open the archive via **ULT: Open Archive**. Verify archived chats remain intact, unread counts persist and no chat was moved.
+6. Test native Telegram folder tabs, search, conversation selection/forwarding, reordering pins, swipe gestures, sharing, notifications and new-message arrivals. ULT presets must never alter a different Telegram folder, archive or picker.
+7. Enable a non-default view on account A; verify account B remains on All. Restart the app; choices should persist independently. Return both to All.
+8. Check display on Pixel 8a/GrapheneOS and Samsung devices with long names, large font, accessibility and no Play Services. All six views must remain responsive.
+
+**Scope:** This is a menu-based filter/sort preview, **not yet a swipeable tab bar**. A native tabs presentation and advanced ordering controls are future steps. The feature does not change Telegram account data.
 
 ## Alpha 0.9.1 — ULT Chat Translation (chooser fix + regression)
 
@@ -80,9 +93,9 @@ These are read-only utilities. They don't forward messages, bypass Premium, expo
 
 ```bash
 adb devices -l
-adb install -r /absolute/path/to/ult-alpha09-1-preview-foss-arm64-debug.apk
+adb install -r /absolute/path/to/ult-alpha10a-preview-foss-arm64-debug.apk
 adb logcat -c
-adb logcat -v threadtime -s AndroidRuntime:E ActivityManager:I > ult-alpha09-1-debug.log
+adb logcat -v threadtime -s AndroidRuntime:E ActivityManager:I > ult-alpha10a-debug.log
 ```
 
 Stop logging with Ctrl+C. Review logs for private messages, IDs, phone numbers and proxy endpoints before sharing.
