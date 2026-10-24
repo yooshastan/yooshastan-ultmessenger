@@ -40,6 +40,11 @@ FIELDS = """
                         if (UltAppearanceThemeAdapter.apply(activity, presets[selected])) {
                             android.widget.Toast.makeText(activity, "Applied " + presets[selected].displayName,
                                     android.widget.Toast.LENGTH_SHORT).show();
+                            // Imported themes update native palette state; rebuild visible
+                            // fragment views so Samsung One UI reflects it immediately.
+                            if (parentLayout != null) {
+                                parentLayout.rebuildAllFragmentViews(true, true);
+                            }
                         } else {
                             new android.app.AlertDialog.Builder(activity)
                                     .setMessage("Couldn't apply this preset. The existing theme was kept.")
@@ -51,6 +56,12 @@ FIELDS = """
                                 .setPositiveButton(android.R.string.ok, null).show();
                     }
                 })
+                .setNeutralButton("Theme behavior", (dialog, ignored) ->
+                        new android.app.AlertDialog.Builder(activity)
+                                .setTitle("ULT fixed themes")
+                                .setMessage("Choosing a ULT preset pauses Telegram's automatic day/night switching so Samsung/Android system dark mode cannot replace it. Choose System to restore your prior day theme, night theme and auto-night preference.")
+                                .setPositiveButton(android.R.string.ok, null)
+                                .show())
                 .setNegativeButton(android.R.string.cancel, null)
                 .show();
     }
