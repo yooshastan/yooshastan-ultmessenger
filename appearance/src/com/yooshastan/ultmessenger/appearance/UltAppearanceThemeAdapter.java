@@ -23,22 +23,48 @@ public final class UltAppearanceThemeAdapter {
     private static final String PREFERENCES = "ult_appearance";
     private static final String SELECTED = "selected_preset";
     private static final String PREVIOUS_THEME = "previous_theme_key";
+    private static final String PREVIOUS_NIGHT_THEME = "previous_night_theme_key";
+    private static final String PREVIOUS_AUTO_NIGHT = "previous_auto_night_type";
 
     private UltAppearanceThemeAdapter() {}
 
     public static boolean apply(Context context, UltAppearancePreset preset) throws IOException {
         SharedPreferences prefs = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE);
         if (preset == UltAppearancePreset.SYSTEM) {
-            String previous = prefs.getString(PREVIOUS_THEME, "Blue");
-            Theme.ThemeInfo original = Theme.getTheme(previous);
-            if (original == null) {
-                original = Theme.getTheme("Blue");
+            if (!prefs.contains(PREVIOUS_THEME)) {
+                // Nothing to undo; do not reset a user's existing Telegram theme.
+                prefs.edit().putString(SELECTED, preset.name()).apply();
+                return true;
             }
-            if (original == null) {
+
+            String previousDayKey = prefs.getString(PREVIOUS_THEME, "Blue");
+            Theme.ThemeInfo previousDay = Theme.getTheme(previousDayKey);
+            if (previousDay == null) {
+                previousDay = Theme.getTheme("Blue");
+            }
+            if (previousDay == null) {
                 return false;
             }
-            Theme.applyTheme(original);
-            prefs.edit().putString(SELECTED, preset.name()).remove(PREVIOUS_THEME).apply();
+
+            String previousNightKey = prefs.getString(PREVIOUS_NIGHT_THEME, null);
+            Theme.ThemeInfo previousNight = previousNightKey != null
+                    ? Theme.getTheme(previousNightKey) : null;
+            if (previousNight != null) {
+                Theme.setCurrentNightTheme(previousNight);
+            }
+            // Reestablish the original day theme before restoring auto-night.
+            Theme.applyTheme(previousDay);
+            if (prefs.contains(PREVIOUS_AUTO_NIGHT)) {
+                Theme.selectedAutoNightType = prefs.getInt(
+                        PREVIOUS_AUTO_NIGHT, Theme.AUTO_NIGHT_TYPE_NONE);
+                Theme.saveAutoNightThemeConfig();
+            }
+            Theme.checkAutoNightThemeConditions(true);
+            prefs.edit().putString(SELECTED, preset.name())
+                    .remove(PREVIOUS_THEME)
+                    .remove(PREVIOUS_NIGHT_THEME)
+                    .remove(PREVIOUS_AUTO_NIGHT)
+                    .apply();
             return true;
         }
 
@@ -46,11 +72,12 @@ public final class UltAppearanceThemeAdapter {
         if (base == null || base.assetName == null) {
             return false;
         }
-        Theme.ThemeInfo current = Theme.getCurrentTheme();
-        String originalKey = current != null ? current.getKey() : "Blue";
-        if (!prefs.contains(PREVIOUS_THEME)) {
-            prefs.edit().putString(PREVIOUS_THEME, originalKey).apply();
-        }
+
+        // Snapshot before applyThemeFile: it always installs into Telegram's
+        // day-theme slot, even if the selected ULT palette is a dark theme.
+        Theme.ThemeInfo oldDay = Theme.getCurrentTheme();
+        Theme.ThemeInfo oldNight = Theme.getCurrentNightTheme();
+        int oldAutoNight = Theme.selectedAutoNightType;
 
         SparseIntArray colors = Theme.getThemeFileValues(null, base.assetName, null);
         int[] defaults = ThemeColors.createDefaultColors();
@@ -63,8 +90,6 @@ public final class UltAppearanceThemeAdapter {
         colors.put(Theme.key_windowBackgroundGray, preset.backgroundArgb);
         colors.put(Theme.key_windowBackgroundWhiteBlackText, preset.textArgb);
         colors.put(Theme.key_windowBackgroundWhiteBlueText, preset.accentArgb);
-        // ULT 0.7: carry the chosen palette into conversation and chat-list UI,
-        // not only the toolbar. Telegram's existing theme engine remains in control.
         colors.put(Theme.key_windowBackgroundWhiteGrayText,
                 preset.dark ? 0xFFB9B4D0 : 0xFF747786);
         colors.put(Theme.key_chats_name, preset.textArgb);
@@ -95,7 +120,27 @@ public final class UltAppearanceThemeAdapter {
         if (installed == null) {
             return false;
         }
-        prefs.edit().putString(SELECTED, preset.name()).apply();
+
+        // Selecting a fixed palette must not be silently overridden by Samsung/
+        // Android system dark mode, Telegram scheduled night, or a brightness
+        // sensor. Capture original settings once so System can restore them.
+        SharedPreferences.Editor editor = prefs.edit();
+        if (!prefs.contains(PREVIOUS_THEME)) {
+            editor.putString(PREVIOUS_THEME, oldDay != null ? oldDay.getKey() : "Blue");
+        }
+        if (!prefs.contains(PREVIOUS_NIGHT_THEME) && oldNight != null) {
+            editor.putString(PREVIOUS_NIGHT_THEME, oldNight.getKey());
+        }
+        if (!prefs.contains(PREVIOUS_AUTO_NIGHT)) {
+            editor.putInt(PREVIOUS_AUTO_NIGHT, oldAutoNight);
+        }
+        editor.putString(SELECTED, preset.name()).apply();
+
+        Theme.selectedAutoNightType = Theme.AUTO_NIGHT_TYPE_NONE;
+        Theme.saveAutoNightThemeConfig();
+        Theme.cancelAutoNightThemeCallbacks();
+        Theme.applyTheme(installed);
         return true;
     }
+
 }
