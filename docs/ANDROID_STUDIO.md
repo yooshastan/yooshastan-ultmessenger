@@ -17,6 +17,16 @@ bash scripts/prepare-android-studio.sh foss
    `.work/mercurygram-upstream`
 6. Wait for Gradle sync. Install the SDK, NDK, CMake, and build prerequisites requested by the pinned upstream project, then select an Android debug build variant.
 
+### Build an ARM64 debug APK locally
+
+The pinned Mercurygram revision requires an explicit version tag. In the prepared Android source directory, use your Temurin JDK 17:
+
+```bash
+JAVA_HOME=/usr/lib/jvm/java-17-temurin-jdk bash ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug -PMG_BUILD_TAG=13.0.3.0.1 --no-daemon --console=plain
+```
+
+This build targets ARM64 phones such as Pixel 8a and Samsung A36. You can also add `MG_BUILD_TAG=13.0.3.0.1` to the generated source's ignored `local.properties` for Android Studio build buttons. Keep Android Studio's Gradle JDK set to Temurin 17. These instructions are only for the Mercurygram-based FOSS variant.
+
 **Important:** This initial Google-free Android project uses the independently pinned Mercurygram source tree. The setup adds the ULT package/branding and the **ULT Presets** menu in Chat Settings. The preset is currently saved but does **not** yet recolor all Telegram screens.
 
 ### Optional Firebase-compatible build
