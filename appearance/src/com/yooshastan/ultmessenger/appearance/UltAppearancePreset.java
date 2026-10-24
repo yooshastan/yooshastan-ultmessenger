@@ -1,8 +1,8 @@
 package com.yooshastan.ultmessenger.appearance;
 
 /**
- * ULT appearance presets. Immutable UI palette definitions; the Telegram Theme
- * adapter is intentionally a later integration step.
+ * ULT appearance presets. Immutable UI palette definitions applied by
+ * UltAppearanceThemeAdapter through Telegram's native theme engine.
  */
 public enum UltAppearancePreset {
     SYSTEM("System", 0xFF1976D2, 0xFFFFFFFF, 0xFFF5F6FA, false),
