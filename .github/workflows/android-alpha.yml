@@ -1,13 +1,14 @@
-name: Android Alpha 0.2 native themes preview
+name: Android Alpha 0.3 proxy profiles preview
 
 on:
   push:
-    branches: [feature/alpha01-bootstrap, feature/alpha02-native-themes]
+    branches: [feature/alpha01-bootstrap, feature/alpha02-native-themes, feature/alpha03-proxy-profiles]
     paths:
       - '.github/workflows/android-alpha.yml'
       - 'scripts/**'
       - 'tests/**'
       - 'appearance/**'
+      - 'proxy/**'
       - 'assets/**'
       - 'upstream/**'
   workflow_dispatch:
@@ -51,11 +52,15 @@ jobs:
           fi
       - uses: android-actions/setup-android@v4
         if: steps.prerequisites.outputs.ready == 'true'
-      - name: Verify pinned locale and appearance patch invariants
+      - name: Verify pinned locale, theme and proxy integration
         if: steps.prerequisites.outputs.ready == 'true'
         run: |
           python3 -m unittest discover -s tests -p 'test_patch_locale_background.py'
           python3 -m unittest discover -s appearance/tests -p 'test_integration.py'
+          python3 -m unittest discover -s proxy/tests -p 'test_integration.py'
+          mkdir -p /tmp/ult-proxy-classes
+          javac -d /tmp/ult-proxy-classes proxy/src/com/yooshastan/ultmessenger/proxy/UltProxyLabels.java proxy/tests/UltProxyLabelsTest.java
+          java -cp /tmp/ult-proxy-classes UltProxyLabelsTest
       - name: Install Android native build tools
         if: steps.prerequisites.outputs.ready == 'true'
         shell: bash
@@ -97,6 +102,7 @@ jobs:
           if [[ "${{ matrix.variant }}" == 'foss' ]]; then
             python3 scripts/integrate-appearance.py "$source_dir"
             python3 scripts/patch_locale_background.py "$source_dir"
+            python3 scripts/integrate-proxy.py "$source_dir"
           fi
       - name: Compile Pixel-compatible ARM64 debug APK
         if: steps.prerequisites.outputs.ready == 'true'
@@ -121,14 +127,14 @@ jobs:
             echo "::error::Expected one compiled APK, found ${#apks[@]}"
             exit 1
           fi
-          cp -- "${apks[0]}" "artifacts/ult-alpha02-preview-${{ matrix.variant }}-arm64-debug.apk"
+          cp -- "${apks[0]}" "artifacts/ult-alpha03-preview-${{ matrix.variant }}-arm64-debug.apk"
           ls -lh artifacts/*.apk
           sha256sum artifacts/*.apk
       - name: Upload installable internal test APK
         if: steps.prerequisites.outputs.ready == 'true' && success()
         uses: actions/upload-artifact@v4
         with:
-          name: ult-alpha02-preview-${{ matrix.variant }}-android
+          name: ult-alpha03-preview-${{ matrix.variant }}-android
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 14
