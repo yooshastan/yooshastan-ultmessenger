@@ -98,7 +98,7 @@ jobs:
           set -euo pipefail
           if [[ "${{ matrix.variant }}" == 'foss' ]]; then
             cd .work/mercurygram-upstream
-            ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug --no-daemon --console=plain
+            ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug -PMG_BUILD_TAG=13.0.3.0.1 --no-daemon --console=plain
           else
             cd .work/telegram-upstream
             ./gradlew :TMessagesProj_App:assembleAfatDebug --no-daemon --console=plain
