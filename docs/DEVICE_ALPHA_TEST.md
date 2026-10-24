@@ -1,5 +1,19 @@
 # Ultgram Alpha 0.10a preview — local chat-view device test checklist
 
+## Alpha 0.10b — paired ULT themes (new preview)
+
+1. From a **successful** run of [Alpha 0.10b FOSS ARM64 workflow](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha10b-paired-ult-themes), download artifact `ult-alpha10b-preview-foss-android`, unzip and install its `ult-alpha10b-preview-foss-arm64-debug.apk`. Do not uninstall existing Ultgram without preserving local data; CI debug keys can differ.
+2. On the Samsung A36, set Android **Display → Dark mode OFF**. Open **Ultgram Settings → Chat Settings → ⋮ → ULT Presets**; select **Candy Pink → Follow phone light/dark**. Verify light pink/white backgrounds and readable chat bubbles.
+3. Enable Android dark mode. Candy Pink should switch to a **deep pink and dark background**, not generic Telegram black/blue. Return to light mode; the original light pink variant should return.
+4. Restart the app once in light mode and again in dark mode. Confirm both companions remain and Android dark/light follows without choosing the preset again.
+5. Change to **ULT Aurora → Follow phone light/dark**, then **ULT Obsidian → Follow phone light/dark**. Repeat the system-mode toggle, inspect captions, incoming/outgoing bubbles, chat list, long messages, media and text contrast.
+6. Select **Candy Pink → Keep fixed colors**. Toggle Android dark mode twice; the fixed Candy Pink palette should stay unchanged (Alpha 0.10a Samsung behavior). Repeat after restart.
+7. Choose **System** and confirm the original Telegram day theme, night theme and auto-night setting return. Try switching between paired and fixed several times first; the original snapshot must still restore.
+8. On the Pixel 8a/GrapheneOS, repeat the Candy Pink paired-mode toggle and System restoration. Test large font and accessibility where possible. **Follow phone** requires Android 10+, while fixed mode remains supported earlier.
+9. Verify language/translation, proxy, chat view presets, native folders, notifications and message send/receive still work. Take redacted light/dark screenshots if any colors fail to update.
+
+**Preview limitation:** The paired mode follows the phone's system setting rather than an independent Telegram brightness/schedule policy. A separate theme preview and custom accent editor remain future work. Firebase-compatible APK is only built when optional secrets are configured.
+
 ## Samsung A36 theme regression fix (new preview)
 
 This branch is a **candidate fix, not yet device-confirmed**. Telegram's theme importer installs a ULT palette into the **day** slot even if it is dark; Samsung/Android system dark mode may immediately replace it with Telegram's separate **night** slot. The ULT chooser previously did not rebuild existing fragment views after import.
