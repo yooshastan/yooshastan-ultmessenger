@@ -103,11 +103,24 @@ jobs:
             cd .work/telegram-upstream
             ./gradlew :TMessagesProj_App:assembleAfatDebug --no-daemon --console=plain
           fi
+      - name: Stage the compiled APK for download
+        if: steps.prerequisites.outputs.ready == 'true' && success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          mapfile -d '' apks < <(find .work -type f -name '*.apk' -path '*/TMessagesProj_App/build/outputs/apk/*' -print0)
+          if (( ${#apks[@]} != 1 )); then
+            echo "::error::Expected one compiled APK, found ${#apks[@]}"
+            exit 1
+          fi
+          cp -- "${apks[0]}" "artifacts/ult-alpha01-${{ matrix.variant }}-arm64-debug.apk"
+          ls -lh artifacts/*.apk
       - name: Upload installable internal test APK
         if: steps.prerequisites.outputs.ready == 'true' && success()
         uses: actions/upload-artifact@v4
         with:
           name: ult-alpha01-${{ matrix.variant }}-android
-          path: .work/*/TMessagesProj_App/build/outputs/apk/**/*.apk
+          path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 14
