@@ -38,8 +38,8 @@ public final class UltProxyLabels {
                 || port < 0 || port > 65535) {
             throw new IllegalArgumentException("Invalid proxy endpoint");
         }
-        String descriptor = type.toUpperCase(Locale.ROOT) + "\u0000"
-                + address.trim().toLowerCase(Locale.ROOT) + "\u0000" + port;
+        String descriptor = type.toUpperCase(Locale.ROOT) + "\0"
+                + address.trim().toLowerCase(Locale.ROOT) + "\0" + port;
         try {
             byte[] hash = MessageDigest.getInstance("SHA-256")
                     .digest(descriptor.getBytes(StandardCharsets.UTF_8));
