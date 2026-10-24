@@ -1,39 +1,49 @@
-# Alpha 0.2 preview — download and device smoke test
+# Ultgram Alpha 0.3 preview — device testing
 
-## Get a test APK from GitHub Actions
-1. Open **Actions → Android Alpha 0.1 downloadable APK**.
-2. Choose the most recent successful run on `feature/alpha01-bootstrap`.
-3. Under **Artifacts**, download `ult-alpha01-foss-android` (ZIP).
-4. Extract the APK from that ZIP on your phone or workstation.
-5. Install only after confirming the run belongs to the expected Yooshastan repository.
+## Download the internal test APK
 
-These artifacts are **internal debug builds**, not signed releases or Play Store packages. They expire after 14 days. Do not redistribute as a stable release. If the artifact is absent, the build failed or was skipped; check the FOSS job logs.
+1. Open [Android Alpha 0.3 proxy profiles preview](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha03-proxy-profiles).
+2. Select a successful run from `feature/alpha03-proxy-profiles`.
+3. Download `ult-alpha03-preview-foss-android` from **Artifacts** and extract the ARM64 APK.
+4. On your Pixel 8a or other Android device, inspect the app name/package and install the debug APK.
 
-## Pixel 8a / Samsung A36 smoke test
-- Confirm independent package installation alongside your existing Telegram app.
-- Open ULT, authenticate using your own test account if possible.
-- Send/receive a regular text message and a photo with consenting test contacts.
-- Test scrolling in chats and loading media.
-- Check Settings → Chat Settings → overflow menu → **ULT Presets**.
-- Select Candy Pink or ULT Midnight, restart, and reopen the selector to confirm the selection persists. **Colors do not yet apply app-wide.**
-- Verify notifications while app is backgrounded on the Google-free build.
-- Try the same steps on GrapheneOS without requiring Google Play or microG.
+These are internal debug test artifacts, not signed production releases. They expire after 14 days. If Android rejects an update due to a different debug signing key, do not uninstall your existing working build without arranging for reauthentication and local-data backup.
 
-## Install with ADB from Fedora
+## Core regression checks
+
+- Open the app and confirm existing Telegram sign-in and chat history remain available.
+- Send and receive text and a photo with a consenting contact.
+- Switch between ULT Midnight, Candy Pink, Neon Stage and Minimal under **Chat Settings → ⋮ → ULT Presets**; restart and restore System.
+- Change Telegram language packs, return to your normal language, and watch for the previous UI-thread freeze.
+- Confirm notifications while the Google-free build is backgrounded.
+
+## Alpha 0.3 proxy manager checks
+
+1. Open **Settings → Data and Storage → Proxy Settings**. The page should say **ULT Proxy Manager**.
+2. Verify the existing native **Use Proxy**, **Add Proxy**, ping/availability, rotation and Tor controls still behave as before.
+3. Add a SOCKS5/MTProto endpoint **you control or trust**. Never use a random public proxy for sensitive accounts.
+4. Tap the **info (i)** icon beside that endpoint. Choose **Name this profile**, save a harmless name such as `Home gateway`, and confirm it appears beside the endpoint.
+5. Reopen the same icon and choose **Edit connection**. Confirm Telegram's normal proxy editor still appears. Rename the label or clear it; make sure the label persists after restarting.
+6. Tap the top-right privacy information icon. Confirm the explanation warns that proxies do not hide your Telegram account identity.
+7. Toggle the proxy **only when you intend to change connectivity**. Verify the selected endpoint and connection state. Disable it when done.
+8. If using Mercurygram's Tor mode, confirm proxy selection cannot silently override Tor routing.
+
+Aliases are stored only on-device, keyed to the proxy protocol/server/port—not password or MTProto secret. Endpoints with different credentials but the same protocol/server/port share one alias. This preview does **not** implement a kill switch, fail-closed routing or anonymity guarantees.
+
+## Fedora ADB installation and logs
+
 ```bash
 adb devices -l
-adb install -r /absolute/path/to/downloaded.apk
-```
-
-## Collect a reproducible problem report
-```bash
+adb install -r /absolute/path/to/ult-alpha03-preview-foss-arm64-debug.apk
 adb logcat -c
-adb logcat -v threadtime -s AndroidRuntime:E ActivityManager:I > ult-alpha01-crash.log
+adb logcat -v threadtime -s AndroidRuntime:E ActivityManager:I > ult-alpha03-debug.log
 ```
-Reproduce the issue, then press Ctrl+C. Review logs for sensitive information before sharing.
 
-## Known incomplete features
-- Native theme presets are experimental and may affect Telegram's detailed color combinations; test multiple chat screens before merging.
-- ULT proxy profile UI, Nekogram-inspired chat layouts, SMS/MMS, and RCS handoff remain on separate development branches.
-- Firebase-compatible variant requires separately configured `ULT_FIREBASE_JSON_B64` and is skipped otherwise.
-- No Yooshastan analytics or advertisements are added; this does not promise the absence of upstream Telegram sponsored content.
+Reproduce an issue, stop logging with Ctrl+C, and review logs for private messages, proxy endpoints and account information before sharing.
+
+## Still planned
+
+- Advanced proxy controls such as explicit fail-closed connectivity require separate design and testing.
+- Nekogram-inspired chat enhancements and the opt-in SMS/MMS / RCS companion remain future branches.
+- Firebase-compatible builds require the optional `ULT_FIREBASE_JSON_B64` secret.
+- ULT adds no advertising/analytics; upstream Telegram-sponsored content can still exist.
