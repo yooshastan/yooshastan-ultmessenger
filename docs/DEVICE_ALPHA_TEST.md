@@ -1,10 +1,10 @@
-# Ultgram Alpha 0.3 preview — device testing
+# Ultgram Alpha 0.4 preview — device testing
 
 ## Download the internal test APK
 
-1. Open [Android Alpha 0.3 proxy profiles preview](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha03-proxy-profiles).
-2. Select a successful run from `feature/alpha03-proxy-profiles`.
-3. Download `ult-alpha03-preview-foss-android` from **Artifacts** and extract the ARM64 APK.
+1. Open [Android Alpha 0.4 chat layouts preview](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha04-proxy-profiles).
+2. Select a successful run from `feature/alpha04-proxy-profiles`.
+3. Download `ult-alpha04-preview-foss-android` from **Artifacts** and extract the ARM64 APK.
 4. On your Pixel 8a or other Android device, inspect the app name/package and install the debug APK.
 
 These are internal debug test artifacts, not signed production releases. They expire after 14 days. If Android rejects an update due to a different debug signing key, do not uninstall your existing working build without arranging for reauthentication and local-data backup.
@@ -17,7 +17,7 @@ These are internal debug test artifacts, not signed production releases. They ex
 - Change Telegram language packs, return to your normal language, and watch for the previous UI-thread freeze.
 - Confirm notifications while the Google-free build is backgrounded.
 
-## Alpha 0.3 proxy manager checks
+## Alpha 0.4 proxy manager checks
 
 1. Open **Settings → Data and Storage → Proxy Settings**. The page should say **ULT Proxy Manager**.
 2. Verify the existing native **Use Proxy**, **Add Proxy**, ping/availability, rotation and Tor controls still behave as before.
@@ -34,9 +34,9 @@ Aliases are stored only on-device, keyed to the proxy protocol/server/port—not
 
 ```bash
 adb devices -l
-adb install -r /absolute/path/to/ult-alpha03-preview-foss-arm64-debug.apk
+adb install -r /absolute/path/to/ult-alpha04-preview-foss-arm64-debug.apk
 adb logcat -c
-adb logcat -v threadtime -s AndroidRuntime:E ActivityManager:I > ult-alpha03-debug.log
+adb logcat -v threadtime -s AndroidRuntime:E ActivityManager:I > ult-alpha04-debug.log
 ```
 
 Reproduce an issue, stop logging with Ctrl+C, and review logs for private messages, proxy endpoints and account information before sharing.
