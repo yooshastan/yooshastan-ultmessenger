@@ -24,7 +24,9 @@ class AppearanceIntegrationTest(TestCase):
             self.assertIn("showUltPresetChooser()", result)
             self.assertIn("ULT Presets", result)
             self.assertIn("getSharedPreferences", result)
+            self.assertIn("UltAppearanceThemeAdapter.apply", result)
             self.assertTrue((root / "TMessagesProj/src/main/java/com/yooshastan/ultmessenger/appearance/UltAppearancePreset.java").is_file())
+            self.assertTrue((root / "TMessagesProj/src/main/java/com/yooshastan/ultmessenger/appearance/UltAppearanceThemeAdapter.java").is_file())
             with self.assertRaises(ValueError):
                 module.integrate(root)
 
