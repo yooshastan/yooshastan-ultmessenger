@@ -68,10 +68,8 @@ CHAT_FIELDS = """
         final boolean offlineReady = it.belloworld.mercurygram.translate.MgTranslateDispatcher.isOfflineUsable();
         new android.app.AlertDialog.Builder(activity)
                 .setTitle("ULT Chat Translation")
-                .setMessage("Engine: " + UltTranslationPolicy.engineLabel(mode)
-                        + (offline ? (offlineReady ? " (ready)" : " (provider not installed)") : " (network)")
-                        + "\\nPer-chat language selection. Stop translation to show original text."
-                        + "\\nMore languages are available in the built-in translation bar.")
+                // Android AlertDialog cannot display setMessage and setItems together:
+                // keep this alert list-only so language choices are actually visible.
                 .setItems(options, (selectionDialog, which) -> {
                     if (which == 0) {
                         controller.toggleTranslatingDialog(getDialogId(), false);
@@ -107,6 +105,15 @@ CHAT_FIELDS = """
                         ultApplyChatTranslation(toLanguage);
                     }
                 })
+                .setNeutralButton("Engine info", (infoDialog, selected) ->
+                        new android.app.AlertDialog.Builder(activity)
+                                .setTitle("Translation engine")
+                                .setMessage("Engine: " + UltTranslationPolicy.engineLabel(mode)
+                                        + (offline ? (offlineReady ? " (ready)" : " (provider not installed)") : " (network)")
+                                        + "\\nTranslation is selected per chat; stop it to view originals."
+                                        + "\\nFor more target languages, use the translation bar.")
+                                .setPositiveButton(android.R.string.ok, null)
+                                .show())
                 .setNegativeButton(android.R.string.cancel, null)
                 .show();
     }
