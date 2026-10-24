@@ -1,0 +1,19 @@
+name: Chat layout model checks
+on:
+  push:
+    branches: [feature/chat-enhancements]
+  pull_request:
+jobs:
+  java-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Validate chat layout preferences
+        run: |
+          mkdir -p /tmp/ult-chat-classes
+          javac -d /tmp/ult-chat-classes chat/src/com/yooshastan/ultmessenger/chat/UltChatLayoutPreset.java chat/tests/UltChatLayoutPresetTest.java
+          java -cp /tmp/ult-chat-classes UltChatLayoutPresetTest
