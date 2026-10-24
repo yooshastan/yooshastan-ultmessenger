@@ -15,7 +15,7 @@ An experimental, independent Android messaging project from Yooshastan Studios. 
 - Optional SMS/MMS inbox and experimental Google Messages RCS companion.
 
 ## Roadmap
-See the [current product roadmap](docs/PRODUCT_ROADMAP.md), [Alpha 0.8 device test plan](docs/DEVICE_ALPHA_TEST.md), [architecture](docs/ARCHITECTURE.md), and [feature matrix](docs/FEATURE_MATRIX.md).
+See the [master feature inventory — shipped vs. remaining](docs/FEATURE_MATRIX.md), [current product roadmap](docs/PRODUCT_ROADMAP.md), [Alpha 0.8 device test plan](docs/DEVICE_ALPHA_TEST.md), and [architecture](docs/ARCHITECTURE.md).
 
 Alpha 0.8 introduces an opt-in, per-account **Hide Archive row** control under **Chats → ⋮**. It affects the main chat-list display only; **ULT: Open Archive** remains available, and it does not unarchive, delete or move messages. The Firebase-compatible build still depends on optional Firebase configuration.
 
