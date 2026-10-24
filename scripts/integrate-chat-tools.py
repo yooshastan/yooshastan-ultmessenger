@@ -9,7 +9,7 @@ from pathlib import Path
 TARGET = Path("TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java")
 MODEL = Path("chat/src/com/yooshastan/ultmessenger/chat/UltChatTools.java")
 IMPORT_ANCHOR = "import org.telegram.ui.ActionBar.ActionBar;\n"
-CLASS_ANCHOR = "public class ChatActivity extends BaseFragment implements\n"
+CLASS_ANCHOR = "        FactorAnimator.Target\n{\n"
 MENU_ANCHOR = (
     "            translateItem = headerItem.lazilyAddSubItem(translate, R.drawable.msg_translate, "
     "LocaleController.getString(R.string.TranslateMessage));\n"
