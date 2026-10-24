@@ -18,7 +18,7 @@ class ThemeStateContractTest(TestCase):
     def test_snapshot_precedes_install_and_auto_night_is_paused_after_success(self):
         text = ADAPTER.read_text(encoding="utf-8")
         before_import = text.index("Theme.ThemeInfo oldDay = Theme.getCurrentTheme();")
-        import_theme = text.index("Theme.ThemeInfo installed = Theme.applyThemeFile(")
+        import_theme = text.index("Theme.ThemeInfo installedTheme = Theme.applyThemeFile(")
         persist_state = text.index("editor.putInt(PREVIOUS_AUTO_NIGHT, oldAutoNight);")
         pause_night = text.index("Theme.selectedAutoNightType = Theme.AUTO_NIGHT_TYPE_NONE;", import_theme)
         self.assertLess(before_import, import_theme)
@@ -26,7 +26,7 @@ class ThemeStateContractTest(TestCase):
         self.assertLess(persist_state, pause_night)
         self.assertIn("Theme.cancelAutoNightThemeCallbacks();", text)
         self.assertIn("Theme.applyTheme(installed);", text)
-        self.assertIn("if (installed == null) {", text)
+        self.assertIn("if (installedTheme == null) {", text)
 
     def test_system_restores_day_night_and_auto_night_without_resetting_unset(self):
         text = ADAPTER.read_text(encoding="utf-8")
@@ -39,6 +39,22 @@ class ThemeStateContractTest(TestCase):
         self.assertIn("Theme.saveAutoNightThemeConfig();", system_branch)
         for field in ("PREVIOUS_THEME", "PREVIOUS_NIGHT_THEME", "PREVIOUS_AUTO_NIGHT"):
             self.assertIn(".remove(" + field + ")", system_branch)
+
+    def test_paired_install_creates_both_slots_then_activates_system_mode(self):
+        text = ADAPTER.read_text(encoding="utf-8")
+        self.assertIn('writeThemeFile(context, preset, preset.forMode(false), "-day")', text)
+        self.assertIn('writeThemeFile(context, preset, preset.forMode(true), "-night")', text)
+        self.assertIn('Theme.applyThemeFile(dayFile,', text)
+        self.assertIn('Theme.applyThemeFile(nightFile,', text)
+        night_index = text.index('Theme.setCurrentNightTheme(pairedNight);')
+        day_index = text.index('Theme.applyTheme(pairedDay);')
+        system_index = text.index('Theme.selectedAutoNightType = Theme.AUTO_NIGHT_TYPE_SYSTEM;')
+        self.assertLess(night_index, day_index)
+        self.assertLess(day_index, system_index)
+        self.assertIn('Theme.saveAutoNightThemeConfig(); // includes the night theme key', text)
+        self.assertIn('if (pairedNight == null) {', text)
+        self.assertIn('Theme.applyTheme(oldDay);', text)
+        self.assertIn('Build.VERSION_CODES.Q', text)
 
     def test_chooser_preserves_options_and_refreshes_visible_fragment(self):
         spec = importlib.util.spec_from_file_location("ult_appearance_integration", INTEGRATOR)
@@ -54,9 +70,12 @@ class ThemeStateContractTest(TestCase):
             integration.integrate(root)
             result = target.read_text(encoding="utf-8")
             self.assertIn(".setSingleChoiceItems(labels, current.ordinal()", result)
+            self.assertIn("Follow phone light/dark", result)
+            self.assertIn("Keep fixed colors", result)
+            self.assertIn("if (preset == UltAppearancePreset.SYSTEM)", result)
             self.assertIn(".setNeutralButton(\"Theme behavior\"", result)
             self.assertIn("parentLayout.rebuildAllFragmentViews(true, true);", result)
-            self.assertIn("Choose System to restore", result)
+            self.assertIn("System restores the original day theme", result)
 
 
 if __name__ == "__main__":
