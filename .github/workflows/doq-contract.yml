@@ -1,0 +1,39 @@
+name: Alpha 0.10f.3 DoQ contract (no network transport)
+
+on:
+  push:
+    branches: [feature/alpha10f3-doq-foundation]
+    paths:
+      - 'dns/**'
+      - 'docs/ALPHA10F3_DOQ_FOUNDATION.md'
+      - '.github/workflows/doq-contract.yml'
+  pull_request:
+    paths:
+      - 'dns/**'
+      - 'docs/ALPHA10F3_DOQ_FOUNDATION.md'
+      - '.github/workflows/doq-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    name: Endpoint validation and no-fallback contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Compile pure Java contract
+        run: |
+          mkdir -p /tmp/ult-doq-contract
+          javac -d /tmp/ult-doq-contract \
+            dns/src/com/yooshastan/ultmessenger/dns/UltDoqEndpoint.java \
+            dns/src/com/yooshastan/ultmessenger/dns/UltDoqResolver.java \
+            dns/tests/UltDoqContractTest.java
+      - name: Run contract test (not proof of active DoQ)
+        run: java -cp /tmp/ult-doq-contract UltDoqContractTest
