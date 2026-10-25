@@ -36,3 +36,32 @@ No passwords, MTProto secrets, authentication tokens, message contents or proxy 
 5. Add a separate explicit consent switch only after verified implementation. The read-only dialog is **not** that switch.
 
 A Telegram proxy may hide an IP from the Telegram service yet expose traffic metadata to the proxy operator, and does not mask the signed-in Telegram account identity or replace a VPN/Tailscale for arbitrary home services.
+
+## Phase 2 — controlled leak/failover verification on A36 and Pixel 8a
+
+**These tests have not yet been executed or passed.** Record only the yes/no outcomes below until a trusted packet-capture point exists. Do not treat the app's 69 ms native MTProto ping as a DNS privacy measurement.
+
+### Network visibility requirement
+
+- A Fedora PC running the MTProto container sees **connections reaching its own proxy**, but it generally cannot see unrelated phone-to-internet traffic on a switched LAN or Wi-Fi. To verify direct connections and DNS leaks, capture at the **Wi-Fi router / gateway**, a permitted managed access point, or a dedicated test network that routes all the phone's traffic.
+- A phone-side local-VPN capture app changes the network topology and may conflict with Tailscale or another VPN: Android supports only one active VPN service per user/profile. It is a useful secondary test, not unqualified proof of baseline behavior. [Android VPN guidance](https://developer.android.com/develop/connectivity/vpn).
+- Do not share raw packet captures, DNS hostnames, proxy secrets, private IP inventories or Telegram account identifiers publicly. Summarize counts and endpoints by category.
+
+### Device matrix
+
+| Scenario | Telegram chat send/receive | Proxy server traffic | Non-proxy Telegram egress | DNS/DoT/DoQ egress | Expected safety interpretation |
+| --- | --- | --- | --- | --- | --- |
+| Native direct baseline, proxy off | Establish baseline | None expected | Expected | Record baseline | Direct mode, not private-routing test |
+| Working selected MTProto, proxy on | Should work | Expected | **Investigate any** | Inspect; unresolved | Native app status alone is insufficient |
+| Unreachable saved proxy, not selected | Should use selected working proxy | Expected for selected profile | **Investigate any** | Inspect; unresolved | Saved failure must not affect routing by itself |
+| Selected proxy deliberately made unavailable on controlled test LAN | Record whether app reconnects/fails | Record retries | **Any unexpected direct fallback is a potential leak** | Inspect | No strict mode can ship until failure behavior is understood |
+| Wi-Fi to mobile-data handoff while proxy selected | Record reconnect behavior | Expected over new network if reachable | **Investigate any** | Inspect both interfaces | Must revalidate in background and after restart |
+| System VPN/Tailscale enabled vs disabled | Record app behavior separately | Depends on network route | Capture each condition | Inspect | VPN may alter visibility; do not conflate with proxy guarantees |
+
+Mark each result with device, Android version, app artifact/build SHA, exact scenario, and whether the capture point was the **network gateway** or the **proxy host**.
+
+### Resolution and fail-closed gate
+
+- **No strict mode yet:** The current release does not block direct traffic if the proxy is disabled or unavailable. It would be misleading to label an existing `Use Proxy` toggle as a kill switch.
+- **No DoQ yet:** DNS over QUIC is standardized by [RFC 9250](https://www.rfc-editor.org/rfc/rfc9250), with dedicated QUIC connections (by default UDP 853). It is not enabled merely by editing DNS settings; each app Java/native lookup path must be owned and tested. DoQ also does not tunnel Telegram message traffic.
+- **Release gate:** only claim strict routing when the controlled network test shows no unintended direct Telegram or plaintext DNS egress in normal, failed-proxy, restart, handoff and IPv6 scenarios, with explicit user opt-in and honest reporting of exceptions.
