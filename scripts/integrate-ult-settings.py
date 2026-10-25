@@ -10,6 +10,10 @@ from pathlib import Path
 TARGET = Path("TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java")
 MODEL = Path("settings/src/com/yooshastan/ultmessenger/settings/UltSettingsActivity.java")
 DEST = Path("TMessagesProj/src/main/java/com/yooshastan/ultmessenger/settings/UltSettingsActivity.java")
+DNS_MODELS = (
+    Path("settings/src/com/yooshastan/ultmessenger/settings/UltDnsPosture.java"),
+    Path("settings/src/com/yooshastan/ultmessenger/settings/UltAndroidDnsInspector.java"),
+)
 ROW_ANCHOR = (
     '        items.add(SettingCell.Factory.of(100, 0xFF8F77FF, 0xFF6E5BD9, '
     'R.drawable.mg_settings, getString(R.string.MercurygramSettings), '
@@ -46,12 +50,17 @@ def integrate(root: Path) -> Path:
         raise ValueError("ULT settings already integrated")
     updated = once(source, ROW_ANCHOR, ULT_ROW + ROW_ANCHOR)
     updated = once(updated, CLICK_ANCHOR, ULT_CLICK + CLICK_ANCHOR)
-    model_data = (Path(__file__).resolve().parents[1] / MODEL).read_bytes()
+    root_models = Path(__file__).resolve().parents[1]
+    model_data = (root_models / MODEL).read_bytes()
+    dns_models = [(relative.name, (root_models / relative).read_bytes())
+                  for relative in DNS_MODELS]
     # Refuse changed upstream or missing model before touching generated source.
     target.write_text(updated, encoding="utf-8")
     dest = root / DEST
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_bytes(model_data)
+    for name, data in dns_models:
+        (dest.parent / name).write_bytes(data)
     return target
 
 

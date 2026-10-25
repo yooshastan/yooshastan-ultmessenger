@@ -30,8 +30,12 @@ class SettingsIntegrationTest(TestCase):
             self.assertIn("Archive row visibility", model.read_text())
             self.assertIn("Experimental native proxy-only mode", model.read_text())
             self.assertIn("ConnectionsManager.setUltStrictNativeProxyEnabled", model.read_text())
-            self.assertIn("Encrypted DNS / DoQ and tracker protection", model.read_text())
-            self.assertIn("No encrypted-only DNS or tracker blocking is active.", model.read_text())
+            self.assertIn("Android Private DNS (DoT) status", model.read_text())
+            self.assertIn("UltAndroidDnsInspector.inspect", model.read_text())
+            self.assertIn("Dedicated DNS-over-QUIC and tracker protection", model.read_text())
+            self.assertIn("No app-enforced DoQ, encrypted-only DNS or tracker filtering.", model.read_text())
+            for extra in integration.DNS_MODELS:
+                self.assertTrue((model.parent / extra.name).is_file())
             with self.assertRaises(ValueError):
                 integration.integrate(root)
 
