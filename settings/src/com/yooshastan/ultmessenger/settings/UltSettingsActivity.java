@@ -1,7 +1,9 @@
 package com.yooshastan.ultmessenger.settings;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.provider.Settings;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -77,8 +79,11 @@ public final class UltSettingsActivity extends BaseFragment {
         addLink(context, content, "Experimental native proxy-only mode",
                 "Opt-in guard for native Telegram sockets; not a full traffic firewall",
                 () -> showNativeStrictProxy(context));
-        addNote(context, content, "Encrypted DNS / DoQ and tracker protection",
-                "Still under development. No encrypted-only DNS or tracker blocking is active.");
+        addLink(context, content, "Android Private DNS (DoT) status",
+                "Inspect the current system resolver and open Android DNS settings",
+                () -> showAndroidPrivateDns(context));
+        addNote(context, content, "Dedicated DNS-over-QUIC and tracker protection",
+                "Not implemented. No app-enforced DoQ, encrypted-only DNS or tracker filtering.");
 
         addSection(context, content, "ABOUT");
         addNote(context, content, "Ultgram by Yooshastan Studios",
@@ -141,6 +146,32 @@ public final class UltSettingsActivity extends BaseFragment {
                 .setNeutralButton(enabled ? "Disable" : "Enable (experimental)", (dialog, which) ->
                         ConnectionsManager.setUltStrictNativeProxyEnabled(!enabled))
                 .setPositiveButton("Cancel", null)
+                .show();
+    }
+
+    private void showAndroidPrivateDns(Context context) {
+        new android.app.AlertDialog.Builder(context)
+                .setTitle("Android Private DNS (DoT)")
+                .setMessage(UltAndroidDnsInspector.inspect(context)
+                        + "\n\nThis is Android's current network DNS status, not an "
+                        + "Ultgram-controlled resolver. Private DNS uses DoT, not DoQ. "
+                        + "Native proxy, Java, media and WebView resolution paths are "
+                        + "not independently leak-verified. A VPN such as PCAPdroid "
+                        + "may affect the network state shown here.")
+                .setNeutralButton("Open network settings", (dialog, which) -> {
+                    try {
+                        context.startActivity(new Intent("android.settings.PRIVATE_DNS_SETTINGS"));
+                    } catch (RuntimeException missingPrivateDnsPage) {
+                        try {
+                            context.startActivity(new Intent(Settings.ACTION_WIRELESS_SETTINGS));
+                        } catch (RuntimeException missingNetworkSettings) {
+                            android.widget.Toast.makeText(context,
+                                    "Search Android Settings for Private DNS",
+                                    android.widget.Toast.LENGTH_LONG).show();
+                        }
+                    }
+                })
+                .setPositiveButton("Done", null)
                 .show();
     }
 
