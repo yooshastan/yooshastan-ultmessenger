@@ -38,7 +38,8 @@ public final class UltChatTools {
 
     /** Safe document metadata; never reads, opens or exports the file. */
     public static String mediaDetails(String mime, long bytes) {
-        String safeMime = mime != null && mime.matches("[A-Za-z0-9.+_-]+/[A-Za-z0-9.+_-]+")
+        String safeMime = mime != null && mime.length() <= 96 && !mime.contains("..")
+                && mime.matches("[A-Za-z0-9][A-Za-z0-9.+_-]*/[A-Za-z0-9][A-Za-z0-9.+_-]*")
                 ? mime : "unknown";
         return "MIME: " + safeMime + "\nBytes: " + Math.max(0L, bytes);
     }
