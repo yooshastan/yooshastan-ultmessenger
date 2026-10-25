@@ -1,3 +1,16 @@
+# Ultgram Alpha 0.10d preview — redacted diagnostics and measured network audit
+
+1. From a **successful** FOSS ARM64 [branch workflow](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha10d-proxy-privacy-verification), download the **ult-alpha10d-preview-foss-android** artifact and install its debug APK. Preserve your signed-in installation if Android reports a signature mismatch; do not uninstall just to force an update.
+2. In **ULT Proxy Manager → saved MTProto/SOCKS5 profile → Connection diagnostics**, verify the selected/disabled status and cached probe value. Tap **Copy redacted status**, paste into a trusted local editor and confirm it contains no endpoint, secret, account ID or chat text. Opening the dialog by itself must not copy anything.
+3. On 5G, verify actual proxy session connectivity, send/receive and media while a gateway port forward points to the chosen MTProto server. A TCP handshake by itself is **not** a Telegram session check.
+4. Separately test Wi-Fi, reconnect after handoff, failed test-proxy selection and recovery with auto-switch off. Restore a working proxy after the controlled failure case.
+5. Use the **[Alpha 0.10d audit runbook](ALPHA10D_TEST.md)** to reduce capture text to **counts only**. A Fedora proxy-host capture confirms ingress but **cannot** establish that Android DNS or other app traffic stayed inside the proxy. Gateway/AP observation is required for Wi-Fi device egress and still does not attribute packets to Ultgram.
+6. Repeat on A36 and Pixel 8a/GrapheneOS, including Candy Pink night/day, translation, notifications and Tor controls. No DNS-over-QUIC, per-app firewall or strict no-direct-fallback is available in this build.
+
+**Do not paste raw packet captures, home network addresses, personal public IPs, or proxy credentials into public GitHub issues.**
+
+---
+
 # Ultgram Alpha 0.10c preview — proxy diagnostics and privacy audit
 
 ## Alpha 0.10c — read-only proxy diagnostics (new)
