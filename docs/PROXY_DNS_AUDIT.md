@@ -69,3 +69,13 @@ Mark each result with device, Android version, app artifact/build SHA, exact sce
 ## Alpha 0.10d audit tooling (next preview)
 
 See the [dedicated device/capture runbook](ALPHA10D_TEST.md). It contains separate proxy-host versus gateway capture commands, a metadata-only stdin classifier, a controlled failed-proxy sequence, and explicit no-leak-proof interpretation. The redacted in-app status copy does **not** initiate a scan, collect network traffic or alter the proxy. All existing strict-route and DoQ release gates above remain in force.
+
+## Alpha 0.10e scoped link guard (draft)
+
+The pinned `org.telegram.messenger.browser.Browser.openUrl` dispatcher is now
+wrapped by an **optional, locally stored external HTTP(S) confirmation** before
+the ordinary upstream open behavior. ULT Proxy Manager's privacy panel exposes
+the preference, default **Off**. This is a deliberate user-consent checkpoint,
+**not** interception of automatic media, WebView subrequests, previews, DNS,
+Java traffic, or native Telegram fallback. Strict fail-closed remains unavailable.
+See [Alpha 0.10e test plan](ALPHA10E_TEST.md).

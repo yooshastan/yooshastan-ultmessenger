@@ -1,8 +1,8 @@
-name: Android Alpha 0.10d proxy privacy verification preview
+name: Android Alpha 0.10e opt-in external link guard preview
 
 on:
   push:
-    branches: [feature/alpha01-bootstrap, feature/alpha02-native-themes, feature/alpha03-proxy-profiles, feature/alpha04-chat-layouts, feature/alpha05-chat-tools, feature/alpha06-message-tools, feature/alpha07-visual-identity, feature/alpha08-archive-visibility, feature/alpha09-translation, feature/alpha10-chat-view-presets, fix/samsung-a36-ult-themes, feature/alpha10b-paired-ult-themes, fix/alpha10b-inapp-night-toggle, feature/alpha10c-proxy-diagnostics, feature/alpha10d-proxy-privacy-verification]
+    branches: [feature/alpha01-bootstrap, feature/alpha02-native-themes, feature/alpha03-proxy-profiles, feature/alpha04-chat-layouts, feature/alpha05-chat-tools, feature/alpha06-message-tools, feature/alpha07-visual-identity, feature/alpha08-archive-visibility, feature/alpha09-translation, feature/alpha10-chat-view-presets, fix/samsung-a36-ult-themes, feature/alpha10b-paired-ult-themes, fix/alpha10b-inapp-night-toggle, feature/alpha10c-proxy-diagnostics, feature/alpha10d-proxy-privacy-verification, feature/alpha10e-external-link-guard]
     paths:
       - '.github/workflows/android-alpha.yml'
       - 'scripts/**'
@@ -71,10 +71,13 @@ jobs:
           java -cp /tmp/ult-appearance-classes UltAppearancePresetTest
           python3 -m unittest discover -s proxy/tests -p 'test_integration.py'
           python3 -m unittest discover -s proxy/tests -p 'test_netwatch.py'
+          python3 -m unittest discover -s proxy/tests -p 'test_external_links.py'
           mkdir -p /tmp/ult-proxy-classes
           javac -d /tmp/ult-proxy-classes proxy/src/com/yooshastan/ultmessenger/proxy/UltProxyLabels.java proxy/src/com/yooshastan/ultmessenger/proxy/UltProxyDiagnostics.java proxy/tests/UltProxyLabelsTest.java proxy/tests/UltProxyDiagnosticsTest.java
           java -cp /tmp/ult-proxy-classes UltProxyLabelsTest
           java -cp /tmp/ult-proxy-classes UltProxyDiagnosticsTest
+          javac -d /tmp/ult-proxy-classes proxy/src/com/yooshastan/ultmessenger/proxy/UltExternalLinkRules.java proxy/tests/UltExternalLinkRulesTest.java
+          java -cp /tmp/ult-proxy-classes UltExternalLinkRulesTest
           python3 -m unittest discover -s chat/tests -p 'test_integration.py'
           mkdir -p /tmp/ult-chat-classes
           javac -d /tmp/ult-chat-classes chat/src/com/yooshastan/ultmessenger/chat/UltChatLayoutPreset.java chat/tests/UltChatLayoutPresetTest.java
@@ -136,6 +139,7 @@ jobs:
             python3 scripts/integrate-appearance.py "$source_dir"
             python3 scripts/patch_locale_background.py "$source_dir"
             python3 scripts/integrate-proxy.py "$source_dir"
+            python3 scripts/integrate-external-links.py "$source_dir"
             python3 scripts/integrate-chat-layouts.py "$source_dir"
             python3 scripts/integrate-chat-tools.py "$source_dir"
             python3 scripts/integrate-message-tools.py "$source_dir"
@@ -166,14 +170,14 @@ jobs:
             echo "::error::Expected one compiled APK, found ${#apks[@]}"
             exit 1
           fi
-          cp -- "${apks[0]}" "artifacts/ult-alpha10d-preview-${{ matrix.variant }}-arm64-debug.apk"
+          cp -- "${apks[0]}" "artifacts/ult-alpha10e-preview-${{ matrix.variant }}-arm64-debug.apk"
           ls -lh artifacts/*.apk
           sha256sum artifacts/*.apk
       - name: Upload installable internal test APK
         if: steps.prerequisites.outputs.ready == 'true' && success()
         uses: actions/upload-artifact@v4
         with:
-          name: ult-alpha10d-preview-${{ matrix.variant }}-android
+          name: ult-alpha10e-preview-${{ matrix.variant }}-android
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 14
