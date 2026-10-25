@@ -47,18 +47,18 @@ class NetwatchTest(TestCase):
 
     def test_proxy_host_cannot_claim_leak_verdict(self):
         lines = [
-            "21:27:54 IP 174.202.240.150.3747 > 10.0.0.169.8443: Flags [S], length 0",
-            "21:27:55 IP 10.0.0.169.8443 > 174.202.240.150.3747: Flags [S.], length 0",
-            "21:27:55 IP 193.46.255.51.55255 > 10.0.0.169.8443: Flags [S], length 0",
+            "21:27:54 IP 203.0.113.150.3747 > 192.0.2.169.8443: Flags [S], length 0",
+            "21:27:55 IP 192.0.2.169.8443 > 203.0.113.150.3747: Flags [S.], length 0",
+            "21:27:55 IP 198.51.100.51.55255 > 192.0.2.169.8443: Flags [S], length 0",
         ]
         result = netwatch.summarize(lines, "proxy-host", set(),
-                                    {ip_address("10.0.0.169")}, 8443)
+                                    {ip_address("192.0.2.169")}, 8443)
         self.assertEqual(result["matched"], 2)
         self.assertEqual(result["remote_source_count"], 2)
         report = netwatch.format_summary("proxy-host", result)
         self.assertIn("Cannot observe phone DNS", report)
-        self.assertNotIn("174.202", report)
-        self.assertNotIn("193.46", report)
+        self.assertNotIn("203.0.113.150", report)
+        self.assertNotIn("198.51.100.51", report)
         self.assertIn("NO LEAK-PROOF", report)
 
     def test_zero_packets_is_not_a_pass(self):
