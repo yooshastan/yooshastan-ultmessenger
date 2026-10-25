@@ -19,7 +19,9 @@ class ProxyIntegrationTest(TestCase):
             target.parent.mkdir(parents=True)
             original = (integration.IMPORT_ANCHOR + integration.CLASS_ANCHOR +
                         integration.EDIT_ANCHOR + integration.DISPLAY_ANCHOR +
-                        integration.MENU_ANCHOR + integration.CLICK_ANCHOR)
+                        integration.MENU_ANCHOR + integration.ADAPTIVE_ANCHOR +
+                        integration.THEME_ICON_ANCHOR + integration.THEME_TITLE_ANCHOR +
+                        integration.CLICK_ANCHOR)
             target.write_text(original, encoding="utf-8")
             integration.integrate(root)
             result = target.read_text(encoding="utf-8")
@@ -30,6 +32,11 @@ class ProxyIntegrationTest(TestCase):
             self.assertIn("showUltProxyPrivacyInfo", result)
             self.assertIn("showUltProxyDiagnostics", result)
             self.assertIn("ULT Connection Diagnostics", result)
+            self.assertIn("Global Use Proxy switch:", result)
+            self.assertIn("actionBar.setTitleColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText))", result)
+            self.assertIn("actionBar.setItemsColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText), false)", result)
+            self.assertIn("ThemeDescription.FLAG_AB_TITLECOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteBlackText", result)
+            self.assertIn("ThemeDescription.FLAG_AB_ITEMSCOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteBlackText", result)
             self.assertIn("UltProxyDiagnostics.routeStatus", result)
             self.assertIn("UltProxyDiagnostics.nativeProbeStatus", result)
             self.assertIn("UltProxyDiagnostics.dnsAuditWarning", result)
