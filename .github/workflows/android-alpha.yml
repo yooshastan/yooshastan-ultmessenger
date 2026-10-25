@@ -8,6 +8,7 @@ on:
       - 'scripts/**'
       - 'tests/**'
       - 'appearance/**'
+      - 'settings/**'
       - 'proxy/**'
       - 'chat/**'
       - 'conversation/**'
