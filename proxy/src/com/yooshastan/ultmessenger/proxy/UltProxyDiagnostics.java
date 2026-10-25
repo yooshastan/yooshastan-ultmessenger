@@ -70,8 +70,9 @@ public final class UltProxyDiagnostics {
     }
 
     public static String dnsAuditWarning() {
-        return "DNS routing unverified. DoQ/DoH3 and strict no-direct-fallback "
-                + "are NOT implemented. A native proxy check is not proof "
-                + "that Java, media or native DNS traffic uses the proxy.";
+        return "DNS routing unverified. DoQ/DoH3 and comprehensive strict no-direct-fallback "
+                + "are NOT implemented. The experimental native socket guard is not a full "
+                + "firewall. A native proxy check is not proof that Java, media or native "
+                + "DNS traffic uses the proxy.";
     }
 }
