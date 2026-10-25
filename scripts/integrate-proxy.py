@@ -19,6 +19,9 @@ DISPLAY_ANCHOR = (
     '                        : proxyInfo.settings.getAddress() + ":" + proxyInfo.settings.getPort());\n'
 )
 MENU_ANCHOR = "        actionBar.setAllowOverlayTitle(false);\n"
+ADAPTIVE_ANCHOR = "        actionBar.setAdaptiveBackground(listView);\n"
+THEME_ICON_ANCHOR = ("        themeDescriptions.add(new ThemeDescription(actionBar, ThemeDescription.FLAG_AB_ITEMSCOLOR, null, null, null, null, Theme.key_actionBarDefaultIcon));\n")
+THEME_TITLE_ANCHOR = ("        themeDescriptions.add(new ThemeDescription(actionBar, ThemeDescription.FLAG_AB_TITLECOLOR, null, null, null, null, Theme.key_actionBarDefaultTitle));\n")
 CLICK_ANCHOR = "                switch (id) {\n                    case -1:\n"
 
 FIELDS = """
@@ -107,7 +110,7 @@ FIELDS = """
         String nl = System.lineSeparator();
         StringBuilder details = new StringBuilder();
         details.append("Transport: ").append(info.settings.getType().name()).append(nl);
-        details.append("Proxy setting: ").append(enabled ? "On" : "Off").append(nl);
+        details.append("Global Use Proxy switch: ").append(enabled ? "On" : "Off").append(nl);
         if (SharedConfig.mg_useTor) {
             details.append("Mercurygram Tor mode is active separately.").append(nl);
         }
@@ -168,6 +171,19 @@ def integrate(root: Path) -> Path:
                           MENU_ANCHOR + "        actionBar.setTitle(\"ULT Proxy Manager\");\n"
                           + "        actionBar.createMenu().addItem(ULT_PROXY_PRIVACY_MENU_ID, R.drawable.msg_info)\n"
                           + '                .setContentDescription("ULT proxy privacy");\n')
+    # Mercurygram makes this action bar adaptive/translucent, so color the
+    # title and back/info icons against the visible page instead of its
+    # nominal actionBarDefault accent background.
+    source = replace_once(source, ADAPTIVE_ANCHOR,
+                          ADAPTIVE_ANCHOR
+                          + "        actionBar.setTitleColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));\n"
+                          + "        actionBar.setItemsColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText), false);\n")
+    source = replace_once(source, THEME_ICON_ANCHOR,
+                          THEME_ICON_ANCHOR.replace("Theme.key_actionBarDefaultIcon",
+                                                    "Theme.key_windowBackgroundWhiteBlackText"))
+    source = replace_once(source, THEME_TITLE_ANCHOR,
+                          THEME_TITLE_ANCHOR.replace("Theme.key_actionBarDefaultTitle",
+                                                    "Theme.key_windowBackgroundWhiteBlackText"))
     source = replace_once(source, CLICK_ANCHOR,
                           "                switch (id) {\n"
                           + "                    case ULT_PROXY_PRIVACY_MENU_ID:\n"
