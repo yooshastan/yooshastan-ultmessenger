@@ -1,3 +1,22 @@
+# Ultgram Alpha 0.10c preview — proxy diagnostics and privacy audit
+
+## Alpha 0.10c — read-only proxy diagnostics (new)
+
+1. After **successful** [GitHub Actions FOSS ARM64 CI](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha10c-proxy-diagnostics), download `ult-alpha10c2-preview-foss-android` and extract the APK. Do not uninstall a working Ultgram to bypass a debug-signature mismatch; protect local messages and session access first.
+2. In **ULT Proxy Manager**, use the info/edit control on an existing non-Tor SOCKS5/MTProto proxy. Choose **Connection diagnostics**.
+3. Verify transport type, enabled/selected state and cached native reachability/latency are displayed. If a probe hasn't run yet, the dialog should report **Not yet checked**, not a fabricated success.
+4. Switch off **Use Proxy**, open diagnostics again and verify it says disabled / direct connections may be used. Do not assume Telegram is still using that proxy.
+5. With no working proxy, verify the app does not claim a leak-proof or encrypted DNS route. Re-enable a known-good proxy and test chats/media normally.
+6. Confirm opening diagnostics causes no profile rewrite, transport switch, DNS action, clipboard copy, request to an external diagnostics service, or new permission prompt.
+7. Repeat on **Samsung A36** and **Pixel 8a/GrapheneOS**. Verify your six ULT day/night themes and translation still work. Never send proxy secrets or private chats in issue logs or screenshots.
+8. Alpha 0.10c.2: check **ULT Proxy Manager** title, back arrow and privacy/info icon against both a dark (e.g., Candy Pink Night) and light ULT preset. They should use readable foreground colors on the translucent page header, including after an in-app sun/moon toggle.
+9. For a saved-but-not-selected proxy, the diagnostic dialog should identify **Global Use Proxy switch: On** separately from **Saved but not selected**; it must not call that profile connected.
+10. See [gateway-based DNS and direct-traffic test matrix](PROXY_DNS_AUDIT.md). We cannot claim no leaks from a native proxy ping.
+
+**Boundaries:** This is a **read-only report on existing Telegram checks**. Neither DoQ/DoH3 nor strict fail-closed routing is shipped. Consult the [Alpha 0.10c DNS/proxy audit](PROXY_DNS_AUDIT.md).
+
+---
+
 # Ultgram Alpha 0.10a preview — local chat-view device test checklist
 
 ## Alpha 0.10b.1 — in-app Night Mode regression (new)
