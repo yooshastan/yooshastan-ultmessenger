@@ -3,10 +3,8 @@ name: Alpha 0.10f.4 native DoQ engine build experiment
 # This is an isolated toolchain experiment. The AAR is not bundled into Ultgram
 # until ABI, licensing, dependencies and real DNS routing have been reviewed.
 on:
-  push:
-    branches: [feature/alpha10f4-privacy-controls-spike]
-    paths:
-      - '.github/workflows/build-doq-native.yml'
+  # Manual-only until authorized AdGuard-specific Conan package dependencies
+  # are available; public ConanCenter does not provide @adguard/oss packages.
   workflow_dispatch:
 
 permissions:

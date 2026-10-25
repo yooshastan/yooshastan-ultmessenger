@@ -2,7 +2,7 @@
 
 **Preview status: do not mistake configuration UI for network enforcement.**
 
-This draft stages the privacy UI and native DNS-engine build experiment. The existing experimental native MTProto direct-socket guard is inherited from Alpha 0.10f.1. **A functioning DoQ transport is not connected to Ultgram's DNS resolution paths**, and tracker-domain rules are not applied to Android network requests. The native AAR GitHub workflow builds an isolated library artifact for review; that AAR is not installed in the app.
+This draft stages the privacy UI and native DNS-engine build experiment. The existing experimental native MTProto direct-socket guard is inherited from Alpha 0.10f.1. **A functioning DoQ transport is not connected to Ultgram's DNS resolution paths**, and tracker-domain rules are not applied to Android network requests. The native AAR experiment is **blocked** on AdGuard-specific Conan packages unavailable from the default public remote. No AAR was produced or installed in the app.
 
 ## New features
 
@@ -10,7 +10,7 @@ This draft stages the privacy UI and native DNS-engine build experiment. The exi
 - `DNS-over-QUIC configuration (preview)`: saves a strictly parsed `quic://hostname[:port]` and a **literal IPv4 bootstrap address**. The address is not resolved via Android DNS and is never contacted in this APK. An empty server clears the draft. No DoQ-on switch is exposed.
 - `Tracker domain rules (preview)`: saves user-entered blocked and allowlisted DNS suffixes locally. The allowlist takes precedence. These rules have **no effect on actual traffic until resolver integration**. No domain-history logging.
 - `UltDnsTrackerPolicy`: independently tested domain-boundary matching and synthetic NXDOMAIN response generation for an explicitly routed DNS query. This class is not automatically invoked by Telegram.
-- Manual/push experiment workflow `.github/workflows/build-doq-native.yml` tries to build AdGuard DnsLibs tag `v2.10.2` pinned to commit `0c6e855b12eee2f696e7cc30719532fda4fdd512`. Any AAR result is a review artifact, not a validated runtime dependency.
+- Manual-only experiment workflow `.github/workflows/build-doq-native.yml` tries to build AdGuard DnsLibs tag `v2.10.2` pinned to commit `0c6e855b12eee2f696e7cc30719532fda4fdd512`. The attempted build failed because `libevent/2.1.11@adguard/oss` and related pinned dependencies are absent from public ConanCenter; upstream uses an external Conan artifact repository. Do not claim an AAR artifact is available. An authorized, reviewable dependency source is required before resuming this experiment.
 
 ## Tomorrow's device checks (Pixel 8a and Samsung A36)
 
