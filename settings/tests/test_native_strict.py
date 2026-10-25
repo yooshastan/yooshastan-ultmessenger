@@ -14,7 +14,7 @@ ANCHORS = {
     integration.JAVA: integration.JAVA_INIT + integration.JAVA_SETTER + integration.JAVA_NATIVE,
     integration.HEADER: integration.HEADER_METHOD + integration.HEADER_FIELD,
     integration.CPP: integration.CPP_METHOD,
-    integration.SOCKET: integration.SOCKET_ATTACH,
+    integration.SOCKET: integration.SOCKET_ATTACH + integration.SOCKET_INTERNAL,
     integration.JNI: integration.JNI_METHOD + integration.JNI_TABLE,
     integration.PROXY_UI: integration.UI_STATUS,
 }
@@ -42,6 +42,7 @@ class NativeStrictTest(TestCase):
             self.assertIn("ultManager.strictProxyMode && ultManager.proxyAddress.empty()", native_socket)
             self.assertIn("overrideProxyAddress.empty()", native_socket)
             self.assertIn("closeSocket(1, -1);", native_socket)
+            self.assertIn("blocked late direct tgnet socket", native_socket)
             self.assertIn('"native_setStrictProxyMode", "(IZ)V"', (root / integration.JNI).read_text())
             self.assertIn("routing NOT leak-verified", (root / integration.PROXY_UI).read_text())
             with self.assertRaises(ValueError):

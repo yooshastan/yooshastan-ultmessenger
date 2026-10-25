@@ -22,6 +22,7 @@ HEADER_METHOD = '    void setProxySettings(std::string address, uint16_t port, s
 HEADER_FIELD = '    std::string proxyAddress = "";\n'
 CPP_METHOD = 'void ConnectionsManager::setProxySettings(std::string address, uint16_t port, std::string username, std::string password, std::string secret) {\n'
 SOCKET_ATTACH = '    ConnectionsManager::getInstance(instanceNum).attachConnection(this);\n'
+SOCKET_INTERNAL = 'void ConnectionSocket::openConnectionInternal(bool ipv6) {\n'
 JNI_METHOD = 'void setProxySettings(JNIEnv *env, jclass c, jint instanceNum, jstring address, jint port, jstring username, jstring password, jstring secret) {\n'
 JNI_TABLE = '        {"native_setProxySettings", "(ILjava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V", (void *) setProxySettings},\n'
 UI_STATUS = '        details.append("Native strict fail-closed: Not implemented").append(nl);\n'
@@ -73,6 +74,17 @@ SOCKET_GUARD = """    // ULT experimental native strict mode: never open a direc
     }
 """
 
+SOCKET_INTERNAL_GUARD = """    // Recheck at socket creation: asynchronous proxy host resolution may
+    // finish after strict mode or the selected proxy has changed.
+    ConnectionsManager &ultManager = ConnectionsManager::getInstance(instanceNum);
+    if (ultManager.strictProxyMode && ultManager.proxyAddress.empty()
+            && overrideProxyAddress.empty()) {
+        if (LOGS_ENABLED) DEBUG_D("strict proxy mode blocked late direct tgnet socket");
+        closeSocket(1, -1);
+        return;
+    }
+"""
+
 
 def once(source: str, anchor: str, value: str) -> str:
     count = source.count(anchor)
@@ -96,6 +108,7 @@ def integrate(root: Path) -> list[Path]:
     header = once(header, HEADER_FIELD, HEADER_FIELD + '    bool strictProxyMode = false;\n')
     cpp = once(cpp, CPP_METHOD, NATIVE_METHOD + CPP_METHOD)
     socket = once(socket, SOCKET_ATTACH, SOCKET_ATTACH + SOCKET_GUARD)
+    socket = once(socket, SOCKET_INTERNAL, SOCKET_INTERNAL + SOCKET_INTERNAL_GUARD)
     jni = once(jni, JNI_METHOD,
                'void setStrictProxyMode(JNIEnv *env, jclass c, jint instanceNum, jboolean enabled) {\n'
                '    ConnectionsManager::getInstance(instanceNum).setStrictProxyMode(enabled == JNI_TRUE);\n'
