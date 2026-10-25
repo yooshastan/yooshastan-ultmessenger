@@ -15,8 +15,7 @@ permissions:
 jobs:
   build-aar:
     name: Build pinned AdGuard DNS AAR (NOT app-integrated)
-    # Pin runner image: rolling ubuntu-latest currently selects GCC 15,
-    # which is outside the pinned Conan 2.10.2 settings schema (max GCC 14).
+    # Pin the runner for reproducible GCC and Android build tool versions.
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
@@ -32,7 +31,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y ninja-build pkg-config make nasm gperf cmake git python3-pip
-          python3 -m pip install --user --break-system-packages conan==2.10.2
+          python3 -m pip install --user --break-system-packages conan==2.33.0
           export PATH="$HOME/.local/bin:$PATH"
           conan profile detect --force
           cmake --version
