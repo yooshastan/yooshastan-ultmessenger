@@ -33,6 +33,8 @@ class SettingsIntegrationTest(TestCase):
             self.assertIn("Android Private DNS (DoT) status", model.read_text())
             self.assertIn("UltAndroidDnsInspector.inspect", model.read_text())
             self.assertIn("Network privacy dashboard", model.read_text())
+            self.assertIn("Network test checklist", model.read_text())
+            self.assertIn("Copy network test report", model.read_text())
             self.assertIn("DNS-over-QUIC configuration (preview)", model.read_text())
             self.assertIn("Tracker domain rules (preview)", model.read_text())
             self.assertIn("DoQ QUIC backend: NOT INSTALLED", model.read_text())

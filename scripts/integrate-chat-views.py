@@ -50,10 +50,35 @@ ACTIVITY_FIELDS = """
                 .show();
     }
 
+
+    // Quick tab cycle uses the same local per-account preferences as the picker.
+    // No Telegram folder, read-state or backend ordering is changed.
+    private void advanceUltChatView() {
+        final Activity activity = getParentActivity();
+        if (activity == null) {
+            return;
+        }
+        final SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences(
+                UltChatView.PREFERENCES, Context.MODE_PRIVATE);
+        final String key = UltChatView.accountKey(currentAccount);
+        final String next = UltChatView.nextQuickTab(preferences.getString(key, UltChatView.ALL));
+        preferences.edit().putString(key, next).apply();
+        if (viewPages != null) {
+            for (ViewPage page : viewPages) {
+                if (page != null && page.dialogsAdapter != null) {
+                    page.dialogsAdapter.updateList(null);
+                }
+            }
+        }
+        android.widget.Toast.makeText(activity,
+                "ULT View: " + UltChatView.LABELS[UltChatView.modeIndex(next)],
+                android.widget.Toast.LENGTH_SHORT).show();
+    }
 """
 ACTIVITY_MENU_ITEMS = """        if (folderId == 0 && communityId == 0 && !onlySelect
                 && initialDialogsType == DIALOGS_TYPE_DEFAULT) {
             io.add(R.drawable.msg_customize, "ULT: Chat Views", this::showUltChatViewPicker);
+            io.add(R.drawable.msg_customize, "ULT: Next Chat Tab", this::advanceUltChatView);
             io.addGap();
         }
 

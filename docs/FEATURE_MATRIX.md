@@ -1,5 +1,8 @@
 # Ultgram — master feature inventory
 
+**Alpha 0.10h.1 (CI preview / device QA pending):** Local chat-view quick cycle + People filter, opt-in message timestamp and document metadata copy, compact spacing in the Ultgram Settings page, and a manual rootless network test report. Does not yet deliver native swipe tab strip, batch message actions, managed downloads or adjustable Telegram chat-list density. [Test plan](ALPHA10H1_OPT_IN_TOOLS_TEST.md).
+
+
 **Alpha 0.10g (draft):** Strict-proxy/WireGuard regression tests and a capture-path classifier are prepared, with a read-only VPN transport indicator in the existing Ultgram Settings dashboard. No Android device packet trace has yet verified strict failover, media, DNS, or external-link routing. [Regression matrix](ALPHA10G_NETWORK_REGRESSION.md). Nullgram/Nekogram-inspired navigation, sorting, message and media tools remain planned as opt-in UI improvements after the transport regression, without importing entire fork codebases.
 
 **Reviewed 2026-10-25.** This is the source of truth for what Yooshastan ULT Messenger ("Ultgram") has delivered, what is incomplete, and which requests still need feasibility or source-license review. The entries below represent **Ultgram implementation status**, not features automatically inherited from Nullgram, Nekogram, Goregram, or Plus Messenger.
