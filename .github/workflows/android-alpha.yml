@@ -1,14 +1,15 @@
-name: Android Alpha 0.10f.2 Android Private DNS posture
+name: Android Alpha 0.10f.4 privacy controls preview (DoQ not active)
 
 on:
   push:
-    branches: [feature/alpha01-bootstrap, feature/alpha02-native-themes, feature/alpha03-proxy-profiles, feature/alpha04-chat-layouts, feature/alpha05-chat-tools, feature/alpha06-message-tools, feature/alpha07-visual-identity, feature/alpha08-archive-visibility, feature/alpha09-translation, feature/alpha10-chat-view-presets, fix/samsung-a36-ult-themes, feature/alpha10b-paired-ult-themes, fix/alpha10b-inapp-night-toggle, feature/alpha10c-proxy-diagnostics, feature/alpha10d-proxy-privacy-verification, feature/alpha10e-external-link-guard, feature/alpha10f0-ult-settings-audit, feature/alpha10f1-native-strict, feature/alpha10f2-android-private-dns-posture]
+    branches: [feature/alpha01-bootstrap, feature/alpha02-native-themes, feature/alpha03-proxy-profiles, feature/alpha04-chat-layouts, feature/alpha05-chat-tools, feature/alpha06-message-tools, feature/alpha07-visual-identity, feature/alpha08-archive-visibility, feature/alpha09-translation, feature/alpha10-chat-view-presets, fix/samsung-a36-ult-themes, feature/alpha10b-paired-ult-themes, fix/alpha10b-inapp-night-toggle, feature/alpha10c-proxy-diagnostics, feature/alpha10d-proxy-privacy-verification, feature/alpha10e-external-link-guard, feature/alpha10f0-ult-settings-audit, feature/alpha10f1-native-strict, feature/alpha10f2-android-private-dns-posture, feature/alpha10f4-privacy-controls-spike]
     paths:
       - '.github/workflows/android-alpha.yml'
       - 'scripts/**'
       - 'tests/**'
       - 'appearance/**'
       - 'settings/**'
+      - 'dns/**'
       - 'proxy/**'
       - 'chat/**'
       - 'conversation/**'
@@ -78,6 +79,11 @@ jobs:
           mkdir -p /tmp/ult-dns-classes
           javac -d /tmp/ult-dns-classes settings/src/com/yooshastan/ultmessenger/settings/UltDnsPosture.java settings/tests/UltDnsPostureTest.java
           java -cp /tmp/ult-dns-classes UltDnsPostureTest
+          mkdir -p /tmp/ult-doq-contract
+          javac -d /tmp/ult-doq-contract dns/src/com/yooshastan/ultmessenger/dns/UltDoqEndpoint.java dns/src/com/yooshastan/ultmessenger/dns/UltDoqBootstrap.java dns/src/com/yooshastan/ultmessenger/dns/UltDnsTrackerPolicy.java dns/src/com/yooshastan/ultmessenger/dns/UltDoqResolver.java dns/tests/UltDoqContractTest.java dns/tests/UltDoqBootstrapTest.java dns/tests/UltDnsTrackerPolicyTest.java
+          java -cp /tmp/ult-doq-contract UltDoqContractTest
+          java -cp /tmp/ult-doq-contract UltDoqBootstrapTest
+          java -cp /tmp/ult-doq-contract UltDnsTrackerPolicyTest
           mkdir -p /tmp/ult-proxy-classes
           javac -d /tmp/ult-proxy-classes proxy/src/com/yooshastan/ultmessenger/proxy/UltProxyLabels.java proxy/src/com/yooshastan/ultmessenger/proxy/UltProxyDiagnostics.java proxy/tests/UltProxyLabelsTest.java proxy/tests/UltProxyDiagnosticsTest.java
           java -cp /tmp/ult-proxy-classes UltProxyLabelsTest
@@ -178,14 +184,14 @@ jobs:
             echo "::error::Expected one compiled APK, found ${#apks[@]}"
             exit 1
           fi
-          cp -- "${apks[0]}" "artifacts/ult-alpha10f2-preview-${{ matrix.variant }}-arm64-debug.apk"
+          cp -- "${apks[0]}" "artifacts/ult-alpha10f4-privacy-controls-preview-${{ matrix.variant }}-arm64-debug.apk"
           ls -lh artifacts/*.apk
           sha256sum artifacts/*.apk
       - name: Upload installable internal test APK
         if: steps.prerequisites.outputs.ready == 'true' && success()
         uses: actions/upload-artifact@v4
         with:
-          name: ult-alpha10f2-preview-${{ matrix.variant }}-android
+          name: ult-alpha10f4-privacy-controls-preview-${{ matrix.variant }}-android
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 14

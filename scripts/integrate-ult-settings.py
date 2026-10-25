@@ -14,6 +14,11 @@ DNS_MODELS = (
     Path("settings/src/com/yooshastan/ultmessenger/settings/UltDnsPosture.java"),
     Path("settings/src/com/yooshastan/ultmessenger/settings/UltAndroidDnsInspector.java"),
 )
+DNS_POLICY_MODELS = (
+    Path("dns/src/com/yooshastan/ultmessenger/dns/UltDoqEndpoint.java"),
+    Path("dns/src/com/yooshastan/ultmessenger/dns/UltDoqBootstrap.java"),
+    Path("dns/src/com/yooshastan/ultmessenger/dns/UltDnsTrackerPolicy.java"),
+)
 ROW_ANCHOR = (
     '        items.add(SettingCell.Factory.of(100, 0xFF8F77FF, 0xFF6E5BD9, '
     'R.drawable.mg_settings, getString(R.string.MercurygramSettings), '
@@ -54,6 +59,8 @@ def integrate(root: Path) -> Path:
     model_data = (root_models / MODEL).read_bytes()
     dns_models = [(relative.name, (root_models / relative).read_bytes())
                   for relative in DNS_MODELS]
+    dns_policy_models = [(relative.name, (root_models / relative).read_bytes())
+                         for relative in DNS_POLICY_MODELS]
     # Refuse changed upstream or missing model before touching generated source.
     target.write_text(updated, encoding="utf-8")
     dest = root / DEST
@@ -61,6 +68,10 @@ def integrate(root: Path) -> Path:
     dest.write_bytes(model_data)
     for name, data in dns_models:
         (dest.parent / name).write_bytes(data)
+    dns_policy_dest = root / "TMessagesProj/src/main/java/com/yooshastan/ultmessenger/dns"
+    dns_policy_dest.mkdir(parents=True, exist_ok=True)
+    for name, data in dns_policy_models:
+        (dns_policy_dest / name).write_bytes(data)
     return target
 
 

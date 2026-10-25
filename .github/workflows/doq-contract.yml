@@ -1,8 +1,8 @@
-name: Alpha 0.10f.3 DoQ contract (no network transport)
+name: Alpha 0.10f.4 DoQ and tracker policy contracts (no network transport)
 
 on:
   push:
-    branches: [feature/alpha10f3-doq-foundation]
+    branches: [feature/alpha10f3-doq-foundation, feature/alpha10f4-privacy-controls-spike]
     paths:
       - 'dns/**'
       - 'docs/ALPHA10F3_DOQ_FOUNDATION.md'
@@ -34,6 +34,13 @@ jobs:
           javac -d /tmp/ult-doq-contract \
             dns/src/com/yooshastan/ultmessenger/dns/UltDoqEndpoint.java \
             dns/src/com/yooshastan/ultmessenger/dns/UltDoqResolver.java \
-            dns/tests/UltDoqContractTest.java
+            dns/src/com/yooshastan/ultmessenger/dns/UltDnsTrackerPolicy.java \
+            dns/src/com/yooshastan/ultmessenger/dns/UltDoqBootstrap.java \
+            dns/tests/UltDoqContractTest.java \
+            dns/tests/UltDnsTrackerPolicyTest.java \
+            dns/tests/UltDoqBootstrapTest.java
       - name: Run contract test (not proof of active DoQ)
-        run: java -cp /tmp/ult-doq-contract UltDoqContractTest
+        run: |
+          java -cp /tmp/ult-doq-contract UltDoqContractTest
+          java -cp /tmp/ult-doq-contract UltDnsTrackerPolicyTest
+          java -cp /tmp/ult-doq-contract UltDoqBootstrapTest

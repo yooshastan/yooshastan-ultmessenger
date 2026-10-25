@@ -14,17 +14,28 @@ public final class UltDoqResolver {
 
     private final UltDoqEndpoint server;
     private final Backend backend;
+    private final UltDnsTrackerPolicy trackerPolicy;
 
     public UltDoqResolver(UltDoqEndpoint server, Backend backend) {
+        this(server, backend, null);
+    }
+
+    public UltDoqResolver(UltDoqEndpoint server, Backend backend,
+                          UltDnsTrackerPolicy trackerPolicy) {
         if (server == null) {
             throw new IllegalArgumentException("DoQ server must be configured");
         }
         this.server = server;
         this.backend = backend;
+        this.trackerPolicy = trackerPolicy;
     }
 
     public byte[] exchange(byte[] dnsQuery) throws IOException {
         validateQuery(dnsQuery);
+        // Opt-in filter is local. Never send a blocked hostname to the backend.
+        if (trackerPolicy != null && trackerPolicy.blocksQuestion(dnsQuery)) {
+            return trackerPolicy.nxdomainResponse(dnsQuery);
+        }
         if (backend == null) {
             throw new IOException("DoQ QUIC backend is not installed; DNS query not sent");
         }

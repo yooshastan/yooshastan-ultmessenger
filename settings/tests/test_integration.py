@@ -32,10 +32,15 @@ class SettingsIntegrationTest(TestCase):
             self.assertIn("ConnectionsManager.setUltStrictNativeProxyEnabled", model.read_text())
             self.assertIn("Android Private DNS (DoT) status", model.read_text())
             self.assertIn("UltAndroidDnsInspector.inspect", model.read_text())
-            self.assertIn("Dedicated DNS-over-QUIC and tracker protection", model.read_text())
-            self.assertIn("No app-enforced DoQ, encrypted-only DNS or tracker filtering.", model.read_text())
+            self.assertIn("Network privacy dashboard", model.read_text())
+            self.assertIn("DNS-over-QUIC configuration (preview)", model.read_text())
+            self.assertIn("Tracker domain rules (preview)", model.read_text())
+            self.assertIn("DoQ QUIC backend: NOT INSTALLED", model.read_text())
             for extra in integration.DNS_MODELS:
                 self.assertTrue((model.parent / extra.name).is_file())
+            policy = root / "TMessagesProj/src/main/java/com/yooshastan/ultmessenger/dns"
+            for extra in integration.DNS_POLICY_MODELS:
+                self.assertTrue((policy / extra.name).is_file())
             with self.assertRaises(ValueError):
                 integration.integrate(root)
 
