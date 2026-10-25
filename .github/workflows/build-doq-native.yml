@@ -15,7 +15,9 @@ permissions:
 jobs:
   build-aar:
     name: Build pinned AdGuard DNS AAR (NOT app-integrated)
-    runs-on: ubuntu-latest
+    # Pin runner image: rolling ubuntu-latest currently selects GCC 15,
+    # which is outside the pinned Conan 2.10.2 settings schema (max GCC 14).
+    runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
