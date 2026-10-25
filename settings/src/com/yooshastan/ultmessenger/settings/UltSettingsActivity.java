@@ -126,6 +126,7 @@ public final class UltSettingsActivity extends BaseFragment {
                 + "DoQ server configured: " + (!endpoint.isEmpty() ? "Yes" : "No") + "\n"
                 + "DoQ QUIC backend: NOT INSTALLED\n"
                 + "DNS tracker rules: SAVED DRAFT — NOT ACTIVE\n"
+                + "Android active-network VPN: " + UltAndroidDnsInspector.inspectVpn(context) + "\n"
                 + "Android network DNS: " + UltAndroidDnsInspector.inspect(context) + "\n\n"
                 + "UNPROTECTED/UNAUDITED: Java/HTTP, DNS, media, CDN and WebViews. "
                 + "A native proxy guard is not a whole-app VPN or a proven kill switch. "

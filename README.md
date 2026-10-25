@@ -1,5 +1,8 @@
 # Yooshastan ULT Messenger
 
+> **Alpha 0.10g network regression (draft, not device-verified):** Carries forward the native MTProxy strict-proxy experiment and existing Ultgram Settings, adds a read-only Android VPN transport hint, and introduces a redacted `tcpdump` text audit and 8-case WireGuard/MTProxy/DNS/media/external-link regression matrix. This is observation-only, **not a kill switch, DNS encryption implementation, or leak-proof guarantee**. Use the [0.10g test guide](docs/ALPHA10G_NETWORK_REGRESSION.md). Identity masking, tracker enforcement, and actual DoQ networking are deferred.
+
+
 **Who is your Telegram client bias?**
 
 An experimental, independent Android messaging project from Yooshastan Studios. Inspired by K-pop's *ultimate bias* and the flexibility of alternative Telegram clients.

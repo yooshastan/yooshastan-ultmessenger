@@ -4,11 +4,35 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.LinkProperties;
 import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.os.Build;
 
 /** Queries platform state only; makes no network or DNS requests. */
 public final class UltAndroidDnsInspector {
     private UltAndroidDnsInspector() { }
+
+    /** Read-only Android network hint; not evidence of an app's actual route. */
+    public static String inspectVpn(Context context) {
+        try {
+            ConnectivityManager manager = (ConnectivityManager) context.getSystemService(
+                    Context.CONNECTIVITY_SERVICE);
+            if (manager == null) {
+                return "Unknown (network service unavailable)";
+            }
+            Network network = manager.getActiveNetwork();
+            NetworkCapabilities capabilities = network == null ? null
+                    : manager.getNetworkCapabilities(network);
+            if (capabilities == null) {
+                return "Unknown (active network unavailable)";
+            }
+            if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) {
+                return "VPN transport reported; Ultgram routing NOT verified";
+            }
+            return "VPN transport not reported; Ultgram routing NOT verified";
+        } catch (RuntimeException inaccessible) {
+            return "Unknown (Android did not expose VPN state)";
+        }
+    }
 
     public static String inspect(Context context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {

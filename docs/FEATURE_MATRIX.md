@@ -1,5 +1,7 @@
 # Ultgram — master feature inventory
 
+**Alpha 0.10g (draft):** Strict-proxy/WireGuard regression tests and a capture-path classifier are prepared, with a read-only VPN transport indicator in the existing Ultgram Settings dashboard. No Android device packet trace has yet verified strict failover, media, DNS, or external-link routing. [Regression matrix](ALPHA10G_NETWORK_REGRESSION.md). Nullgram/Nekogram-inspired navigation, sorting, message and media tools remain planned as opt-in UI improvements after the transport regression, without importing entire fork codebases.
+
 **Reviewed 2026-10-25.** This is the source of truth for what Yooshastan ULT Messenger ("Ultgram") has delivered, what is incomplete, and which requests still need feasibility or source-license review. The entries below represent **Ultgram implementation status**, not features automatically inherited from Nullgram, Nekogram, Goregram, or Plus Messenger.
 
 **Status legend:** **CI shipped** = source and Android build available, but not necessarily field-validated; **device-tested** = user reported successful device testing; **partial** = foundation exists but requested scope is incomplete; **planned** = not implemented; **research** = feasibility, permission, license or platform limitation needs validation.
