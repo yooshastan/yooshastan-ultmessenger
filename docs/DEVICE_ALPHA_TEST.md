@@ -2,7 +2,7 @@
 
 ## Alpha 0.10c — read-only proxy diagnostics (new)
 
-1. After **successful** [GitHub Actions FOSS ARM64 CI](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha10c-proxy-diagnostics), download `ult-alpha10c-preview-foss-android` and extract the APK. Do not uninstall a working Ultgram to bypass a debug-signature mismatch; protect local messages and session access first.
+1. After **successful** [GitHub Actions FOSS ARM64 CI](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha10c-proxy-diagnostics), download `ult-alpha10c2-preview-foss-android` and extract the APK. Do not uninstall a working Ultgram to bypass a debug-signature mismatch; protect local messages and session access first.
 2. In **ULT Proxy Manager**, use the info/edit control on an existing non-Tor SOCKS5/MTProto proxy. Choose **Connection diagnostics**.
 3. Verify transport type, enabled/selected state and cached native reachability/latency are displayed. If a probe hasn't run yet, the dialog should report **Not yet checked**, not a fabricated success.
 4. Switch off **Use Proxy**, open diagnostics again and verify it says disabled / direct connections may be used. Do not assume Telegram is still using that proxy.
