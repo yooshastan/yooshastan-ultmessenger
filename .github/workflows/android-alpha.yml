@@ -78,7 +78,8 @@ jobs:
           python3 -m unittest discover -s settings/tests -p 'test_native_strict.py'
           mkdir -p /tmp/ult-dns-classes
           javac -d /tmp/ult-dns-classes settings/src/com/yooshastan/ultmessenger/settings/UltDnsPosture.java settings/tests/UltDnsPostureTest.java
-          java -cp /tmp/ult-dns-classes UltDnsPostureTest\n          mkdir -p /tmp/ult-doq-contract
+          java -cp /tmp/ult-dns-classes UltDnsPostureTest
+          mkdir -p /tmp/ult-doq-contract
           javac -d /tmp/ult-doq-contract dns/src/com/yooshastan/ultmessenger/dns/UltDoqEndpoint.java dns/src/com/yooshastan/ultmessenger/dns/UltDoqBootstrap.java dns/src/com/yooshastan/ultmessenger/dns/UltDnsTrackerPolicy.java dns/src/com/yooshastan/ultmessenger/dns/UltDoqResolver.java dns/tests/UltDoqContractTest.java dns/tests/UltDoqBootstrapTest.java dns/tests/UltDnsTrackerPolicyTest.java
           java -cp /tmp/ult-doq-contract UltDoqContractTest
           java -cp /tmp/ult-doq-contract UltDoqBootstrapTest
