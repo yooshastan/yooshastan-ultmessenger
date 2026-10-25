@@ -26,8 +26,10 @@ class SettingsIntegrationTest(TestCase):
             self.assertIn("new it.belloworld.mercurygram.ui.MercurygramSettingsActivity()", src)
             model = root / integration.DEST
             self.assertTrue(model.is_file())
-            self.assertIn("Strict proxy, encrypted DNS and tracker protection", model.read_text())
-            self.assertIn("No strict, DNS or tracker protection is active yet.", model.read_text())
+            self.assertIn("Experimental native proxy-only mode", model.read_text())
+            self.assertIn("ConnectionsManager.setUltStrictNativeProxyEnabled", model.read_text())
+            self.assertIn("Encrypted DNS / DoQ and tracker protection", model.read_text())
+            self.assertIn("No encrypted-only DNS or tracker blocking is active.", model.read_text())
             with self.assertRaises(ValueError):
                 integration.integrate(root)
 
