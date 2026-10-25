@@ -9,6 +9,7 @@ from pathlib import Path
 
 TARGET = Path("TMessagesProj/src/main/java/org/telegram/ui/ProxyListActivity.java")
 MODEL = Path("proxy/src/com/yooshastan/ultmessenger/proxy/UltProxyLabels.java")
+DIAGNOSTICS_MODEL = Path("proxy/src/com/yooshastan/ultmessenger/proxy/UltProxyDiagnostics.java")
 IMPORT_ANCHOR = "import org.telegram.ui.Components.SlideChooseView;\n"
 CLASS_ANCHOR = "public class ProxyListActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {\n"
 EDIT_ANCHOR = "            checkImageView.setOnClickListener(v -> presentFragment(new ProxySettingsActivity(currentInfo)));\n"
@@ -39,11 +40,13 @@ FIELDS = """
         }
         new android.app.AlertDialog.Builder(getParentActivity())
                 .setTitle("ULT Proxy Profiles")
-                .setItems(new String[]{"Edit connection", "Name this profile"}, (dialog, selected) -> {
+                .setItems(new String[]{"Edit connection", "Name this profile", "Connection diagnostics"}, (dialog, selected) -> {
                     if (selected == 0) {
                         presentFragment(new ProxySettingsActivity(info));
-                    } else {
+                    } else if (selected == 1) {
                         showUltRenameProxy(info);
+                    } else {
+                        showUltProxyDiagnostics(info);
                     }
                 })
                 .setNegativeButton(android.R.string.cancel, null)
@@ -90,6 +93,36 @@ FIELDS = """
                 .show();
     }
 
+
+    private void showUltProxyDiagnostics(SharedConfig.ProxyInfo info) {
+        final android.app.Activity activity = getParentActivity();
+        if (info == null || info.mgInternal || activity == null) {
+            return;
+        }
+        boolean selected = SharedConfig.currentProxy == info;
+        // This describes the proxy UI switch; Tor has separate upstream controls.
+        boolean enabled = useProxySettings && !SharedConfig.mg_useTor;
+        boolean connected = currentConnectionState == ConnectionsManager.ConnectionStateConnected;
+        boolean updating = currentConnectionState == ConnectionsManager.ConnectionStateUpdating;
+        String nl = System.lineSeparator();
+        StringBuilder details = new StringBuilder();
+        details.append("Transport: ").append(info.settings.getType().name()).append(nl);
+        details.append("Proxy setting: ").append(enabled ? "On" : "Off").append(nl);
+        if (SharedConfig.mg_useTor) {
+            details.append("Mercurygram Tor mode is active separately.").append(nl);
+        }
+        details.append("Selection/session: ").append(UltProxyDiagnostics.routeStatus(
+                enabled, selected, connected, updating)).append(nl);
+        details.append("Cached reachability: ").append(UltProxyDiagnostics.nativeProbeStatus(
+                info.checking, info.availableCheckTime, info.available, info.ping)).append(nl);
+        details.append(nl).append(UltProxyDiagnostics.dnsAuditWarning());
+        new android.app.AlertDialog.Builder(activity)
+                .setTitle("ULT Connection Diagnostics")
+                .setMessage(details.toString())
+                .setPositiveButton(android.R.string.ok, null)
+                .show();
+    }
+
     private void showUltProxyPrivacyInfo() {
         if (getParentActivity() == null) {
             return;
@@ -121,7 +154,8 @@ def integrate(root: Path) -> Path:
     if "ULT_PROXY_PRIVACY_MENU_ID" in source:
         raise ValueError("ULT proxy integration already applied")
     source = replace_once(source, IMPORT_ANCHOR,
-                          IMPORT_ANCHOR + "import com.yooshastan.ultmessenger.proxy.UltProxyLabels;\n")
+                          IMPORT_ANCHOR + "import com.yooshastan.ultmessenger.proxy.UltProxyLabels;\n"
+                          + "import com.yooshastan.ultmessenger.proxy.UltProxyDiagnostics;\n")
     source = replace_once(source, CLASS_ANCHOR, CLASS_ANCHOR + FIELDS)
     source = replace_once(source, EDIT_ANCHOR,
                           "            checkImageView.setOnClickListener(v -> showUltProxyActions(currentInfo));\n")
@@ -146,9 +180,15 @@ def integrate(root: Path) -> Path:
         raise FileNotFoundError(model_src)
     # Validate all source anchors and prerequisites before writing anything.
     model_data = model_src.read_bytes()
+    diagnostics_src = Path(__file__).resolve().parents[1] / DIAGNOSTICS_MODEL
+    diagnostics_dst = root / "TMessagesProj/src/main/java/com/yooshastan/ultmessenger/proxy/UltProxyDiagnostics.java"
+    if not diagnostics_src.is_file():
+        raise FileNotFoundError(diagnostics_src)
+    diagnostics_data = diagnostics_src.read_bytes()
     target.write_text(source, encoding="utf-8")
     model_dst.parent.mkdir(parents=True, exist_ok=True)
     model_dst.write_bytes(model_data)
+    diagnostics_dst.write_bytes(diagnostics_data)
     return target
 
 if __name__ == "__main__":
