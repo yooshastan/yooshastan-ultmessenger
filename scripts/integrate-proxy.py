@@ -122,6 +122,19 @@ FIELDS = """
         new android.app.AlertDialog.Builder(activity)
                 .setTitle("ULT Connection Diagnostics")
                 .setMessage(details.toString())
+                .setNeutralButton("Copy redacted status", (dialog, which) -> {
+                    String snapshot = UltProxyDiagnostics.redactedAuditSnapshot(
+                            info.settings.getType().name(), enabled, selected, connected, updating,
+                            info.checking, info.availableCheckTime, info.available, info.ping);
+                    android.content.ClipboardManager clipboard = (android.content.ClipboardManager)
+                            activity.getSystemService(Context.CLIPBOARD_SERVICE);
+                    if (clipboard != null) {
+                        clipboard.setPrimaryClip(android.content.ClipData.newPlainText(
+                                "ULT proxy status", snapshot));
+                        Toast.makeText(activity, "Redacted status copied to clipboard",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                })
                 .setPositiveButton(android.R.string.ok, null)
                 .show();
     }
