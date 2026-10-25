@@ -27,7 +27,7 @@ Do not intentionally shut down a shared proxy or expose private services to simu
 
 ## Capture point matters
 
-The **Fedora proxy host** at the forwarded internal port can confirm incoming TCP and MTProto activity; it **cannot** see ordinary phone-to-internet DNS or unrelated traffic. In the user's confirmed test, incoming 5G packets reached the Fedora proxy after correcting a router forwarding rule. That confirms transport reachability only.
+The **Fedora proxy host** at the forwarded internal port can confirm incoming TCP and MTProto activity; it **cannot** see ordinary phone-to-internet DNS or unrelated traffic. In controlled testing, incoming packets reached the Fedora proxy after correcting a forwarding rule. That confirms transport reachability only.
 
 For phone egress on **home Wi-Fi**, capture on an authorized router/gateway/AP **before NAT**, or another trusted network topology through which the phone's traffic actually flows. Do not assume the Fedora workstation sees this traffic on a switched LAN. A home gateway cannot see the phone's independent cellular egress when the phone is on 5G.
 
@@ -40,10 +40,10 @@ The following optional, dependency-free utility reads existing **tcpdump text** 
 On the Fedora host, with this project checked out and tcpdump available:
 
 ~~~bash
-sudo timeout -s INT 30s tcpdump -nn -q -l -ni enp6s0f4u2 \
-  'tcp dst port 8443 and dst host 10.0.0.169' |
+sudo timeout -s INT 30s tcpdump -nn -q -l -ni HOST_INTERFACE \
+  'tcp dst port 8443 and dst host PROXY_HOST_IP' |
 python3 scripts/alpha10d-netwatch.py \
-  --capture-role proxy-host --proxy-ip 10.0.0.169 --proxy-port 8443
+  --capture-role proxy-host --proxy-ip PROXY_HOST_IP --proxy-port 8443
 ~~~
 
 Expected report: inbound packet count and number of observed source addresses, **not** a leak verdict. Unsolicited internet port probes may contribute to this count.
