@@ -42,8 +42,8 @@ public final class UltProxyDiagnostics {
     }
 
     public static String dnsAuditWarning() {
-        return "DNS path NOT audited. Encrypted DNS and strict no-direct-fallback "
-                + "are NOT implemented. A successful proxy check is not proof "
-                + "that all Telegram, media, Java and native lookups use the proxy.";
+        return "DNS routing unverified. DoQ/DoH3 and strict no-direct-fallback "
+                + "are NOT implemented. A native proxy check is not proof "
+                + "that Java, media or native DNS traffic uses the proxy.";
     }
 }
