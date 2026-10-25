@@ -1,4 +1,4 @@
-name: Android Alpha 0.10c proxy diagnostics preview
+name: Android Alpha 0.10c.2 proxy UX and DNS audit preview
 
 on:
   push:
@@ -15,6 +15,10 @@ on:
       - 'assets/**'
       - 'upstream/**'
   workflow_dispatch:
+
+concurrency:
+  group: android-alpha-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -161,14 +165,14 @@ jobs:
             echo "::error::Expected one compiled APK, found ${#apks[@]}"
             exit 1
           fi
-          cp -- "${apks[0]}" "artifacts/ult-alpha10c-preview-${{ matrix.variant }}-arm64-debug.apk"
+          cp -- "${apks[0]}" "artifacts/ult-alpha10c2-preview-${{ matrix.variant }}-arm64-debug.apk"
           ls -lh artifacts/*.apk
           sha256sum artifacts/*.apk
       - name: Upload installable internal test APK
         if: steps.prerequisites.outputs.ready == 'true' && success()
         uses: actions/upload-artifact@v4
         with:
-          name: ult-alpha10c-preview-${{ matrix.variant }}-android
+          name: ult-alpha10c2-preview-${{ matrix.variant }}-android
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 14
