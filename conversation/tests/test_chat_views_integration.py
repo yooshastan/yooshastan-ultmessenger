@@ -37,6 +37,8 @@ class ChatViewIntegrationTest(TestCase):
             activity = a.read_text()
             adapter = b.read_text()
             self.assertIn("ULT: Chat Views", activity)
+            self.assertIn("ULT: Next Chat Tab", activity)
+            self.assertIn("nextQuickTab", activity)
             self.assertIn("setSingleChoiceItems(UltChatView.LABELS", activity)
             self.assertNotIn("setMessage(", activity)
             self.assertIn("accountKey(currentAccount)", activity)

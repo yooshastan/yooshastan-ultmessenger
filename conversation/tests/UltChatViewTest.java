@@ -9,6 +9,10 @@ public final class UltChatViewTest {
         ok(UltChatView.ALL.equals(UltChatView.sanitize("bogus")), "unknown defaults all");
         ok(UltChatView.MODES.length == UltChatView.LABELS.length, "labels match keys");
         ok(UltChatView.modeIndex("bots") == 4, "bot index");
+        ok(UltChatView.modeIndex("people") == 5, "people index");
+        ok(UltChatView.PEOPLE.equals(UltChatView.nextQuickTab(UltChatView.BOTS)), "cycle to people");
+        ok(UltChatView.ALL.equals(UltChatView.nextQuickTab(UltChatView.PEOPLE)), "cycle wraps to all");
+        ok(UltChatView.ALL.equals(UltChatView.nextQuickTab(UltChatView.UNREAD_FIRST)), "sorting mode exits to all");
         ok(!UltChatView.accountKey(0).equals(UltChatView.accountKey(1)), "per-account isolation");
         boolean badKey = false;
         try { UltChatView.accountKey(-1); } catch (IllegalArgumentException expected) { badKey = true; }
@@ -20,6 +24,9 @@ public final class UltChatViewTest {
         ok(!UltChatView.accepts(UltChatView.GROUPS, false, false, true, false), "channels not groups");
         ok(UltChatView.accepts(UltChatView.CHANNELS, false, false, true, false), "channels");
         ok(UltChatView.accepts(UltChatView.BOTS, false, false, false, true), "bots");
+        ok(UltChatView.accepts(UltChatView.PEOPLE, false, false, false, false), "people");
+        ok(!UltChatView.accepts(UltChatView.PEOPLE, false, false, false, true), "people exclude bots");
+        ok(!UltChatView.accepts(UltChatView.PEOPLE, false, true, false, false), "people exclude groups");
         ok(!UltChatView.accepts(UltChatView.BOTS, false, false, false, false), "normal users not bots");
         ok(UltChatView.accepts(UltChatView.UNREAD_FIRST, false, false, false, false), "sort mode retains all");
         ok(UltChatView.compareUnreadFirst(true, false, false, true, false, true) < 0, "archive first");

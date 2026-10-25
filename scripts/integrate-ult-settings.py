@@ -13,6 +13,7 @@ DEST = Path("TMessagesProj/src/main/java/com/yooshastan/ultmessenger/settings/Ul
 DNS_MODELS = (
     Path("settings/src/com/yooshastan/ultmessenger/settings/UltDnsPosture.java"),
     Path("settings/src/com/yooshastan/ultmessenger/settings/UltAndroidDnsInspector.java"),
+    Path("settings/src/com/yooshastan/ultmessenger/settings/UltNetworkTestReport.java"),
 )
 DNS_POLICY_MODELS = (
     Path("dns/src/com/yooshastan/ultmessenger/dns/UltDoqEndpoint.java"),

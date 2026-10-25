@@ -16,6 +16,16 @@ public final class UltChatToolsTest {
         if (!UltChatTools.hasTopic(42) || UltChatTools.hasTopic(0) || UltChatTools.hasTopic(-1)) {
             throw new AssertionError("Topic detection failed");
         }
+        if (!"12345".equals(UltChatTools.unixTimestamp(12345))
+                || UltChatTools.unixTimestamp(0) != null) {
+            throw new AssertionError("Message time should be a raw positive Unix timestamp");
+        }
+        if (!"MIME: audio/flac\nBytes: 4096".equals(UltChatTools.mediaDetails("audio/flac", 4096))) {
+            throw new AssertionError("Document metadata should be deterministic");
+        }
+        if (!"MIME: unknown\nBytes: 0".equals(UltChatTools.mediaDetails("../bad", -8))) {
+            throw new AssertionError("Document metadata must not expose malformed MIME data");
+        }
         System.out.println("ULT chat tools model passed");
     }
 }

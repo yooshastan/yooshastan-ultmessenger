@@ -29,6 +29,7 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ProxyListActivity;
 import org.telegram.ui.ThemeActivity;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -38,6 +39,10 @@ import java.util.Set;
  */
 public final class UltSettingsActivity extends BaseFragment {
     private static final String DNS_PREFS = "ult_dns_preview_config";
+    private static final String UI_PREFS = "ult_interface_preferences";
+    private static final String COMPACT_ROWS = "compact_ult_settings";
+    private final ArrayList<LinearLayout> settingsRows = new ArrayList<>();
+    private boolean compactRows;
     private static final String DNS_ENDPOINT = "doq_endpoint";
     private static final String DNS_BOOTSTRAP = "doq_bootstrap_ipv4";
     private static final String DNS_BLOCKED = "tracker_blocked_domains";
@@ -45,6 +50,9 @@ public final class UltSettingsActivity extends BaseFragment {
 
     @Override
     public View createView(Context context) {
+        settingsRows.clear();
+        compactRows = context.getSharedPreferences(UI_PREFS, Context.MODE_PRIVATE)
+                .getBoolean(COMPACT_ROWS, false);
         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
         actionBar.setTitle("Ultgram Settings");
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
@@ -66,6 +74,9 @@ public final class UltSettingsActivity extends BaseFragment {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         addSection(context, content, "APPEARANCE");
+        addLink(context, content, "Compact Ultgram Settings rows",
+                "Reduce spacing in this settings page only (not the chat list)",
+                () -> setCompactRows(context, !compactRows));
         addLink(context, content, "ULT theme presets", "Six presets, fixed colors and light/dark pairing",
                 () -> presentFragment(new ThemeActivity(ThemeActivity.THEME_TYPE_BASIC)));
 
@@ -74,7 +85,7 @@ public final class UltSettingsActivity extends BaseFragment {
                 "In Chat Settings, open the ⋮ menu → ULT Chat Layout",
                 () -> presentFragment(new ThemeActivity(ThemeActivity.THEME_TYPE_BASIC)));
         addLink(context, content, "Chat views and sorting",
-                "All, Unread, Groups, Channels, Bots and Unread First",
+                "All, Unread, Groups, Channels, Bots, People and Unread First",
                 () -> showChatViewPicker(context));
         addNote(context, content, "Archive row visibility",
                 "Chats → ⋮ → ULT: Hide Archive row (account-specific display only).");
@@ -84,6 +95,12 @@ public final class UltSettingsActivity extends BaseFragment {
                 "Copy chat IDs from the chat menu or message IDs from the long-press menu.");
 
         addSection(context, content, "PRIVACY AND NETWORK");
+        addLink(context, content, "Network test checklist",
+                "Mark the manual Wonhee/MTProxy tests you performed; no packet capture",
+                () -> showNetworkTestChecklist(context));
+        addLink(context, content, "Copy network test report",
+                "Read-only VPN hint, native guard and manual test states; no IPs or secrets",
+                () -> showNetworkTestReport(context));
         addLink(context, content, "Network privacy dashboard",
                 "Current safeguards, unsupported paths and copyable diagnostic summary",
                 () -> showPrivacyDashboard(context));
@@ -111,6 +128,71 @@ public final class UltSettingsActivity extends BaseFragment {
                 "Independent Telegram-compatible client. Existing Mercurygram settings remain separate.");
         fragmentView = scroll;
         return fragmentView;
+    }
+
+
+    private void setCompactRows(Context context, boolean enabled) {
+        compactRows = enabled;
+        context.getSharedPreferences(UI_PREFS, Context.MODE_PRIVATE)
+                .edit().putBoolean(COMPACT_ROWS, enabled).apply();
+        for (LinearLayout row : settingsRows) {
+            int vertical = AndroidUtilities.dp(enabled ? 9 : 14);
+            row.setPadding(AndroidUtilities.dp(20), vertical,
+                    AndroidUtilities.dp(20), vertical);
+        }
+        android.widget.Toast.makeText(context,
+                enabled ? "Compact Ultgram Settings enabled" : "Default spacing restored",
+                android.widget.Toast.LENGTH_SHORT).show();
+    }
+
+    private SharedPreferences testPrefs(Context context) {
+        return context.getSharedPreferences(UltNetworkTestReport.PREFERENCES, Context.MODE_PRIVATE);
+    }
+
+    private boolean[] manualChecks(Context context) {
+        boolean[] values = new boolean[UltNetworkTestReport.CHECKS.length];
+        SharedPreferences prefs = testPrefs(context);
+        for (int i = 0; i < values.length; i++) {
+            values[i] = prefs.getBoolean(UltNetworkTestReport.key(i), false);
+        }
+        return values;
+    }
+
+    private void showNetworkTestChecklist(Context context) {
+        final boolean[] values = manualChecks(context);
+        new android.app.AlertDialog.Builder(context)
+                .setTitle("ULT manual network checks")
+                .setMultiChoiceItems(UltNetworkTestReport.CHECKS, values,
+                        (dialog, which, checked) -> values[which] = checked)
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Save checks", (dialog, which) -> {
+                    SharedPreferences.Editor edit = testPrefs(context).edit();
+                    for (int i = 0; i < values.length; i++) {
+                        edit.putBoolean(UltNetworkTestReport.key(i), values[i]);
+                    }
+                    edit.apply();
+                })
+                .show();
+    }
+
+    private void showNetworkTestReport(Context context) {
+        final String report = UltNetworkTestReport.render(
+                UltAndroidDnsInspector.inspectVpn(context),
+                ConnectionsManager.isUltStrictNativeProxyEnabled(),
+                android.os.Build.VERSION.SDK_INT, manualChecks(context));
+        new android.app.AlertDialog.Builder(context)
+                .setTitle("Ultgram network test report")
+                .setMessage(report)
+                .setNeutralButton("Copy report", (dialog, which) -> {
+                    ClipboardManager clipboard = (ClipboardManager)
+                            context.getSystemService(Context.CLIPBOARD_SERVICE);
+                    if (clipboard != null) {
+                        clipboard.setPrimaryClip(
+                                ClipData.newPlainText("Ultgram network test report", report));
+                    }
+                })
+                .setPositiveButton("Done", null)
+                .show();
     }
 
     private SharedPreferences dnsPrefs(Context context) {
@@ -356,12 +438,14 @@ public final class UltSettingsActivity extends BaseFragment {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
     }
 
-    private static LinearLayout createRow(Context context, LinearLayout parent,
+    private LinearLayout createRow(Context context, LinearLayout parent,
                                            String title, String detail, boolean clickable) {
         LinearLayout row = new LinearLayout(context);
         row.setOrientation(LinearLayout.VERTICAL);
-        row.setPadding(AndroidUtilities.dp(20), AndroidUtilities.dp(14),
-                AndroidUtilities.dp(20), AndroidUtilities.dp(14));
+        int rowSpacing = AndroidUtilities.dp(compactRows ? 9 : 14);
+        row.setPadding(AndroidUtilities.dp(20), rowSpacing,
+                AndroidUtilities.dp(20), rowSpacing);
+        settingsRows.add(row);
         row.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
         TextView titleView = new TextView(context);
         titleView.setText(title);
@@ -383,11 +467,11 @@ public final class UltSettingsActivity extends BaseFragment {
         return row;
     }
 
-    private static void addNote(Context context, LinearLayout parent, String title, String detail) {
+    private void addNote(Context context, LinearLayout parent, String title, String detail) {
         createRow(context, parent, title, detail, false);
     }
 
-    private static void addLink(Context context, LinearLayout parent,
+    private void addLink(Context context, LinearLayout parent,
                                  String title, String detail, Runnable action) {
         createRow(context, parent, title, detail, true).setOnClickListener(view -> action.run());
     }

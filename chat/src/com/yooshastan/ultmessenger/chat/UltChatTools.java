@@ -31,6 +31,19 @@ public final class UltChatTools {
         return "https://t.me/" + candidate.toLowerCase(Locale.ROOT);
     }
 
+    /** Local message metadata, copied only following an explicit menu tap. */
+    public static String unixTimestamp(long seconds) {
+        return seconds > 0 ? Long.toString(seconds) : null;
+    }
+
+    /** Safe document metadata; never reads, opens or exports the file. */
+    public static String mediaDetails(String mime, long bytes) {
+        String safeMime = mime != null && mime.length() <= 96 && !mime.contains("..")
+                && mime.matches("[A-Za-z0-9][A-Za-z0-9.+_-]*/[A-Za-z0-9][A-Za-z0-9.+_-]*")
+                ? mime : "unknown";
+        return "MIME: " + safeMime + "\nBytes: " + Math.max(0L, bytes);
+    }
+
     public static boolean hasTopic(long topicId) {
         return topicId > 0;
     }

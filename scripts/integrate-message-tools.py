@@ -13,6 +13,8 @@ HANDLER_ANCHOR = "            case OPTION_COPY: {\n"
 
 CONSTANTS = """    public final static int OPTION_ULT_COPY_MESSAGE_ID = 0x554c56;
     public final static int OPTION_ULT_COPY_SENDER_ID = 0x554c57;
+    public final static int OPTION_ULT_COPY_UNIX_TIME = 0x554c58;
+    public final static int OPTION_ULT_COPY_MEDIA_DETAILS = 0x554c59;
 """
 MENU = """        // ULT: local read-only metadata; never copy private message content.
         if (selectedObject != null && selectedObject.messageOwner != null
@@ -23,6 +25,16 @@ MENU = """        // ULT: local read-only metadata; never copy private message c
             if (selectedObject.getFromChatId() != 0) {
                 items.add("ULT: Copy sender peer ID");
                 options.add(OPTION_ULT_COPY_SENDER_ID);
+                icons.add(R.drawable.msg_copy);
+            }
+            if (selectedObject.messageOwner.date > 0) {
+                items.add("ULT: Copy message time (Unix UTC)");
+                options.add(OPTION_ULT_COPY_UNIX_TIME);
+                icons.add(R.drawable.msg_copy);
+            }
+            if (selectedObject.getDocument() != null) {
+                items.add("ULT: Copy document details");
+                options.add(OPTION_ULT_COPY_MEDIA_DETAILS);
                 icons.add(R.drawable.msg_copy);
             }
         }
@@ -39,6 +51,25 @@ HANDLERS = """            case OPTION_ULT_COPY_MESSAGE_ID: {
                 if (senderPeerId != 0) {
                     AndroidUtilities.addToClipboard(UltChatTools.numericId(senderPeerId));
                     android.widget.Toast.makeText(getParentActivity(), "Sender peer ID copied",
+                            android.widget.Toast.LENGTH_SHORT).show();
+                }
+                break;
+            }
+            case OPTION_ULT_COPY_UNIX_TIME: {
+                final String timestamp = UltChatTools.unixTimestamp(selectedObject.messageOwner.date);
+                if (timestamp != null) {
+                    AndroidUtilities.addToClipboard(timestamp);
+                    android.widget.Toast.makeText(getParentActivity(), "Unix timestamp copied",
+                            android.widget.Toast.LENGTH_SHORT).show();
+                }
+                break;
+            }
+            case OPTION_ULT_COPY_MEDIA_DETAILS: {
+                if (selectedObject.getDocument() != null) {
+                    AndroidUtilities.addToClipboard(UltChatTools.mediaDetails(
+                            selectedObject.getDocument().mime_type,
+                            selectedObject.getDocument().size));
+                    android.widget.Toast.makeText(getParentActivity(), "Document details copied",
                             android.widget.Toast.LENGTH_SHORT).show();
                 }
                 break;

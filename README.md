@@ -1,5 +1,8 @@
 # Yooshastan ULT Messenger
 
+> **Alpha 0.10h.1 (draft, not device-tested):** Adds a quick-cycle entry for locally filtered chats (including People/private chats), opt-in message timestamp and document metadata copy actions, compact rows within **Ultgram Settings only**, and a redacted manually marked Network Test Report compatible with Wonhee Proxy remaining connected. This is **not** a native swipe-tab strip, bulk message manager, download manager or complete appearance redesign. No new VPN/DNS/proxy enforcement is activated. [Test instructions](docs/ALPHA10H1_OPT_IN_TOOLS_TEST.md). The feature work is staged on top of Alpha 0.10g's device-tested baseline.
+
+
 > **Alpha 0.10g network regression (draft, not device-verified):** Carries forward the native MTProxy strict-proxy experiment and existing Ultgram Settings, adds a read-only Android VPN transport hint, and introduces a redacted `tcpdump` text audit and 8-case WireGuard/MTProxy/DNS/media/external-link regression matrix. This is observation-only, **not a kill switch, DNS encryption implementation, or leak-proof guarantee**. Use the [0.10g test guide](docs/ALPHA10G_NETWORK_REGRESSION.md). Identity masking, tracker enforcement, and actual DoQ networking are deferred.
 
 

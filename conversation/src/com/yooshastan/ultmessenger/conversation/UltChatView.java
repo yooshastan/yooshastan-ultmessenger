@@ -11,11 +11,13 @@ public final class UltChatView {
     public static final String GROUPS = "groups";
     public static final String CHANNELS = "channels";
     public static final String BOTS = "bots";
+    public static final String PEOPLE = "people";
     public static final String UNREAD_FIRST = "unread_first";
-    public static final String[] MODES = {ALL, UNREAD, GROUPS, CHANNELS, BOTS, UNREAD_FIRST};
+    public static final String[] MODES = {ALL, UNREAD, GROUPS, CHANNELS, BOTS, PEOPLE, UNREAD_FIRST};
+    private static final String[] QUICK_TABS = {ALL, UNREAD, GROUPS, CHANNELS, BOTS, PEOPLE};
     public static final String[] LABELS = {
         "All chats (Telegram order)", "Unread only", "Groups only", "Channels only",
-        "Bots only", "Unread first (pinned stay on top)"
+        "Bots only", "People / private chats", "Unread first (pinned stay on top)"
     };
 
     private UltChatView() {}
@@ -28,6 +30,17 @@ public final class UltChatView {
     public static String sanitize(String mode) {
         if (mode != null) {
             for (String candidate : MODES) if (candidate.equals(mode)) return candidate;
+        }
+        return ALL;
+    }
+
+    /** Cycles opt-in display tabs; the unread-first sorting preset is not a category. */
+    public static String nextQuickTab(String currentMode) {
+        String safe = sanitize(currentMode);
+        for (int i = 0; i < QUICK_TABS.length; i++) {
+            if (QUICK_TABS[i].equals(safe)) {
+                return QUICK_TABS[(i + 1) % QUICK_TABS.length];
+            }
         }
         return ALL;
     }
@@ -45,6 +58,7 @@ public final class UltChatView {
             case GROUPS: return group;
             case CHANNELS: return channel;
             case BOTS: return bot;
+            case PEOPLE: return !group && !channel && !bot;
             default: return true; // All and Unread First include all normal dialogs.
         }
     }

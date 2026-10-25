@@ -1,8 +1,8 @@
-name: Android Alpha 0.10g network regression (DoQ not active)
+name: Android Alpha 0.10h.1 opt-in tools and test report
 
 on:
   push:
-    branches: [feature/alpha01-bootstrap, feature/alpha02-native-themes, feature/alpha03-proxy-profiles, feature/alpha04-chat-layouts, feature/alpha05-chat-tools, feature/alpha06-message-tools, feature/alpha07-visual-identity, feature/alpha08-archive-visibility, feature/alpha09-translation, feature/alpha10-chat-view-presets, fix/samsung-a36-ult-themes, feature/alpha10b-paired-ult-themes, fix/alpha10b-inapp-night-toggle, feature/alpha10c-proxy-diagnostics, feature/alpha10d-proxy-privacy-verification, feature/alpha10e-external-link-guard, feature/alpha10f0-ult-settings-audit, feature/alpha10f1-native-strict, feature/alpha10f2-android-private-dns-posture, feature/alpha10f4-privacy-controls-spike, feature/alpha10g-network-regression]
+    branches: [feature/alpha01-bootstrap, feature/alpha02-native-themes, feature/alpha03-proxy-profiles, feature/alpha04-chat-layouts, feature/alpha05-chat-tools, feature/alpha06-message-tools, feature/alpha07-visual-identity, feature/alpha08-archive-visibility, feature/alpha09-translation, feature/alpha10-chat-view-presets, fix/samsung-a36-ult-themes, feature/alpha10b-paired-ult-themes, fix/alpha10b-inapp-night-toggle, feature/alpha10c-proxy-diagnostics, feature/alpha10d-proxy-privacy-verification, feature/alpha10e-external-link-guard, feature/alpha10f0-ult-settings-audit, feature/alpha10f1-native-strict, feature/alpha10f2-android-private-dns-posture, feature/alpha10f4-privacy-controls-spike, feature/alpha10g-network-regression, feature/alpha10h1-quick-tools-report]
     paths:
       - '.github/workflows/android-alpha.yml'
       - 'scripts/**'
@@ -77,10 +77,14 @@ jobs:
           python3 -m unittest discover -s settings/tests -p 'test_integration.py'
           python3 -m unittest discover -s settings/tests -p 'test_native_strict.py'
           python3 -m unittest discover -s settings/tests -p 'test_alpha10g_settings_contract.py'
+          python3 -m unittest discover -s settings/tests -p 'test_alpha10h1_contract.py'
           python3 -m unittest discover -s proxy/tests -p 'test_alpha10g_path_audit.py'
           mkdir -p /tmp/ult-dns-classes
           javac -d /tmp/ult-dns-classes settings/src/com/yooshastan/ultmessenger/settings/UltDnsPosture.java settings/tests/UltDnsPostureTest.java
           java -cp /tmp/ult-dns-classes UltDnsPostureTest
+          mkdir -p /tmp/ult-network-report
+          javac -d /tmp/ult-network-report settings/src/com/yooshastan/ultmessenger/settings/UltNetworkTestReport.java settings/tests/UltNetworkTestReportTest.java
+          java -cp /tmp/ult-network-report UltNetworkTestReportTest
           mkdir -p /tmp/ult-doq-contract
           javac -d /tmp/ult-doq-contract dns/src/com/yooshastan/ultmessenger/dns/UltDoqEndpoint.java dns/src/com/yooshastan/ultmessenger/dns/UltDoqBootstrap.java dns/src/com/yooshastan/ultmessenger/dns/UltDnsTrackerPolicy.java dns/src/com/yooshastan/ultmessenger/dns/UltDoqResolver.java dns/tests/UltDoqContractTest.java dns/tests/UltDoqBootstrapTest.java dns/tests/UltDnsTrackerPolicyTest.java
           java -cp /tmp/ult-doq-contract UltDoqContractTest
@@ -186,14 +190,14 @@ jobs:
             echo "::error::Expected one compiled APK, found ${#apks[@]}"
             exit 1
           fi
-          cp -- "${apks[0]}" "artifacts/ult-alpha10g-network-regression-${{ matrix.variant }}-arm64-debug.apk"
+          cp -- "${apks[0]}" "artifacts/ult-alpha10h1-opt-in-tools-${{ matrix.variant }}-arm64-debug.apk"
           ls -lh artifacts/*.apk
           sha256sum artifacts/*.apk
       - name: Upload installable internal test APK
         if: steps.prerequisites.outputs.ready == 'true' && success()
         uses: actions/upload-artifact@v4
         with:
-          name: ult-alpha10g-network-regression-${{ matrix.variant }}-android
+          name: ult-alpha10h1-opt-in-tools-${{ matrix.variant }}-android
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 14
