@@ -9,6 +9,9 @@
 5. With no working proxy, verify the app does not claim a leak-proof or encrypted DNS route. Re-enable a known-good proxy and test chats/media normally.
 6. Confirm opening diagnostics causes no profile rewrite, transport switch, DNS action, clipboard copy, request to an external diagnostics service, or new permission prompt.
 7. Repeat on **Samsung A36** and **Pixel 8a/GrapheneOS**. Verify your six ULT day/night themes and translation still work. Never send proxy secrets or private chats in issue logs or screenshots.
+8. Alpha 0.10c.2: check **ULT Proxy Manager** title, back arrow and privacy/info icon against both a dark (e.g., Candy Pink Night) and light ULT preset. They should use readable foreground colors on the translucent page header, including after an in-app sun/moon toggle.
+9. For a saved-but-not-selected proxy, the diagnostic dialog should identify **Global Use Proxy switch: On** separately from **Saved but not selected**; it must not call that profile connected.
+10. See [gateway-based DNS and direct-traffic test matrix](PROXY_DNS_AUDIT.md). We cannot claim no leaks from a native proxy ping.
 
 **Boundaries:** This is a **read-only report on existing Telegram checks**. Neither DoQ/DoH3 nor strict fail-closed routing is shipped. Consult the [Alpha 0.10c DNS/proxy audit](PROXY_DNS_AUDIT.md).
 
