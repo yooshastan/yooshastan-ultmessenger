@@ -12,7 +12,9 @@ import com.yooshastan.ultmessenger.proxy.UltExternalLinkPolicy;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
+import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
@@ -67,8 +69,11 @@ public final class UltSettingsActivity extends BaseFragment {
         addLink(context, content, "Confirm external links",
                 "Ask before opening HTTP(S) links outside the Telegram proxy",
                 () -> showExternalLinkGuard(context));
-        addNote(context, content, "Strict proxy, encrypted DNS and tracker protection",
-                "Under development in Alpha 0.10f. No strict, DNS or tracker protection is active yet.");
+        addLink(context, content, "Experimental native proxy-only mode",
+                "Opt-in guard for native Telegram sockets; not a full traffic firewall",
+                () -> showNativeStrictProxy(context));
+        addNote(context, content, "Encrypted DNS / DoQ and tracker protection",
+                "Still under development. No encrypted-only DNS or tracker blocking is active.");
 
         addSection(context, content, "ABOUT");
         addNote(context, content, "Ultgram by Yooshastan Studios",
@@ -105,6 +110,32 @@ public final class UltSettingsActivity extends BaseFragment {
                 .setNeutralButton(enabled ? "Disable" : "Enable", (dialog, which) ->
                         UltExternalLinkPolicy.setEnabled(context, !enabled))
                 .setPositiveButton("Done", null)
+                .show();
+    }
+
+    private void showNativeStrictProxy(Context context) {
+        final boolean enabled = ConnectionsManager.isUltStrictNativeProxyEnabled();
+        if (!enabled && SharedConfig.mg_useTor) {
+            new android.app.AlertDialog.Builder(context)
+                    .setTitle("Native strict mode unavailable with Tor")
+                    .setMessage("Mercurygram Tor owns the native proxy slot. "
+                            + "Turn Tor off before testing Ultgram's experimental native guard.")
+                    .setPositiveButton("OK", null)
+                    .show();
+            return;
+        }
+        new android.app.AlertDialog.Builder(context)
+                .setTitle("Experimental native proxy-only: " + (enabled ? "On" : "Off"))
+                .setMessage("When on, Ultgram refuses to open a direct native Telegram "
+                        + "socket without an active proxy address. An unavailable or disabled "
+                        + "proxy may stop Telegram networking until a working proxy is "
+                        + "selected or this mode is turned off. This does not cover Java "
+                        + "HTTP, DNS, WebViews, external media or all traffic paths. "
+                        + "It is NOT yet verified as fail-closed. Test with PCAPdroid "
+                        + "before relying on it for privacy.")
+                .setNeutralButton(enabled ? "Disable" : "Enable (experimental)", (dialog, which) ->
+                        ConnectionsManager.setUltStrictNativeProxyEnabled(!enabled))
+                .setPositiveButton("Cancel", null)
                 .show();
     }
 
