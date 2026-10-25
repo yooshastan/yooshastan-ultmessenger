@@ -54,9 +54,14 @@ public final class UltSettingsActivity extends BaseFragment {
                 () -> presentFragment(new ThemeActivity(ThemeActivity.THEME_TYPE_BASIC)));
 
         addSection(context, content, "CHATS AND TOOLS");
+        addLink(context, content, "ULT chat layout presets",
+                "In Chat Settings, open the ⋮ menu → ULT Chat Layout",
+                () -> presentFragment(new ThemeActivity(ThemeActivity.THEME_TYPE_BASIC)));
         addLink(context, content, "Chat views and sorting",
                 "All, Unread, Groups, Channels, Bots and Unread First",
                 () -> showChatViewPicker(context));
+        addNote(context, content, "Archive row visibility",
+                "Chats → ⋮ → ULT: Hide Archive row (account-specific display only).");
         addNote(context, content, "Chat translation",
                 "Use a chat's ⋮ menu → ULT Chat Translation. Language and consent are per chat.");
         addNote(context, content, "Message and chat tools",
