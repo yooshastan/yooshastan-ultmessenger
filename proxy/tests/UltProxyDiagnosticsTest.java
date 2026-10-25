@@ -32,6 +32,21 @@ public final class UltProxyDiagnosticsTest {
         if (!warning.contains("NOT implemented") || !warning.contains("not proof")) {
             throw new AssertionError("Diagnostics must not promise DNS leak prevention");
         }
+        String snapshot = UltProxyDiagnostics.redactedAuditSnapshot(
+                "MTPROTO", true, true, true, false, false, 100, true, 69);
+        if (!snapshot.contains("local status snapshot")
+                || !snapshot.contains("Selected; Telegram session connected")
+                || !snapshot.contains("69 ms")
+                || !snapshot.contains("NOT implemented")
+                || !snapshot.contains("clipboard only on request")) {
+            throw new AssertionError("Redacted report must state scope and native status");
+        }
+        String untrustedTransport = UltProxyDiagnostics.redactedAuditSnapshot(
+                "secret@10.0.0.169", true, false, false, false, false, 0, false, 0);
+        if (untrustedTransport.contains("secret@") || untrustedTransport.contains("10.0.0.169")
+                || !untrustedTransport.contains("Other/unknown")) {
+            throw new AssertionError("Redacted report must allowlist transport fields");
+        }
         System.out.println("ULT proxy diagnostics passed");
     }
 }

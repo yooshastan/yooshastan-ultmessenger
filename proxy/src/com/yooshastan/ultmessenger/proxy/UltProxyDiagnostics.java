@@ -41,6 +41,34 @@ public final class UltProxyDiagnostics {
         return "Reachable in last native Telegram check (latency unavailable)";
     }
 
+    /**
+     * Explicit user-triggered, endpoint-free clipboard snapshot.
+     * Caller passes only native boolean/state values; transport is allowlisted.
+     * This is not a network trace or proof of proxy-only routing.
+     */
+    public static String redactedAuditSnapshot(String transport, boolean enabled,
+                                               boolean selected, boolean connected,
+                                               boolean updating, boolean checking,
+                                               long checkedAt, boolean available,
+                                               long pingMillis) {
+        String safeTransport;
+        if ("MTPROTO".equals(transport) || "SOCKS5".equals(transport)
+                || "WEB".equals(transport)) {
+            safeTransport = transport;
+        } else {
+            safeTransport = "Other/unknown";
+        }
+        return "Ultgram Alpha 0.10d local status snapshot (NOT a leak test)\n"
+                + "Transport: " + safeTransport + "\n"
+                + "Global Use Proxy switch: " + (enabled ? "On" : "Off") + "\n"
+                + "Selection/session: " + routeStatus(enabled, selected, connected, updating) + "\n"
+                + "Cached reachability: "
+                + nativeProbeStatus(checking, checkedAt, available, pingMillis) + "\n\n"
+                + dnsAuditWarning() + "\n"
+                + "No proxy endpoint, credential, secret, chat text or account ID included. "
+                + "Copied to Android clipboard only on request; other apps may access clipboard data.";
+    }
+
     public static String dnsAuditWarning() {
         return "DNS routing unverified. DoQ/DoH3 and strict no-direct-fallback "
                 + "are NOT implemented. A native proxy check is not proof "
