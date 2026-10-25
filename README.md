@@ -4,6 +4,8 @@
 
 An experimental, independent Android messaging project from Yooshastan Studios. Inspired by K-pop's *ultimate bias* and the flexibility of alternative Telegram clients.
 
+> **Alpha 0.10d privacy verification preview:** The `feature/alpha10d-proxy-privacy-verification` branch adds an **explicit Copy redacted status** button to the local proxy diagnostics and a dependency-free [`alpha10d-netwatch.py`](scripts/alpha10d-netwatch.py) classifier for gateway/proxy-host **packet-count summaries**. No packet capture runs inside Ultgram and no strict routing, DNS encryption or leak protection has been implemented. The FOSS ARM64 test artifact is `ult-alpha10d-preview-foss-android` when [this branch's CI](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha10d-proxy-privacy-verification) passes. Follow the [Alpha 0.10d test guide](docs/ALPHA10D_TEST.md).
+
 > **Alpha 0.10c.2 proxy UX and DNS audit preview:** The `feature/alpha10c-proxy-diagnostics` branch adds an opt-in **read-only** connection diagnostics dialog to named proxy profiles. Its FOSS ARM64 APK will be available in [GitHub Actions](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha10c-proxy-diagnostics) after CI passes as `ult-alpha10c2-preview-foss-android`. See the [proxy/DNS audit](docs/PROXY_DNS_AUDIT.md) and [device checklist](docs/DEVICE_ALPHA_TEST.md).
 
 ## Goals
