@@ -65,3 +65,7 @@ Mark each result with device, Android version, app artifact/build SHA, exact sce
 - **No strict mode yet:** The current release does not block direct traffic if the proxy is disabled or unavailable. It would be misleading to label an existing `Use Proxy` toggle as a kill switch.
 - **No DoQ yet:** DNS over QUIC is standardized by [RFC 9250](https://www.rfc-editor.org/rfc/rfc9250), with dedicated QUIC connections (by default UDP 853). It is not enabled merely by editing DNS settings; each app Java/native lookup path must be owned and tested. DoQ also does not tunnel Telegram message traffic.
 - **Release gate:** only claim strict routing when the controlled network test shows no unintended direct Telegram or plaintext DNS egress in normal, failed-proxy, restart, handoff and IPv6 scenarios, with explicit user opt-in and honest reporting of exceptions.
+
+## Alpha 0.10d audit tooling (next preview)
+
+See the [dedicated device/capture runbook](ALPHA10D_TEST.md). It contains separate proxy-host versus gateway capture commands, a metadata-only stdin classifier, a controlled failed-proxy sequence, and explicit no-leak-proof interpretation. The redacted in-app status copy does **not** initiate a scan, collect network traffic or alter the proxy. All existing strict-route and DoQ release gates above remain in force.
