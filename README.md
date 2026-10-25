@@ -4,7 +4,7 @@
 
 An experimental, independent Android messaging project from Yooshastan Studios. Inspired by K-pop's *ultimate bias* and the flexibility of alternative Telegram clients.
 
-> **Alpha 0.10c proxy diagnostics preview:** The `feature/alpha10c-proxy-diagnostics` branch adds an opt-in **read-only** connection diagnostics dialog to named proxy profiles. Its FOSS ARM64 APK will be available in [GitHub Actions](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha10c-proxy-diagnostics) after CI passes as `ult-alpha10c-preview-foss-android`. See the [proxy/DNS audit](docs/PROXY_DNS_AUDIT.md) and [device checklist](docs/DEVICE_ALPHA_TEST.md).
+> **Alpha 0.10c.2 proxy UX and DNS audit preview:** The `feature/alpha10c-proxy-diagnostics` branch adds an opt-in **read-only** connection diagnostics dialog to named proxy profiles. Its FOSS ARM64 APK will be available in [GitHub Actions](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha10c-proxy-diagnostics) after CI passes as `ult-alpha10c2-preview-foss-android`. See the [proxy/DNS audit](docs/PROXY_DNS_AUDIT.md) and [device checklist](docs/DEVICE_ALPHA_TEST.md).
 
 ## Goals
 - Telegram Android compatibility based on the official GPL-2.0 client.
@@ -23,7 +23,7 @@ Alpha 0.10b adds an explicit **Follow phone light/dark** or **Keep fixed colors*
 
 Alpha 0.10a adds **Chats → ⋮ → ULT: Chat Views**, an account-specific local display control for All, Unread, Groups, Channels, Bots and Unread First. It filters/sorts displayed lists only; server-side archive, pins and folders remain untouched. Alpha 0.9.1 repaired the language-choice dialog and the English translation flow has been device-tested. Alpha 0.9 adds **⋮ → ULT Chat Translation** with per-chat language choices and a remote-engine consent prompt. Mercurygram's pre-existing offline AIDL translator is now **strictly local**: missing or failed providers never silently fall back to HTTP. Secret chats require the offline provider. The Alpha 0.8 hide-archive control remains included. Firebase remains optional.
 
-Alpha 0.10c begins with **Connection diagnostics** in **ULT Proxy Manager → saved profile info → Connection diagnostics**. This exposes the app's existing proxy selection, native Telegram connection state, and cached reachability check without logging secrets, resolving a new hostname or modifying routing. **Strict DNS/DoQ and fail-closed proxy routing are not implemented**; see [transport/DNS audit](docs/PROXY_DNS_AUDIT.md).
+Alpha 0.10c begins with **Connection diagnostics** in **ULT Proxy Manager → saved profile info → Connection diagnostics**. This exposes the app's existing proxy selection, native Telegram connection state, and cached reachability check without logging secrets, resolving a new hostname or modifying routing. The 0.10c.2 update clarifies **Global Use Proxy switch** versus the selected profile and fixes dark-mode title/back/info contrast on the adaptive proxy header. **Strict DNS/DoQ and fail-closed proxy routing are not implemented**; see [transport/DNS audit](docs/PROXY_DNS_AUDIT.md).
 
 ## Disclaimer
 Not affiliated with Telegram. Uses the Telegram API; a project-specific API ID is required for distribution. The application must comply with Telegram's [API terms](https://core.telegram.org/api/terms). GPL licensing and corresponding-source obligations apply to derivative code.
