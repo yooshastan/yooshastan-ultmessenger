@@ -41,6 +41,14 @@ public final class UltChatToolsTest {
         if (!"MIME: unknown\nBytes: 0".equals(UltChatTools.mediaDetails("../bad", -8))) {
             throw new AssertionError("Document metadata must not expose malformed MIME data");
         }
+        if (!"File: demo.flac\nSize: 2.0 MiB\nMIME: audio/flac\nBytes: 2097152"
+                .equals(UltChatTools.mediaSummary("demo.flac", "audio/flac", 2097152))) {
+            throw new AssertionError("File summary must expose readable and exact size");
+        }
+        if (!UltChatTools.mediaSummary("../secret\nthing", null, -3)
+                .startsWith("File: .._secret_thing\nSize: 0 B\nMIME: unknown\nBytes: 0")) {
+            throw new AssertionError("File summary must sanitize names and sizes");
+        }
         System.out.println("ULT chat tools model passed");
     }
 }

@@ -75,6 +75,9 @@ public final class UltSettingsActivity extends BaseFragment {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         addSection(context, content, "APPEARANCE");
+        addLink(context, content, "Chat list preview density",
+                "Switch Telegram's existing compact two-line / expanded three-line preview",
+                () -> showChatListDensity(context));
         addLink(context, content, "Compact Ultgram Settings rows",
                 "Reduce spacing in this settings page only (not the chat list)",
                 () -> setCompactRows(context, !compactRows));
@@ -96,7 +99,10 @@ public final class UltSettingsActivity extends BaseFragment {
         addNote(context, content, "Chat translation",
                 "Use a chat's ⋮ menu → ULT Chat Translation. Language and consent are per chat.");
         addNote(context, content, "Message and chat tools",
-                "Copy chat IDs from the chat menu or message IDs from the long-press menu.");
+                "Long-press a document for an optional readable file summary; nothing downloads automatically.");
+        addLink(context, content, "Media storage and cache",
+                "Open Telegram's native storage manager; deleting anything requires a separate tap",
+                () -> presentFragment(new org.telegram.ui.CacheControlActivity()));
 
         addSection(context, content, "PRIVACY AND NETWORK");
         addLink(context, content, "Network test checklist",
@@ -108,6 +114,9 @@ public final class UltSettingsActivity extends BaseFragment {
         addLink(context, content, "Network privacy dashboard",
                 "Current safeguards, unsupported paths and copyable diagnostic summary",
                 () -> showPrivacyDashboard(context));
+        addLink(context, content, "Network path audit coverage",
+                "Read-only inventory of native, DNS, HTTP, media/CDN and WebView paths",
+                () -> showNetworkPathCoverage(context));
         addLink(context, content, "ULT Proxy Manager",
                 "Named proxies, connection diagnostics and external link confirmations",
                 () -> presentFragment(new ProxyListActivity()));
@@ -134,6 +143,25 @@ public final class UltSettingsActivity extends BaseFragment {
         return fragmentView;
     }
 
+
+    private void showChatListDensity(Context context) {
+        final boolean threeLines = SharedConfig.useThreeLinesLayout;
+        new android.app.AlertDialog.Builder(context)
+                .setTitle("Telegram chat list preview")
+                .setSingleChoiceItems(new String[] {
+                        "Two-line preview (compact)",
+                        "Three-line preview (more text)" }, threeLines ? 1 : 0,
+                        (dialog, selected) -> {
+                            SharedConfig.setUseThreeLinesLayout(selected == 1);
+                            android.widget.Toast.makeText(context,
+                                    "Chat list preview updated",
+                                    android.widget.Toast.LENGTH_SHORT).show();
+                            dialog.dismiss();
+                        })
+                .setMessage("Uses Telegram's existing global chat-list setting. " +
+                        "Does not alter messages, chat order or theme colors.")
+                .setNegativeButton("Cancel", null).show();
+    }
 
     private void setCompactRows(Context context, boolean enabled) {
         compactRows = enabled;
@@ -194,6 +222,32 @@ public final class UltSettingsActivity extends BaseFragment {
                     if (clipboard != null) {
                         clipboard.setPrimaryClip(
                                 ClipData.newPlainText("Ultgram network test report", report));
+                    }
+                })
+                .setPositiveButton("Done", null)
+                .show();
+    }
+
+    private void showNetworkPathCoverage(Context context) {
+        final String report = "ULTGRAM NETWORK PATH COVERAGE — STATIC CODE AUDIT\\n"
+                + "Native tgnet sockets: experimental guard exists; live egress not proven\\n"
+                + "Java HTTP and hostname resolution: NOT FULLY AUDITED\\n"
+                + "Android DNS, DoT, DoQ: external routing NOT VERIFIED; DoQ backend NOT INSTALLED\\n"
+                + "Media downloads and CDN: NOT ROUTE-VERIFIED\\n"
+                + "WebViews, previews and external links: NOT ROUTE-VERIFIED\\n"
+                + "Calls / real-time media (UDP): NOT ROUTE-VERIFIED\\n\\n"
+                + "Capture required: phone-edge/gateway + tunnel-inner + proxy-host; "
+                + "a proxy-host capture alone cannot rule out direct traffic. "
+                + "Android VPN indicator does not identify the app route. "
+                + "No new packet capture, DNS filtering, or traffic monitoring is active.";
+        new android.app.AlertDialog.Builder(context)
+                .setTitle("Ultgram network path coverage")
+                .setMessage(report)
+                .setNeutralButton("Copy coverage", (dialog, which) -> {
+                    ClipboardManager clipboard = (ClipboardManager)
+                            context.getSystemService(Context.CLIPBOARD_SERVICE);
+                    if (clipboard != null) {
+                        clipboard.setPrimaryClip(ClipData.newPlainText("ULT network coverage", report));
                     }
                 })
                 .setPositiveButton("Done", null)
