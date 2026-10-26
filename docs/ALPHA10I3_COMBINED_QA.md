@@ -22,3 +22,20 @@ Base: user-tested Alpha 0.10i.2 (built from tested 0.10i.1a strict cold-start re
 - Verify existing chat-category bar, themes, conversation tools and newly added public message links remain functional.
 - Open **Network path audit coverage** and copy the report. Ensure it displays "NOT ROUTE-VERIFIED" caveats and no endpoints, usernames, tokens or secrets.
 - For traffic audits, compare **trusted phone-edge**, WireGuard tunnel-inner and proxy-host capture under: normal, proxy-down, IPv4/IPv6 and Wi-Fi/mobile handoff conditions. Do not claim safe zero-leak outcomes from checkbox tests or proxy-host-only observations.
+
+## Pixel 8a device testing reported by user (2026-10-26)
+
+These are **user-reported functional results**, not CI or packet-capture proof.
+
+| Tested behavior | Status | Evidence scope |
+| --- | --- | --- |
+| Install/update and strict-proxy cold start with switch continuously ON | Passed | Proxy connected immediately without an OFF/ON toggle |
+| Chat messaging and general proxy connectivity | Passed | User-reported |
+| Document metadata long-press | Passed | Reported PDF MIME: application/pdf, Bytes: 64375 |
+| Document file summary | Passed | Reported 62.9 KiB for 64375 bytes and application/pdf |
+| Two/three-line chat preview | Passed | User observed layout change |
+| Preview setting persists after reopening | User confirmed | No independent instrumented persistence test |
+| Network path coverage dialog | Passed as display test | User copied redacted text; no packet capture |
+| Media storage/cache navigation, public-message permalinks, network leak test | Not fully reported | Do not mark passed |
+
+The packaging-only RC1 branch retains the device-tested app source changes. Debug-signing and binary reproducibility are **not** proven; install the RC1 APK as an internal test build and repeat startup checks.
