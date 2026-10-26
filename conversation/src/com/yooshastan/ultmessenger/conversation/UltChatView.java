@@ -14,13 +14,19 @@ public final class UltChatView {
     public static final String PEOPLE = "people";
     public static final String UNREAD_FIRST = "unread_first";
     public static final String[] MODES = {ALL, UNREAD, GROUPS, CHANNELS, BOTS, PEOPLE, UNREAD_FIRST};
-    private static final String[] QUICK_TABS = {ALL, UNREAD, GROUPS, CHANNELS, BOTS, PEOPLE};
+    public static final String[] QUICK_TAB_MODES = {ALL, UNREAD, GROUPS, CHANNELS, BOTS, PEOPLE};
+    public static final String[] QUICK_TAB_LABELS = {"All", "Unread", "Groups", "Channels", "Bots", "People"};
     public static final String[] LABELS = {
         "All chats (Telegram order)", "Unread only", "Groups only", "Channels only",
         "Bots only", "People / private chats", "Unread first (pinned stay on top)"
     };
 
     private UltChatView() {}
+
+    public static String quickBarKey(int account) {
+        if (account < 0) throw new IllegalArgumentException("Invalid account");
+        return "chat_bar_account_" + account;
+    }
 
     public static String accountKey(int account) {
         if (account < 0) throw new IllegalArgumentException("Invalid account");
@@ -37,9 +43,9 @@ public final class UltChatView {
     /** Cycles opt-in display tabs; the unread-first sorting preset is not a category. */
     public static String nextQuickTab(String currentMode) {
         String safe = sanitize(currentMode);
-        for (int i = 0; i < QUICK_TABS.length; i++) {
-            if (QUICK_TABS[i].equals(safe)) {
-                return QUICK_TABS[(i + 1) % QUICK_TABS.length];
+        for (int i = 0; i < QUICK_TAB_MODES.length; i++) {
+            if (QUICK_TAB_MODES[i].equals(safe)) {
+                return QUICK_TAB_MODES[(i + 1) % QUICK_TAB_MODES.length];
             }
         }
         return ALL;

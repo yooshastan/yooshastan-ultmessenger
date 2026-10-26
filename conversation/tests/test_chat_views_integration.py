@@ -20,6 +20,8 @@ class ChatViewIntegrationTest(TestCase):
             integration.ACTIVITY_IMPORT,
             integration.ACTIVITY_METHOD,
             integration.ACTIVITY_MENU,
+            integration.ACTIVITY_RETURN,
+            integration.ACTIVITY_RESUME,
         )), encoding="utf-8")
         adapter.write_text("".join((
             integration.ADAPTER_IMPORT, integration.ADAPTER_CLASS,
@@ -39,6 +41,13 @@ class ChatViewIntegrationTest(TestCase):
             self.assertIn("ULT: Chat Views", activity)
             self.assertIn("ULT: Next Chat Tab", activity)
             self.assertIn("nextQuickTab", activity)
+            self.assertIn("ULT: Show category bar", activity)
+            self.assertIn("installUltCategoryBar(context, contentView)", activity)
+            self.assertIn("quickBarKey(currentAccount)", activity)
+            self.assertIn("refreshUltCategoryBar()", activity)
+            self.assertIn("setUltCategoryMode(choice)", activity)
+            self.assertIn("initialDialogsType == DIALOGS_TYPE_DEFAULT", activity)
+            self.assertNotIn("addDialogFilter", activity)
             self.assertIn("setSingleChoiceItems(UltChatView.LABELS", activity)
             self.assertNotIn("setMessage(", activity)
             self.assertIn("accountKey(currentAccount)", activity)
