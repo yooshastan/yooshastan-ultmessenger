@@ -18,6 +18,7 @@ import com.yooshastan.ultmessenger.dns.UltDoqBootstrap;
 import com.yooshastan.ultmessenger.dns.UltDoqEndpoint;
 import com.yooshastan.ultmessenger.dns.UltDnsTrackerPolicy;
 import com.yooshastan.ultmessenger.proxy.UltExternalLinkPolicy;
+import com.yooshastan.ultmessenger.proxy.UltStrictProxyPolicy;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
@@ -179,6 +180,7 @@ public final class UltSettingsActivity extends BaseFragment {
         final String report = UltNetworkTestReport.render(
                 UltAndroidDnsInspector.inspectVpn(context),
                 ConnectionsManager.isUltStrictNativeProxyEnabled(),
+                ConnectionsManager.native_isStrictProxyModeEnabled(UserConfig.selectedAccount),
                 android.os.Build.VERSION.SDK_INT, manualChecks(context));
         new android.app.AlertDialog.Builder(context)
                 .setTitle("Ultgram network test report")
@@ -202,9 +204,10 @@ public final class UltSettingsActivity extends BaseFragment {
     private void showPrivacyDashboard(Context context) {
         final SharedPreferences prefs = dnsPrefs(context);
         final boolean strictNative = ConnectionsManager.isUltStrictNativeProxyEnabled();
+        final boolean observedNative = ConnectionsManager.native_isStrictProxyModeEnabled(UserConfig.selectedAccount);
         final String endpoint = prefs.getString(DNS_ENDPOINT, "");
         final String report = "ULTGRAM NETWORK PRIVACY — LOCAL STATUS ONLY\n"
-                + "Native Telegram socket guard: " + (strictNative ? "ON (experimental)" : "OFF") + "\n"
+                + "Native Telegram socket guard: " + UltStrictProxyPolicy.nativeStatus(strictNative, observedNative) + "\n"
                 + "DoQ server configured: " + (!endpoint.isEmpty() ? "Yes" : "No") + "\n"
                 + "DoQ QUIC backend: NOT INSTALLED\n"
                 + "DNS tracker rules: SAVED DRAFT — NOT ACTIVE\n"
@@ -385,17 +388,37 @@ public final class UltSettingsActivity extends BaseFragment {
                     .show();
             return;
         }
+        if (!enabled && !ConnectionsManager.canEnableUltStrictNativeProxy()) {
+            new android.app.AlertDialog.Builder(context)
+                    .setTitle("Select a proxy before strict mode")
+                    .setMessage("Strict mode cannot be enabled while Use Proxy is OFF or "
+                            + "the selected proxy is invalid. Open ULT Proxy Manager, "
+                            + "select a valid MTProto or SOCKS5 profile, and enable Use Proxy. "
+                            + "This checks configuration only, not proxy reachability.")
+                    .setPositiveButton("OK", null)
+                    .show();
+            return;
+        }
+        final boolean observed = ConnectionsManager.native_isStrictProxyModeEnabled(UserConfig.selectedAccount);
         new android.app.AlertDialog.Builder(context)
                 .setTitle("Experimental native proxy-only: " + (enabled ? "On" : "Off"))
-                .setMessage("When on, Ultgram refuses to open a direct native Telegram "
-                        + "socket without an active proxy address. An unavailable or disabled "
-                        + "proxy may stop Telegram networking until a working proxy is "
-                        + "selected or this mode is turned off. This does not cover Java "
-                        + "HTTP, DNS, WebViews, external media or all traffic paths. "
-                        + "It is NOT yet verified as fail-closed. Test with PCAPdroid "
-                        + "before relying on it for privacy.")
-                .setNeutralButton(enabled ? "Disable" : "Enable (experimental)", (dialog, which) ->
-                        ConnectionsManager.setUltStrictNativeProxyEnabled(!enabled))
+                .setMessage("Saved strict switch: " + (enabled ? "ON" : "OFF")
+                        + ". Native state for this account: " + (observed ? "ON" : "OFF")
+                        + ". Enabling closes native Telegram sockets and requires a "
+                        + "configured proxy; proxy failure can still interrupt messages. "
+                        + "Disabling requests reconnection, but Android network availability "
+                        + "can still prevent it. This is NOT a full firewall or proof of "
+                        + "DNS/media/Java routing. Keep Wonhee connected and validate via "
+                        + "an independent network capture before relying on privacy claims.")
+                .setNeutralButton(enabled ? "Disable and reconnect" : "Enable (experimental)", (dialog, which) -> {
+                    if (!ConnectionsManager.setUltStrictNativeProxyEnabled(!enabled)) {
+                        new android.app.AlertDialog.Builder(context)
+                                .setTitle("Strict mode was not enabled")
+                                .setMessage("Proxy configuration changed. Select and enable a valid proxy first.")
+                                .setPositiveButton("OK", null)
+                                .show();
+                    }
+                })
                 .setPositiveButton("Cancel", null)
                 .show();
     }

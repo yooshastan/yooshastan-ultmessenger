@@ -10,6 +10,7 @@ from pathlib import Path
 TARGET = Path("TMessagesProj/src/main/java/org/telegram/ui/ProxyListActivity.java")
 MODEL = Path("proxy/src/com/yooshastan/ultmessenger/proxy/UltProxyLabels.java")
 DIAGNOSTICS_MODEL = Path("proxy/src/com/yooshastan/ultmessenger/proxy/UltProxyDiagnostics.java")
+STRICT_POLICY_MODEL = Path("proxy/src/com/yooshastan/ultmessenger/proxy/UltStrictProxyPolicy.java")
 IMPORT_ANCHOR = "import org.telegram.ui.Components.SlideChooseView;\n"
 CLASS_ANCHOR = "public class ProxyListActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {\n"
 EDIT_ANCHOR = "            checkImageView.setOnClickListener(v -> presentFragment(new ProxySettingsActivity(currentInfo)));\n"
@@ -214,10 +215,16 @@ def integrate(root: Path) -> Path:
     if not diagnostics_src.is_file():
         raise FileNotFoundError(diagnostics_src)
     diagnostics_data = diagnostics_src.read_bytes()
+    strict_policy_src = Path(__file__).resolve().parents[1] / STRICT_POLICY_MODEL
+    strict_policy_dst = root / "TMessagesProj/src/main/java/com/yooshastan/ultmessenger/proxy/UltStrictProxyPolicy.java"
+    if not strict_policy_src.is_file():
+        raise FileNotFoundError(strict_policy_src)
+    strict_policy_data = strict_policy_src.read_bytes()
     target.write_text(source, encoding="utf-8")
     model_dst.parent.mkdir(parents=True, exist_ok=True)
     model_dst.write_bytes(model_data)
     diagnostics_dst.write_bytes(diagnostics_data)
+    strict_policy_dst.write_bytes(strict_policy_data)
     return target
 
 if __name__ == "__main__":

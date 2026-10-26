@@ -18,6 +18,7 @@ PROXY_UI = Path("TMessagesProj/src/main/java/org/telegram/ui/ProxyListActivity.j
 JAVA_INIT = '        final ProxySettings proxySettings = ProxySettings.fromSharedPreferences(preferences);\n'
 JAVA_SETTER = '    public static void setProxySettings(boolean enabled, ProxySettings settings) {\n'
 JAVA_NATIVE = '    public static native void native_setProxySettings(int currentAccount, String address, int port, String username, String password, String secret);\n'
+JAVA_IMPORT = 'import org.telegram.utils.proxy.ProxySettings;\n'
 HEADER_METHOD = '    void setProxySettings(std::string address, uint16_t port, std::string username, std::string password, std::string secret);\n'
 HEADER_FIELD = '    std::string proxyAddress = "";\n'
 CPP_METHOD = 'void ConnectionsManager::setProxySettings(std::string address, uint16_t port, std::string username, std::string password, std::string secret) {\n'
@@ -35,29 +36,69 @@ JAVA_METHODS = """    private static final String ULT_STRICT_NATIVE_PROXY_KEY = 
                 .getBoolean(ULT_STRICT_NATIVE_PROXY_KEY, false);
     }
 
-    public static void setUltStrictNativeProxyEnabled(boolean enabled) {
+    /** Configuration guard; does not prove that a selected proxy is reachable. */
+    public static boolean canEnableUltStrictNativeProxy() {
+        final SharedPreferences preferences = MessagesController.getGlobalMainSettings();
+        final ProxySettings selected = ProxySettings.fromSharedPreferences(preferences);
+        final boolean validSelection = SharedConfig.currentProxy != null
+                && SharedConfig.currentProxy.settings != null
+                && SharedConfig.currentProxy.settings.isValid() && selected.isValid()
+                && selected.getType() != ProxySettings.Type.WEB
+                && (selected.getType() != ProxySettings.Type.MTPROTO
+                    || !selected.getSecret().isEmpty());
+        return UltStrictProxyPolicy.canEnable(
+                preferences.getBoolean("proxy_enabled", false), validSelection, SharedConfig.mg_useTor);
+    }
+
+    /** False means enabling was refused; disabling is always allowed. */
+    public static boolean setUltStrictNativeProxyEnabled(boolean enabled) {
+        if (enabled && !canEnableUltStrictNativeProxy()) {
+            return false;
+        }
         ApplicationLoader.applicationContext.getSharedPreferences(
                 "mainconfig", Activity.MODE_PRIVATE).edit()
                 .putBoolean(ULT_STRICT_NATIVE_PROXY_KEY, enabled).apply();
+        // Repeat on all accounts even if preference was already OFF; this
+        // repairs a stale native guard without weakening an ON preference.
         for (int account = 0; account < UserConfig.MAX_ACCOUNT_COUNT; account++) {
             native_setStrictProxyMode(account, enabled);
         }
+        return true;
     }
 
 """
 
 NATIVE_METHOD = """void ConnectionsManager::setStrictProxyMode(bool enabled) {
     scheduleTask([&, enabled] {
-        if (strictProxyMode == enabled) {
+        if (strictProxyMode.load() == enabled) {
+            // An OFF request can also recover an out-of-sync connection.
+            if (!enabled && networkAvailable && !networkPaused) {
+                Datacenter *active = getDatacenterWithId(DEFAULT_DATACENTER_ID);
+                if (active != nullptr) active->createGenericConnection()->connect();
+                processRequestQueue(0, 0);
+            }
             return;
         }
-        strictProxyMode = enabled;
-        // Close any established direct/native transports before resuming.
+        strictProxyMode.store(enabled);
         for (auto & datacenter : datacenters) {
             datacenter.second->suspendConnections(true);
         }
+        Datacenter *primary = getDatacenterWithId(DEFAULT_DATACENTER_ID);
+        if (primary != nullptr && primary->isHandshakingAny()) {
+            primary->beginHandshake(HandshakeTypeCurrent, true);
+        }
+        // Re-open after either transition even with no queued message request.
+        // Strict ON still blocks direct sockets when the native proxy is absent.
+        // Respect Android network-unavailable / paused states.
+        if (networkAvailable && !networkPaused && primary != nullptr) {
+            primary->createGenericConnection()->connect();
+        }
         processRequestQueue(0, 0);
     });
+}
+
+bool ConnectionsManager::isStrictProxyModeEnabled() const {
+    return strictProxyMode.load();
 }
 
 """
@@ -99,27 +140,45 @@ def integrate(root: Path) -> list[Path]:
     if any("native_setStrictProxyMode" in x or "strictProxyMode" in x for x in sources):
         raise ValueError("ULT native strict integration already applied")
     java, header, cpp, socket, jni, proxy_ui = sources
+    java = once(java, JAVA_IMPORT, JAVA_IMPORT + 'import com.yooshastan.ultmessenger.proxy.UltStrictProxyPolicy;\n')
     java = once(java, JAVA_INIT, JAVA_INIT +
                 '        native_setStrictProxyMode(currentAccount, preferences.getBoolean("ult_strict_native_proxy", false));\n')
     java = once(java, JAVA_SETTER, JAVA_METHODS + JAVA_SETTER)
     java = once(java, JAVA_NATIVE,
-                JAVA_NATIVE + '    public static native void native_setStrictProxyMode(int currentAccount, boolean enabled);\n')
-    header = once(header, HEADER_METHOD, HEADER_METHOD + '    void setStrictProxyMode(bool enabled);\n')
-    header = once(header, HEADER_FIELD, HEADER_FIELD + '    bool strictProxyMode = false;\n')
+                JAVA_NATIVE + '    public static native void native_setStrictProxyMode(int currentAccount, boolean enabled);\n'
+                             + '    public static native boolean native_isStrictProxyModeEnabled(int currentAccount);\n')
+    header = once(header, HEADER_METHOD, HEADER_METHOD + '    void setStrictProxyMode(bool enabled);\n'
+                  + '    bool isStrictProxyModeEnabled() const;\n')
+    header = once(header, HEADER_FIELD, HEADER_FIELD + '    std::atomic<bool> strictProxyMode{false};\n')
     cpp = once(cpp, CPP_METHOD, NATIVE_METHOD + CPP_METHOD)
     socket = once(socket, SOCKET_ATTACH, SOCKET_ATTACH + SOCKET_GUARD)
     socket = once(socket, SOCKET_INTERNAL, SOCKET_INTERNAL + SOCKET_INTERNAL_GUARD)
     jni = once(jni, JNI_METHOD,
                'void setStrictProxyMode(JNIEnv *env, jclass c, jint instanceNum, jboolean enabled) {\n'
                '    ConnectionsManager::getInstance(instanceNum).setStrictProxyMode(enabled == JNI_TRUE);\n'
+               '}\n\n'
+               'jboolean isStrictProxyModeEnabled(JNIEnv *env, jclass c, jint instanceNum) {\n'
+               '    return ConnectionsManager::getInstance(instanceNum).isStrictProxyModeEnabled() ? JNI_TRUE : JNI_FALSE;\n'
                '}\n\n' + JNI_METHOD)
     jni = once(jni, JNI_TABLE,
-               JNI_TABLE + '        {"native_setStrictProxyMode", "(IZ)V", (void *) setStrictProxyMode},\n')
+               JNI_TABLE + '        {"native_setStrictProxyMode", "(IZ)V", (void *) setStrictProxyMode},\n'
+               + '        {"native_isStrictProxyModeEnabled", "(I)Z", (void *) isStrictProxyModeEnabled},\n')
+    proxy_ui = once(proxy_ui, '        listView.setOnItemClickListener((view, position) -> {\n            if (position == useProxyRow) {\n',
+                    '        listView.setOnItemClickListener((view, position) -> {\n            if (position == useProxyRow) {\n'
+                    '                if (useProxySettings && ConnectionsManager.isUltStrictNativeProxyEnabled()) {\n'
+                    '                    new android.app.AlertDialog.Builder(getParentActivity())\n'
+                    '                            .setTitle("Disable native strict mode first")\n'
+                    '                            .setMessage("Strict mode is still ON. Turn it off in Ultgram Settings before disabling the selected proxy. No direct fallback was enabled.")\n'
+                    '                            .setPositiveButton("OK", null).show();\n'
+                    '                    return;\n'
+                    '                }\n')
     proxy_ui = once(proxy_ui, UI_STATUS,
-                    '        details.append("Experimental native direct-socket guard: ")\n'
-                    '                .append(ConnectionsManager.isUltStrictNativeProxyEnabled()\n'
-                    '                        ? "On (routing NOT leak-verified)" : "Off")\n'
-                    '                .append(nl);\n')
+                    '        details.append("Experimental native socket guard requested: ")\n'
+                    '                .append(ConnectionsManager.isUltStrictNativeProxyEnabled() ? "On" : "Off")\n'
+                    '                .append(nl);\n'
+                    '        details.append("Native socket guard observed (this account): ")\n'
+                    '                .append(ConnectionsManager.native_isStrictProxyModeEnabled(currentAccount) ? "On" : "Off")\n'
+                    '                .append(" (routing NOT leak-verified)").append(nl);\n')
     # All anchors are checked before any file is written.
     for target, updated in zip(paths, (java, header, cpp, socket, jni, proxy_ui)):
         target.write_text(updated, encoding="utf-8")
