@@ -36,6 +36,9 @@ class StrictRecoveryContract(TestCase):
                 "native_isStrictProxyModeEnabled(UserConfig.selectedAccount)",
                 "NOT a full firewall"):
             self.assertIn(marker, ui)
+        self.assertIn('setNeutralButton("Disable and reconnect"', ui)
+        self.assertIn("setUltStrictNativeProxyEnabled(false)", ui)
+        self.assertIn('setNegativeButton(requested || observed ? null : "Enable (experimental)"', ui)
         self.assertIn("return !strictRequested;", policy)
         self.assertIn("!torActive", policy)
 

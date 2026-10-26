@@ -378,48 +378,61 @@ public final class UltSettingsActivity extends BaseFragment {
     }
 
     private void showNativeStrictProxy(Context context) {
-        final boolean enabled = ConnectionsManager.isUltStrictNativeProxyEnabled();
-        if (!enabled && SharedConfig.mg_useTor) {
-            new android.app.AlertDialog.Builder(context)
-                    .setTitle("Native strict mode unavailable with Tor")
-                    .setMessage("Mercurygram Tor owns the native proxy slot. "
-                            + "Turn Tor off before testing Ultgram's experimental native guard.")
-                    .setPositiveButton("OK", null)
-                    .show();
-            return;
-        }
-        if (!enabled && !ConnectionsManager.canEnableUltStrictNativeProxy()) {
-            new android.app.AlertDialog.Builder(context)
-                    .setTitle("Select a proxy before strict mode")
-                    .setMessage("Strict mode cannot be enabled while Use Proxy is OFF or "
-                            + "the selected proxy is invalid. Open ULT Proxy Manager, "
-                            + "select a valid MTProto or SOCKS5 profile, and enable Use Proxy. "
-                            + "This checks configuration only, not proxy reachability.")
-                    .setPositiveButton("OK", null)
-                    .show();
-            return;
-        }
+        final boolean requested = ConnectionsManager.isUltStrictNativeProxyEnabled();
         final boolean observed = ConnectionsManager.native_isStrictProxyModeEnabled(UserConfig.selectedAccount);
+        // Keep OFF accessible even when saved settings and native state disagree,
+        // the configured proxy was removed, or Tor was turned on later.
         new android.app.AlertDialog.Builder(context)
-                .setTitle("Experimental native proxy-only: " + (enabled ? "On" : "Off"))
-                .setMessage("Saved strict switch: " + (enabled ? "ON" : "OFF")
+                .setTitle("Experimental native proxy-only: " + (requested ? "On" : "Off"))
+                .setMessage("Saved strict switch: " + (requested ? "ON" : "OFF")
                         + ". Native state for this account: " + (observed ? "ON" : "OFF")
-                        + ". Enabling closes native Telegram sockets and requires a "
-                        + "configured proxy; proxy failure can still interrupt messages. "
-                        + "Disabling requests reconnection, but Android network availability "
-                        + "can still prevent it. This is NOT a full firewall or proof of "
-                        + "DNS/media/Java routing. Keep Wonhee connected and validate via "
-                        + "an independent network capture before relying on privacy claims.")
-                .setNeutralButton(enabled ? "Disable and reconnect" : "Enable (experimental)", (dialog, which) -> {
-                    if (!ConnectionsManager.setUltStrictNativeProxyEnabled(!enabled)) {
-                        new android.app.AlertDialog.Builder(context)
-                                .setTitle("Strict mode was not enabled")
-                                .setMessage("Proxy configuration changed. Select and enable a valid proxy first.")
-                                .setPositiveButton("OK", null)
-                                .show();
-                    }
-                })
-                .setPositiveButton("Cancel", null)
+                        + ". Disabling always requests native reconnection, even if "
+                        + "the saved switch is already OFF. Enabling requires a valid "
+                        + "selected proxy; proxy failure may interrupt messages. "
+                        + "This is NOT a full firewall or proof of DNS/media/Java routing. "
+                        + "Keep Wonhee connected and independently verify network paths "
+                        + "before relying on privacy claims.")
+                .setNeutralButton("Disable and reconnect", (dialog, which) ->
+                        ConnectionsManager.setUltStrictNativeProxyEnabled(false))
+                .setNegativeButton(requested || observed ? null : "Enable (experimental)",
+                        (dialog, which) -> {
+                            if (SharedConfig.mg_useTor) {
+                                new android.app.AlertDialog.Builder(context)
+                                        .setTitle("Native strict mode unavailable with Tor")
+                                        .setMessage("Mercurygram Tor owns the native proxy slot. "
+                                                + "Turn Tor off before testing the native guard.")
+                                        .setPositiveButton("OK", null)
+                                        .show();
+                            } else if (!ConnectionsManager.canEnableUltStrictNativeProxy()) {
+                                new android.app.AlertDialog.Builder(context)
+                                        .setTitle("Select a proxy before strict mode")
+                                        .setMessage("Strict mode cannot be enabled while Use Proxy is OFF "
+                                                + "or the selected proxy is invalid. Open ULT Proxy Manager, "
+                                                + "select a valid MTProto or SOCKS5 profile, and enable Use Proxy. "
+                                                + "This checks configuration only, not proxy reachability.")
+                                        .setPositiveButton("OK", null)
+                                        .show();
+                            } else {
+                                new android.app.AlertDialog.Builder(context)
+                                        .setTitle("Confirm experimental strict mode")
+                                        .setMessage("Telegram native sockets will be restricted. A proxy "
+                                                + "failure can interrupt messages. This does not enforce "
+                                                + "DNS, Java, media, or device-wide routing.")
+                                        .setNegativeButton("Cancel", null)
+                                        .setPositiveButton("Enable", (confirm, button) -> {
+                                            if (!ConnectionsManager.setUltStrictNativeProxyEnabled(true)) {
+                                                new android.app.AlertDialog.Builder(context)
+                                                        .setTitle("Strict mode was not enabled")
+                                                        .setMessage("Proxy configuration changed. "
+                                                                + "Select and enable a valid proxy first.")
+                                                        .setPositiveButton("OK", null)
+                                                        .show();
+                                            }
+                                        })
+                                        .show();
+                            }
+                        })
+                .setPositiveButton("Done", null)
                 .show();
     }
 
