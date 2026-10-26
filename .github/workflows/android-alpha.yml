@@ -1,8 +1,8 @@
-name: Android Alpha 0.10h.2 strict-proxy recovery
+name: Android Alpha 0.10i.1 chat category bar
 
 on:
   push:
-    branches: [feature/alpha01-bootstrap, feature/alpha02-native-themes, feature/alpha03-proxy-profiles, feature/alpha04-chat-layouts, feature/alpha05-chat-tools, feature/alpha06-message-tools, feature/alpha07-visual-identity, feature/alpha08-archive-visibility, feature/alpha09-translation, feature/alpha10-chat-view-presets, fix/samsung-a36-ult-themes, feature/alpha10b-paired-ult-themes, fix/alpha10b-inapp-night-toggle, feature/alpha10c-proxy-diagnostics, feature/alpha10d-proxy-privacy-verification, feature/alpha10e-external-link-guard, feature/alpha10f0-ult-settings-audit, feature/alpha10f1-native-strict, feature/alpha10f2-android-private-dns-posture, feature/alpha10f4-privacy-controls-spike, feature/alpha10g-network-regression, feature/alpha10h1-quick-tools-report, feature/alpha10h2-strict-recovery]
+    branches: [feature/alpha01-bootstrap, feature/alpha02-native-themes, feature/alpha03-proxy-profiles, feature/alpha04-chat-layouts, feature/alpha05-chat-tools, feature/alpha06-message-tools, feature/alpha07-visual-identity, feature/alpha08-archive-visibility, feature/alpha09-translation, feature/alpha10-chat-view-presets, fix/samsung-a36-ult-themes, feature/alpha10b-paired-ult-themes, fix/alpha10b-inapp-night-toggle, feature/alpha10c-proxy-diagnostics, feature/alpha10d-proxy-privacy-verification, feature/alpha10e-external-link-guard, feature/alpha10f0-ult-settings-audit, feature/alpha10f1-native-strict, feature/alpha10f2-android-private-dns-posture, feature/alpha10f4-privacy-controls-spike, feature/alpha10g-network-regression, feature/alpha10h1-quick-tools-report, feature/alpha10h2-strict-recovery, feature/alpha10i1-chat-category-bar]
     paths:
       - '.github/workflows/android-alpha.yml'
       - 'scripts/**'
@@ -194,14 +194,14 @@ jobs:
             echo "::error::Expected one compiled APK, found ${#apks[@]}"
             exit 1
           fi
-          cp -- "${apks[0]}" "artifacts/ult-alpha10h2-strict-recovery-${{ matrix.variant }}-arm64-debug.apk"
+          cp -- "${apks[0]}" "artifacts/ult-alpha10i1-chat-category-bar-${{ matrix.variant }}-arm64-debug.apk"
           ls -lh artifacts/*.apk
           sha256sum artifacts/*.apk
       - name: Upload installable internal test APK
         if: steps.prerequisites.outputs.ready == 'true' && success()
         uses: actions/upload-artifact@v4
         with:
-          name: ult-alpha10h2-strict-recovery-${{ matrix.variant }}-android
+          name: ult-alpha10i1-chat-category-bar-${{ matrix.variant }}-android
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 14

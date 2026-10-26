@@ -8,6 +8,9 @@ public final class UltChatViewTest {
         ok(UltChatView.ALL.equals(UltChatView.sanitize(null)), "unset defaults all");
         ok(UltChatView.ALL.equals(UltChatView.sanitize("bogus")), "unknown defaults all");
         ok(UltChatView.MODES.length == UltChatView.LABELS.length, "labels match keys");
+        ok(UltChatView.QUICK_TAB_MODES.length == 6, "six categories");
+        ok(UltChatView.QUICK_TAB_MODES.length == UltChatView.QUICK_TAB_LABELS.length, "category labels match");
+        ok(!UltChatView.quickBarKey(0).equals(UltChatView.quickBarKey(1)), "separate per-account bar visibility");
         ok(UltChatView.modeIndex("bots") == 4, "bot index");
         ok(UltChatView.modeIndex("people") == 5, "people index");
         ok(UltChatView.PEOPLE.equals(UltChatView.nextQuickTab(UltChatView.BOTS)), "cycle to people");

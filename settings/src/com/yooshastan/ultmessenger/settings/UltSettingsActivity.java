@@ -85,6 +85,9 @@ public final class UltSettingsActivity extends BaseFragment {
         addLink(context, content, "ULT chat layout presets",
                 "In Chat Settings, open the ⋮ menu → ULT Chat Layout",
                 () -> presentFragment(new ThemeActivity(ThemeActivity.THEME_TYPE_BASIC)));
+        addLink(context, content, "Show chat category bar",
+                "Optional All / Unread / Groups / Channels / Bots / People strip on Chats",
+                () -> toggleChatCategoryBar(context));
         addLink(context, content, "Chat views and sorting",
                 "All, Unread, Groups, Channels, Bots, People and Unread First",
                 () -> showChatViewPicker(context));
@@ -344,6 +347,17 @@ public final class UltSettingsActivity extends BaseFragment {
                     }
                 })
                 .show();
+    }
+
+    private void toggleChatCategoryBar(Context context) {
+        SharedPreferences preferences = context.getSharedPreferences(
+                UltChatView.PREFERENCES, Context.MODE_PRIVATE);
+        String key = UltChatView.quickBarKey(UserConfig.selectedAccount);
+        boolean enabled = !preferences.getBoolean(key, false);
+        preferences.edit().putBoolean(key, enabled).apply();
+        android.widget.Toast.makeText(context,
+                enabled ? "Category bar enabled in Chats" : "Category bar hidden",
+                android.widget.Toast.LENGTH_SHORT).show();
     }
 
     private void showChatViewPicker(Context context) {
