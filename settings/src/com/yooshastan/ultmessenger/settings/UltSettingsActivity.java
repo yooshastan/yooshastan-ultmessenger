@@ -158,8 +158,6 @@ public final class UltSettingsActivity extends BaseFragment {
                                     android.widget.Toast.LENGTH_SHORT).show();
                             dialog.dismiss();
                         })
-                .setMessage("Uses Telegram's existing global chat-list setting. " +
-                        "Does not alter messages, chat order or theme colors.")
                 .setNegativeButton("Cancel", null).show();
     }
 
@@ -229,13 +227,13 @@ public final class UltSettingsActivity extends BaseFragment {
     }
 
     private void showNetworkPathCoverage(Context context) {
-        final String report = "ULTGRAM NETWORK PATH COVERAGE — STATIC CODE AUDIT\\n"
-                + "Native tgnet sockets: experimental guard exists; live egress not proven\\n"
-                + "Java HTTP and hostname resolution: NOT FULLY AUDITED\\n"
-                + "Android DNS, DoT, DoQ: external routing NOT VERIFIED; DoQ backend NOT INSTALLED\\n"
-                + "Media downloads and CDN: NOT ROUTE-VERIFIED\\n"
-                + "WebViews, previews and external links: NOT ROUTE-VERIFIED\\n"
-                + "Calls / real-time media (UDP): NOT ROUTE-VERIFIED\\n\\n"
+        final String report = "ULTGRAM NETWORK PATH COVERAGE — STATIC CODE AUDIT\n"
+                + "Native tgnet sockets: experimental guard exists; live egress not proven\n"
+                + "Java HTTP and hostname resolution: NOT FULLY AUDITED\n"
+                + "Android DNS, DoT, DoQ: external routing NOT VERIFIED; DoQ backend NOT INSTALLED\n"
+                + "Media downloads and CDN: NOT ROUTE-VERIFIED\n"
+                + "WebViews, previews and external links: NOT ROUTE-VERIFIED\n"
+                + "Calls / real-time media (UDP): NOT ROUTE-VERIFIED\n\n"
                 + "Capture required: phone-edge/gateway + tunnel-inner + proxy-host; "
                 + "a proxy-host capture alone cannot rule out direct traffic. "
                 + "Android VPN indicator does not identify the app route. "

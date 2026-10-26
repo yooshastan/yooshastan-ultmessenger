@@ -23,6 +23,7 @@ class CombinedContract(TestCase):
         self.assertIn("SharedConfig.setUseThreeLinesLayout(selected == 1)", u)
         self.assertIn("SharedConfig.useThreeLinesLayout", u)
         self.assertIn("Two-line preview (compact)", u)
+        self.assertNotIn('setMessage("Uses Telegram', u)
         self.assertIn("Three-line preview (more text)", u)
     def test_audit_is_diagnostic_only_and_native_guard_is_unmodified(self):
         u = UI.read_text()
