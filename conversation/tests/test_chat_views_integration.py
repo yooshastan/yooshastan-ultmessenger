@@ -41,6 +41,8 @@ class ChatViewIntegrationTest(TestCase):
             self.assertIn("ULT: Chat Views", activity)
             self.assertIn("ULT: Next Chat Tab", activity)
             self.assertIn("nextQuickTab", activity)
+            self.assertIn('"ULT View: " + UltChatView.LABELS[UltChatView.modeIndex(next)]', activity)
+            self.assertNotIn('"ULT View:  + UltChatView.LABELS', activity)
             self.assertIn("ULT: Show category bar", activity)
             self.assertIn("installUltCategoryBar(context, contentView)", activity)
             self.assertIn("quickBarKey(currentAccount)", activity)

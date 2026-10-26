@@ -75,7 +75,7 @@ ACTIVITY_FIELDS = """
         }
         refreshUltCategoryBar();
         android.widget.Toast.makeText(activity,
-                "ULT View:  + UltChatView.LABELS[UltChatView.modeIndex(next)],
+                "ULT View: " + UltChatView.LABELS[UltChatView.modeIndex(next)],
                 android.widget.Toast.LENGTH_SHORT).show();
     }
     private android.widget.HorizontalScrollView ultCategoryBar;
