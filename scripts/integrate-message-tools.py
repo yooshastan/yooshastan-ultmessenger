@@ -17,6 +17,7 @@ CONSTANTS = """    public final static int OPTION_ULT_COPY_MESSAGE_ID = 0x554c56
     public final static int OPTION_ULT_COPY_MEDIA_DETAILS = 0x554c59;
     public final static int OPTION_ULT_COPY_ISO_UTC_TIME = 0x554c5a;
     public final static int OPTION_ULT_COPY_PUBLIC_MESSAGE_LINK = 0x554c5b;
+    public final static int OPTION_ULT_COPY_FILE_SUMMARY = 0x554c5c;
 """
 MENU = """        // ULT: local read-only metadata; never copy private message content.
         if (selectedObject != null && selectedObject.messageOwner != null
@@ -50,6 +51,9 @@ MENU = """        // ULT: local read-only metadata; never copy private message c
             if (selectedObject.getDocument() != null) {
                 items.add("ULT: Copy document details");
                 options.add(OPTION_ULT_COPY_MEDIA_DETAILS);
+                icons.add(R.drawable.msg_copy);
+                items.add("ULT: Copy file summary");
+                options.add(OPTION_ULT_COPY_FILE_SUMMARY);
                 icons.add(R.drawable.msg_copy);
             }
         }
@@ -100,6 +104,17 @@ HANDLERS = """            case OPTION_ULT_COPY_MESSAGE_ID: {
                         android.widget.Toast.makeText(getParentActivity(), "Public message link copied",
                                 android.widget.Toast.LENGTH_SHORT).show();
                     }
+                }
+                break;
+            }
+            case OPTION_ULT_COPY_FILE_SUMMARY: {
+                if (selectedObject != null && selectedObject.getDocument() != null) {
+                    final org.telegram.tgnet.TLRPC.Document document = selectedObject.getDocument();
+                    AndroidUtilities.addToClipboard(UltChatTools.mediaSummary(
+                            org.telegram.messenger.FileLoader.getDocumentFileName(document),
+                            document.mime_type, document.size));
+                    android.widget.Toast.makeText(getParentActivity(), "File summary copied",
+                            android.widget.Toast.LENGTH_SHORT).show();
                 }
                 break;
             }

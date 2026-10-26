@@ -61,6 +61,31 @@ public final class UltChatTools {
         return "MIME: " + safeMime + "\nBytes: " + Math.max(0L, bytes);
     }
 
+    /** Clipboard-only summary: no filesystem, storage or network access. */
+    public static String mediaSummary(String filename, String mime, long bytes) {
+        String safeName = filename == null ? "" : filename.trim();
+        // Prevent terminal/control injection and accidental path/credential copying.
+        safeName = safeName.replaceAll("[\\\\/\\r\\n\\t\\p{Cntrl}]", "_");
+        if (safeName.length() > 120) {
+            safeName = safeName.substring(0, 120);
+        }
+        if (safeName.isEmpty()) {
+            safeName = "unnamed";
+        }
+        long safeSize = Math.max(0L, bytes);
+        final String[] units = {"B", "KiB", "MiB", "GiB", "TiB"};
+        double amount = safeSize;
+        int unit = 0;
+        while (amount >= 1024.0 && unit < units.length - 1) {
+            amount /= 1024.0;
+            unit++;
+        }
+        String size = unit == 0 ? Long.toString(safeSize) + " B"
+                : String.format(Locale.ROOT, "%.1f %s", amount, units[unit]);
+        String details = mediaDetails(mime, safeSize);
+        return "File: " + safeName + "\nSize: " + size + "\n" + details;
+    }
+
     public static boolean hasTopic(long topicId) {
         return topicId > 0;
     }
