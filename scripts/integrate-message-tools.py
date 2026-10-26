@@ -15,6 +15,8 @@ CONSTANTS = """    public final static int OPTION_ULT_COPY_MESSAGE_ID = 0x554c56
     public final static int OPTION_ULT_COPY_SENDER_ID = 0x554c57;
     public final static int OPTION_ULT_COPY_UNIX_TIME = 0x554c58;
     public final static int OPTION_ULT_COPY_MEDIA_DETAILS = 0x554c59;
+    public final static int OPTION_ULT_COPY_ISO_UTC_TIME = 0x554c5a;
+    public final static int OPTION_ULT_COPY_PUBLIC_MESSAGE_LINK = 0x554c5b;
 """
 MENU = """        // ULT: local read-only metadata; never copy private message content.
         if (selectedObject != null && selectedObject.messageOwner != null
@@ -30,6 +32,19 @@ MENU = """        // ULT: local read-only metadata; never copy private message c
             if (selectedObject.messageOwner.date > 0) {
                 items.add("ULT: Copy message time (Unix UTC)");
                 options.add(OPTION_ULT_COPY_UNIX_TIME);
+                icons.add(R.drawable.msg_copy);
+                items.add("ULT: Copy message time (ISO UTC)");
+                options.add(OPTION_ULT_COPY_ISO_UTC_TIME);
+                icons.add(R.drawable.msg_copy);
+            }
+            // Only an actual public channel/supergroup can have a valid
+            // t.me/<username>/<message ID> permalink.
+            if (currentEncryptedChat == null && currentChat != null
+                    && ChatObject.isChannel(currentChat) && selectedObject.getId() > 0
+                    && UltChatTools.publicMessageLink(
+                        ChatObject.getPublicUsername(currentChat), selectedObject.getId()) != null) {
+                items.add("ULT: Copy public message link");
+                options.add(OPTION_ULT_COPY_PUBLIC_MESSAGE_LINK);
                 icons.add(R.drawable.msg_copy);
             }
             if (selectedObject.getDocument() != null) {
@@ -61,6 +76,30 @@ HANDLERS = """            case OPTION_ULT_COPY_MESSAGE_ID: {
                     AndroidUtilities.addToClipboard(timestamp);
                     android.widget.Toast.makeText(getParentActivity(), "Unix timestamp copied",
                             android.widget.Toast.LENGTH_SHORT).show();
+                }
+                break;
+            }
+            case OPTION_ULT_COPY_ISO_UTC_TIME: {
+                final String isoUtc = selectedObject.messageOwner != null
+                        ? UltChatTools.utcTimestamp(selectedObject.messageOwner.date) : null;
+                if (isoUtc != null) {
+                    AndroidUtilities.addToClipboard(isoUtc);
+                    android.widget.Toast.makeText(getParentActivity(), "UTC timestamp copied",
+                            android.widget.Toast.LENGTH_SHORT).show();
+                }
+                break;
+            }
+            case OPTION_ULT_COPY_PUBLIC_MESSAGE_LINK: {
+                // Revalidate at tap-time: chat metadata can change while menu is open.
+                if (currentEncryptedChat == null && currentChat != null
+                        && ChatObject.isChannel(currentChat) && selectedObject.getId() > 0) {
+                    final String publicMessageLink = UltChatTools.publicMessageLink(
+                            ChatObject.getPublicUsername(currentChat), selectedObject.getId());
+                    if (publicMessageLink != null) {
+                        AndroidUtilities.addToClipboard(publicMessageLink);
+                        android.widget.Toast.makeText(getParentActivity(), "Public message link copied",
+                                android.widget.Toast.LENGTH_SHORT).show();
+                    }
                 }
                 break;
             }

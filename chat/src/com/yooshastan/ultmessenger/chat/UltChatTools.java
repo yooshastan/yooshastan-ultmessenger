@@ -1,6 +1,8 @@
 package com.yooshastan.ultmessenger.chat;
 
 import java.util.Locale;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.regex.Pattern;
 
 /**
@@ -31,9 +33,24 @@ public final class UltChatTools {
         return "https://t.me/" + candidate.toLowerCase(Locale.ROOT);
     }
 
+    /** Public message permalink. Never generate private, invitation or secret-chat links. */
+    public static String publicMessageLink(String username, long messageId) {
+        if (messageId <= 0) {
+            return null;
+        }
+        final String root = publicLink(username);
+        return root != null ? root + "/" + messageId : null;
+    }
+
     /** Local message metadata, copied only following an explicit menu tap. */
     public static String unixTimestamp(long seconds) {
         return seconds > 0 ? Long.toString(seconds) : null;
+    }
+
+    /** Human-readable UTC; Z explicitly means UTC, never device-local time. */
+    public static String utcTimestamp(long seconds) {
+        return seconds > 0 ? DateTimeFormatter.ISO_INSTANT.format(
+                Instant.ofEpochSecond(seconds)) : null;
     }
 
     /** Safe document metadata; never reads, opens or exports the file. */
