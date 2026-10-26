@@ -17,8 +17,8 @@ class StrictRecoveryContract(TestCase):
         for marker in (
                 "strictProxyMode.store(enabled)", "std::atomic<bool> strictProxyMode",
                 "canEnableUltStrictNativeProxy()", "native_isStrictProxyModeEnabled",
-                "if (!enabled && networkAvailable && !networkPaused",
-                "if (networkAvailable && !networkPaused && primary != nullptr)",
+                "if (networkAvailable && !networkPaused && (!enabled || !proxyAddress.empty()))",
+                "if (!awaitingProxy && networkAvailable && !networkPaused && primary != nullptr)",
                 "createGenericConnection()->connect()", "processRequestQueue(0, 0)",
                 "if (useProxySettings && ConnectionsManager.isUltStrictNativeProxyEnabled())",
                 "closeSocket(1, -1);", "overrideProxyAddress.empty()"):

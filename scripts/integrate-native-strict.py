@@ -16,12 +16,18 @@ JNI = Path("TMessagesProj/jni/TgNetWrapper.cpp")
 PROXY_UI = Path("TMessagesProj/src/main/java/org/telegram/ui/ProxyListActivity.java")
 
 JAVA_INIT = '        final ProxySettings proxySettings = ProxySettings.fromSharedPreferences(preferences);\n'
+JAVA_STARTUP_DONE = '        checkConnection();\n    }\n'
 JAVA_SETTER = '    public static void setProxySettings(boolean enabled, ProxySettings settings) {\n'
 JAVA_NATIVE = '    public static native void native_setProxySettings(int currentAccount, String address, int port, String username, String password, String secret);\n'
 JAVA_IMPORT = 'import org.telegram.utils.proxy.ProxySettings;\n'
 HEADER_METHOD = '    void setProxySettings(std::string address, uint16_t port, std::string username, std::string password, std::string secret);\n'
 HEADER_FIELD = '    std::string proxyAddress = "";\n'
 CPP_METHOD = 'void ConnectionsManager::setProxySettings(std::string address, uint16_t port, std::string username, std::string password, std::string secret) {\n'
+CPP_PROXY_FINISH = ('            processRequestQueue(0, 0);\n'
+                    '        }\n'
+                    '    });\n'
+                    '}\n\n'
+                    'void ConnectionsManager::setLangCode(std::string langCode) {\n')
 SOCKET_ATTACH = '    ConnectionsManager::getInstance(instanceNum).attachConnection(this);\n'
 SOCKET_INTERNAL = 'void ConnectionSocket::openConnectionInternal(bool ipv6) {\n'
 JNI_METHOD = 'void setProxySettings(JNIEnv *env, jclass c, jint instanceNum, jstring address, jint port, jstring username, jstring password, jstring secret) {\n'
@@ -71,8 +77,10 @@ JAVA_METHODS = """    private static final String ULT_STRICT_NATIVE_PROXY_KEY = 
 NATIVE_METHOD = """void ConnectionsManager::setStrictProxyMode(bool enabled) {
     scheduleTask([&, enabled] {
         if (strictProxyMode.load() == enabled) {
-            // An OFF request can also recover an out-of-sync connection.
-            if (!enabled && networkAvailable && !networkPaused) {
+            // A repeated ON request after startup is a safe reconnect trigger
+            // only after the selected native proxy has been configured.
+            // A repeated OFF request retains the recovery behavior from 0.10h.2.
+            if (networkAvailable && !networkPaused && (!enabled || !proxyAddress.empty())) {
                 Datacenter *active = getDatacenterWithId(DEFAULT_DATACENTER_ID);
                 if (active != nullptr) active->createGenericConnection()->connect();
                 processRequestQueue(0, 0);
@@ -87,13 +95,16 @@ NATIVE_METHOD = """void ConnectionsManager::setStrictProxyMode(bool enabled) {
         if (primary != nullptr && primary->isHandshakingAny()) {
             primary->beginHandshake(HandshakeTypeCurrent, true);
         }
-        // Re-open after either transition even with no queued message request.
-        // Strict ON still blocks direct sockets when the native proxy is absent.
-        // Respect Android network-unavailable / paused states.
-        if (networkAvailable && !networkPaused && primary != nullptr) {
+        // A saved strict ON switch can be restored before Java has applied the
+        // selected native proxy. Do not start a blocked/direct attempt in that gap.
+        // The native proxy setter and the post-init handshake retry resume it.
+        const bool awaitingProxy = enabled && proxyAddress.empty();
+        if (!awaitingProxy && networkAvailable && !networkPaused && primary != nullptr) {
             primary->createGenericConnection()->connect();
         }
-        processRequestQueue(0, 0);
+        if (!awaitingProxy) {
+            processRequestQueue(0, 0);
+        }
     });
 }
 
@@ -143,6 +154,14 @@ def integrate(root: Path) -> list[Path]:
     java = once(java, JAVA_IMPORT, JAVA_IMPORT + 'import com.yooshastan.ultmessenger.proxy.UltStrictProxyPolicy;\n')
     java = once(java, JAVA_INIT, JAVA_INIT +
                 '        native_setStrictProxyMode(currentAccount, preferences.getBoolean("ult_strict_native_proxy", false));\n')
+    # Keep the strict guard installed before the first native proxy operation,
+    # then replay ON after proxy and network initialisation for cold-start recovery.
+    java = once(java, JAVA_STARTUP_DONE,
+                '        checkConnection();\n'
+                '        if (preferences.getBoolean("ult_strict_native_proxy", false)) {\n'
+                '            native_setStrictProxyMode(currentAccount, true);\n'
+                '        }\n'
+                '    }\n')
     java = once(java, JAVA_SETTER, JAVA_METHODS + JAVA_SETTER)
     java = once(java, JAVA_NATIVE,
                 JAVA_NATIVE + '    public static native void native_setStrictProxyMode(int currentAccount, boolean enabled);\n'
@@ -151,6 +170,14 @@ def integrate(root: Path) -> list[Path]:
                   + '    bool isStrictProxyModeEnabled() const;\n')
     header = once(header, HEADER_FIELD, HEADER_FIELD + '    std::atomic<bool> strictProxyMode{false};\n')
     cpp = once(cpp, CPP_METHOD, NATIVE_METHOD + CPP_METHOD)
+    cpp = once(cpp, CPP_PROXY_FINISH,
+               '            // Startup strict mode can precede proxy restoration.\n'
+               '            // Once a valid address is installed, explicitly wake Telegram.\n'
+               '            if (strictProxyMode.load() && !proxyAddress.empty()\n'
+               '                    && networkAvailable && !networkPaused && datacenter != nullptr) {\n'
+               '                datacenter->createGenericConnection()->connect();\n'
+               '            }\n'
+               + CPP_PROXY_FINISH)
     socket = once(socket, SOCKET_ATTACH, SOCKET_ATTACH + SOCKET_GUARD)
     socket = once(socket, SOCKET_INTERNAL, SOCKET_INTERNAL + SOCKET_INTERNAL_GUARD)
     jni = once(jni, JNI_METHOD,
