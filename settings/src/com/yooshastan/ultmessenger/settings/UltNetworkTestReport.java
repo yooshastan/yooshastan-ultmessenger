@@ -36,16 +36,20 @@ public final class UltNetworkTestReport {
         return "Unknown; route NOT verified";
     }
 
-    public static String render(String vpnHint, boolean strictNative,
-                                int androidSdk, boolean[] userChecks) {
+    public static String render(String vpnHint, boolean strictRequested,
+                                boolean strictObserved, int androidSdk, boolean[] userChecks) {
         if (userChecks == null || userChecks.length != CHECKS.length) {
             throw new IllegalArgumentException("Checklist length mismatch");
         }
         StringBuilder out = new StringBuilder("ULTGRAM NETWORK TEST REPORT — USER-REPORTED\n");
         out.append("Android SDK: ").append(Math.max(0, androidSdk)).append('\n');
         out.append("Android VPN hint: ").append(vpnSummary(vpnHint)).append('\n');
-        out.append("Native proxy-only mode: ").append(strictNative ? "ON (experimental)" : "OFF")
-                .append('\n');
+        out.append("Native proxy-only requested: ").append(strictRequested ? "ON" : "OFF").append('\n');
+        out.append("Native socket guard observed (selected account): ")
+                .append(strictObserved ? "ON" : "OFF").append('\n');
+        if (strictRequested != strictObserved) {
+            out.append("STATE MISMATCH: native transition may be pending; restart and recheck.\n");
+        }
         out.append("Checklist (not independently verified):\n");
         for (int i = 0; i < CHECKS.length; i++) {
             out.append(userChecks[i] ? "[marked] " : "[not marked] ")

@@ -38,7 +38,8 @@ public final class UltProxyDiagnosticsTest {
                 || !snapshot.contains("Selected; Telegram session connected")
                 || !snapshot.contains("69 ms")
                 || !snapshot.contains("NOT implemented")
-                || !snapshot.contains("clipboard only on request")) {
+                || !snapshot.contains("clipboard only on request")
+                || snapshot.contains("Alpha 0.10d")) {
             throw new AssertionError("Redacted report must state scope and native status");
         }
         String untrustedTransport = UltProxyDiagnostics.redactedAuditSnapshot(

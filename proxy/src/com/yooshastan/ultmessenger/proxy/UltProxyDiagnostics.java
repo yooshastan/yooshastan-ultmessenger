@@ -58,7 +58,7 @@ public final class UltProxyDiagnostics {
         } else {
             safeTransport = "Other/unknown";
         }
-        return "Ultgram Alpha 0.10d local status snapshot (NOT a leak test)\n"
+        return "Ultgram local status snapshot (NOT a leak test)\n"
                 + "Transport: " + safeTransport + "\n"
                 + "Global Use Proxy switch: " + (enabled ? "On" : "Off") + "\n"
                 + "Selection/session: " + routeStatus(enabled, selected, connected, updating) + "\n"

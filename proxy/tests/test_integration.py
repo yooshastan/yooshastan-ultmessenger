@@ -48,6 +48,7 @@ class ProxyIntegrationTest(TestCase):
             self.assertIn("info.mgInternal", result)
             self.assertTrue((root / "TMessagesProj/src/main/java/com/yooshastan/ultmessenger/proxy/UltProxyLabels.java").is_file())
             self.assertTrue((root / "TMessagesProj/src/main/java/com/yooshastan/ultmessenger/proxy/UltProxyDiagnostics.java").is_file())
+            self.assertTrue((root / "TMessagesProj/src/main/java/com/yooshastan/ultmessenger/proxy/UltStrictProxyPolicy.java").is_file())
             with self.assertRaises(ValueError):
                 integration.integrate(root)
 

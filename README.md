@@ -1,5 +1,7 @@
 # Yooshastan ULT Messenger
 
+> **Alpha 0.10h.2 (draft, pending Pixel validation):** Fixes the experimental native strict-proxy toggle after an observed Ultgram outage. New enables require an active configured MTProto/SOCKS5 proxy; the proxy switch cannot be casually disabled while the guard is requested ON. Switching strict OFF requests a native reconnection, and diagnostics distinguish requested vs native-observed state without claiming whole-app leak protection. Keeps strict **OFF by default**. See [Alpha 0.10h.2 tests](docs/ALPHA10H2_STRICT_RECOVERY_TEST.md). **Do not re-enable strict until this APK passes device testing.**
+
 > **Alpha 0.10h.1 (draft, not device-tested):** Adds a quick-cycle entry for locally filtered chats (including People/private chats), opt-in message timestamp and document metadata copy actions, compact rows within **Ultgram Settings only**, and a redacted manually marked Network Test Report compatible with Wonhee Proxy remaining connected. This is **not** a native swipe-tab strip, bulk message manager, download manager or complete appearance redesign. No new VPN/DNS/proxy enforcement is activated. [Test instructions](docs/ALPHA10H1_OPT_IN_TOOLS_TEST.md). The feature work is staged on top of Alpha 0.10g's device-tested baseline.
 
 
