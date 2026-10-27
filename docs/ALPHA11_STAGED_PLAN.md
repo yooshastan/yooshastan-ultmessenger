@@ -21,7 +21,7 @@
 - Device QA: account switching, persistence, pinned/archived conversations, switching categories, no unauthorized remote translation of secret chats.
 
 ## Release gates
-- Each stage has its own branch/PR, Python/Java contracts and FOSS ARM64 compile before Pixel smoke test.
+- Alpha 0.11a retains its tested device baseline. **0.11b and 0.11c now share one feature branch and one full FOSS ARM64 release-candidate compile** to reduce long native builds. Lightweight Python/Java contracts run on each development push. Full compile occurs on the combined RC branch (or a deliberate manual dispatch) before Pixel smoke tests.
 - Strict-proxy ON across cold start and reconnect, messaging, downloads, no forced-toggle recovery, existing theme/document behavior.
 - No claims of VPN/DoQ protections or network fail-closed behavior without actual capture.
 - Public distribution needs owned signing, versioning, security/license review.

@@ -1,8 +1,10 @@
-name: Ultgram Alpha 0.11a opt-in screen privacy
+name: Ultgram Alpha 0.11b+c combined FOSS ARM64 candidate
 
+# Compile the pinned native Android source only for the combined RC branch or
+# an explicit manual dispatch. Feature commits receive fast scaffold + JVM tests.
 on:
   push:
-    branches: [feature/alpha01-bootstrap, feature/alpha02-native-themes, feature/alpha03-proxy-profiles, feature/alpha04-chat-layouts, feature/alpha05-chat-tools, feature/alpha06-message-tools, feature/alpha07-visual-identity, feature/alpha08-archive-visibility, feature/alpha09-translation, feature/alpha10-chat-view-presets, fix/samsung-a36-ult-themes, feature/alpha10b-paired-ult-themes, fix/alpha10b-inapp-night-toggle, feature/alpha10c-proxy-diagnostics, feature/alpha10d-proxy-privacy-verification, feature/alpha10e-external-link-guard, feature/alpha10f0-ult-settings-audit, feature/alpha10f1-native-strict, feature/alpha10f2-android-private-dns-posture, feature/alpha10f4-privacy-controls-spike, feature/alpha10g-network-regression, feature/alpha10h1-quick-tools-report, feature/alpha10h2-strict-recovery, feature/alpha10i1-chat-category-bar, fix/alpha10i1a-strict-startup, feature/alpha10i2-message-utilities, feature/alpha10i3-media-appearance-audit, release/alpha10i3-rc1, feature/alpha11a-local-privacy]
+    branches: [release/alpha11bc-combined-rc1]
     paths:
       - '.github/workflows/android-alpha.yml'
       - 'scripts/**'
@@ -86,6 +88,7 @@ jobs:
           python3 -m unittest discover -s settings/tests -p 'test_alpha10i3_combined_contract.py'
           python3 -m unittest discover -s settings/tests -p 'test_alpha10i3_rc1_release_contract.py'
           python3 -m unittest discover -s settings/tests -p 'test_alpha11a_screen_privacy.py'
+          python3 -m unittest discover -s settings/tests -p 'test_alpha11bc_combined_contract.py'
           python3 -m unittest discover -s proxy/tests -p 'test_alpha10g_path_audit.py'
           mkdir -p /tmp/ult-dns-classes
           javac -d /tmp/ult-dns-classes settings/src/com/yooshastan/ultmessenger/settings/UltDnsPosture.java settings/tests/UltDnsPostureTest.java
@@ -93,6 +96,8 @@ jobs:
           mkdir -p /tmp/ult-network-report
           javac -d /tmp/ult-network-report settings/src/com/yooshastan/ultmessenger/settings/UltNetworkTestReport.java settings/tests/UltNetworkTestReportTest.java
           java -cp /tmp/ult-network-report UltNetworkTestReportTest
+          javac -d /tmp/ult-network-report settings/src/com/yooshastan/ultmessenger/settings/UltNetworkSourceMatrix.java settings/tests/UltNetworkSourceMatrixTest.java
+          java -cp /tmp/ult-network-report UltNetworkSourceMatrixTest
           mkdir -p /tmp/ult-doq-contract
           javac -d /tmp/ult-doq-contract dns/src/com/yooshastan/ultmessenger/dns/UltDoqEndpoint.java dns/src/com/yooshastan/ultmessenger/dns/UltDoqBootstrap.java dns/src/com/yooshastan/ultmessenger/dns/UltDnsTrackerPolicy.java dns/src/com/yooshastan/ultmessenger/dns/UltDoqResolver.java dns/tests/UltDoqContractTest.java dns/tests/UltDoqBootstrapTest.java dns/tests/UltDnsTrackerPolicyTest.java
           java -cp /tmp/ult-doq-contract UltDoqContractTest
@@ -199,13 +204,13 @@ jobs:
             echo "::error::Expected one compiled APK, found ${#apks[@]}"
             exit 1
           fi
-          cp -- "${apks[0]}" "artifacts/ult-alpha11a-screen-privacy-foss-arm64-debug.apk"
+          cp -- "${apks[0]}" "artifacts/ult-alpha11bc-combined-foss-arm64-debug.apk"
           (
             cd artifacts
-            sha256sum ult-alpha11a-screen-privacy-foss-arm64-debug.apk > SHA256SUMS
+            sha256sum ult-alpha11bc-combined-foss-arm64-debug.apk > SHA256SUMS
           )
           {
-            printf 'Candidate: Ultgram Alpha 0.11a local screen-privacy (internal test APK)\n'
+            printf 'Candidate: Ultgram Alpha 0.11b+c combined audit / chat / translation (internal test APK)\n'
             printf 'Repo: yooshastan/yooshastan-ultmessenger\n'
             printf 'Repo commit: %s\n' "$GITHUB_SHA"
             printf 'Pinned Mercurygram source: %s\n' "$(tr -d '\r\n ' < upstream/mercurygram.sha)"
@@ -218,7 +223,7 @@ jobs:
         if: steps.prerequisites.outputs.ready == 'true' && success()
         uses: actions/upload-artifact@v4
         with:
-          name: ult-alpha11a-screen-privacy-foss-android
+          name: ult-alpha11bc-combined-foss-android
           path: artifacts/*
           if-no-files-found: error
           retention-days: 30

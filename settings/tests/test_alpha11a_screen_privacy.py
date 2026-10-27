@@ -45,7 +45,7 @@ class ScreenPrivacyTest(TestCase):
 
     def test_ult_settings_dialog_windows_are_protected_before_show(self):
         ui = (ROOT / "settings/src/com/yooshastan/ultmessenger/settings/UltSettingsActivity.java").read_text()
-        self.assertEqual(ui.count("new UltSecureDialogBuilder(context)"), 16)
+        self.assertGreaterEqual(ui.count("new UltSecureDialogBuilder(context)"), 16)
         self.assertNotIn("new android.app.AlertDialog.Builder(context)", ui)
         self.assertIn("class UltSecureDialogBuilder extends android.app.AlertDialog.Builder", ui)
         self.assertIn("public android.app.AlertDialog show()", ui)

@@ -40,6 +40,85 @@ public final class UltChatView {
         return ALL;
     }
 
+
+    /** Category order/visibility lives in local per-account UI preferences only. */
+    public static String tabConfigKey(int account) {
+        if (account < 0) throw new IllegalArgumentException("Invalid account");
+        return "chat_tabs_account_" + account;
+    }
+
+    public static String defaultTabConfig() {
+        return "all,unread,groups,channels,bots,people";
+    }
+
+    public static boolean isQuickTab(String mode) {
+        if (mode == null) return false;
+        for (String candidate : QUICK_TAB_MODES) {
+            if (candidate.equals(mode)) return true;
+        }
+        return false;
+    }
+
+    public static String[] visibleTabs(String saved) {
+        java.util.ArrayList<String> modes = new java.util.ArrayList<>();
+        modes.add(ALL);
+        if (saved == null) saved = defaultTabConfig();
+        for (String token : saved.split(",", -1)) {
+            String mode = token.trim();
+            if (isQuickTab(mode) && !ALL.equals(mode) && !modes.contains(mode)) {
+                modes.add(mode);
+            }
+        }
+        return modes.toArray(new String[0]);
+    }
+
+    public static String serializeTabs(String[] modes) {
+        return String.join(",", visibleTabs(String.join(",", modes)));
+    }
+
+    public static boolean isTabVisible(String saved, String mode) {
+        for (String visible : visibleTabs(saved)) {
+            if (visible.equals(mode)) return true;
+        }
+        return false;
+    }
+
+    public static String changeTabVisibility(String saved, String mode, boolean visible) {
+        if (!isQuickTab(mode)) throw new IllegalArgumentException("Unknown chat tab");
+        if (ALL.equals(mode)) return serializeTabs(visibleTabs(saved));
+        java.util.ArrayList<String> modes = new java.util.ArrayList<>(
+                java.util.Arrays.asList(visibleTabs(saved)));
+        modes.remove(mode);
+        if (visible) modes.add(mode);
+        return String.join(",", modes);
+    }
+
+    public static String moveTab(String saved, String mode, int direction) {
+        if (direction != -1 && direction != 1) throw new IllegalArgumentException("Direction");
+        java.util.ArrayList<String> modes = new java.util.ArrayList<>(
+                java.util.Arrays.asList(visibleTabs(saved)));
+        int index = modes.indexOf(mode);
+        int to = index + direction;
+        if (index <= 0 || to <= 0 || to >= modes.size()) return String.join(",", modes);
+        java.util.Collections.swap(modes, index, to);
+        return String.join(",", modes);
+    }
+
+    public static String quickTabLabel(String mode) {
+        for (int i = 0; i < QUICK_TAB_MODES.length; i++) {
+            if (QUICK_TAB_MODES[i].equals(mode)) return QUICK_TAB_LABELS[i];
+        }
+        return QUICK_TAB_LABELS[0];
+    }
+
+    public static String nextVisibleTab(String current, String saved) {
+        String[] tabs = visibleTabs(saved);
+        for (int i = 0; i < tabs.length; i++) {
+            if (tabs[i].equals(current)) return tabs[(i + 1) % tabs.length];
+        }
+        return ALL;
+    }
+
     /** Cycles opt-in display tabs; the unread-first sorting preset is not a category. */
     public static String nextQuickTab(String currentMode) {
         String safe = sanitize(currentMode);

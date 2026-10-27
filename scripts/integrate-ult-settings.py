@@ -14,6 +14,7 @@ DNS_MODELS = (
     Path("settings/src/com/yooshastan/ultmessenger/settings/UltDnsPosture.java"),
     Path("settings/src/com/yooshastan/ultmessenger/settings/UltAndroidDnsInspector.java"),
     Path("settings/src/com/yooshastan/ultmessenger/settings/UltNetworkTestReport.java"),
+    Path("settings/src/com/yooshastan/ultmessenger/settings/UltNetworkSourceMatrix.java"),
 )
 DNS_POLICY_MODELS = (
     Path("dns/src/com/yooshastan/ultmessenger/dns/UltDoqEndpoint.java"),
