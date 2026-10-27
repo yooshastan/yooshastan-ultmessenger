@@ -27,3 +27,19 @@ jobs:
           test -s docs/ANDROID_STUDIO.md
       - name: Test prototype configuration helper
         run: python3 -m unittest discover -s tests -v
+
+      - name: Fast Alpha 0.11 network / chat / translation contract checks
+        if: github.ref == 'refs/heads/feature/alpha11bc-batched' || github.head_ref == 'feature/alpha11bc-batched'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s proxy/tests -p 'test_alpha10g_path_audit.py'
+          python3 -m unittest discover -s settings/tests -p 'test_alpha11a_screen_privacy.py'
+          python3 -m unittest discover -s conversation/tests -p 'test_chat_views_integration.py'
+          python3 -m unittest discover -s translation/tests -p 'test_integration.py'
+          classes="$(mktemp -d)"
+          trap 'rm -rf "$classes"' EXIT
+          javac -d "$classes" conversation/src/com/yooshastan/ultmessenger/conversation/UltChatView.java conversation/tests/UltChatViewTest.java
+          java -cp "$classes" UltChatViewTest
+          javac -d "$classes" translation/src/com/yooshastan/ultmessenger/translation/UltTranslationPolicy.java translation/tests/UltTranslationPolicyTest.java
+          java -cp "$classes" UltTranslationPolicyTest
