@@ -64,7 +64,7 @@ class ScreenPrivacyTest(TestCase):
         self.assertIn("putBoolean(KEY_ENABLED, enabled)", model)
         self.assertIn("Protect Ultgram screenshots", ui)
         self.assertIn("refreshUltScreenPrivacy()", ui)
-        self.assertIn("notifications, other application windows", ui)
+        self.assertIn("Other Telegram dialogs and windows", ui)
         self.assertNotIn("getWindow().clearFlags(", ui)
 
 if __name__ == "__main__":
