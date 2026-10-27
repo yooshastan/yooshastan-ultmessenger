@@ -13,7 +13,7 @@ NATIVE = ROOT / "scripts/integrate-native-strict.py"
 class RC1Contract(TestCase):
     def test_foss_only_candidate_has_integrity_metadata(self):
         workflow = WORKFLOW.read_text(encoding="utf-8")
-        for required in ("release/alpha10i3-rc1", "variant: [foss]",
+        for required in ("release/alpha11bc-combined-rc1", "variant: [foss]",
                          "SHA256SUMS", "BUILD_INFO.txt", "artifacts/*",
                          "retention-days: 30"):
             with self.subTest(required=required):
