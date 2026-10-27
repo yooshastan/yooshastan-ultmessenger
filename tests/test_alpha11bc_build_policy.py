@@ -31,7 +31,7 @@ class BatchBuildPolicy(TestCase):
             self.assertIn(check, wf)
         self.assertNotIn("./gradlew", wf)
         self.assertNotIn("sdkmanager", wf)
-        self.assertIn("one full FOSS ARM64", PLAN.read_text())
+        self.assertIn("release/alpha11bc-combined-rc1", PLAN.read_text())
 
 if __name__ == "__main__":
     main()
