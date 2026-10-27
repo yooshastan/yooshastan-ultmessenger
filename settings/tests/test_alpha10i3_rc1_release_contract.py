@@ -21,7 +21,7 @@ class RC1Contract(TestCase):
         self.assertNotIn("variant: [foss, firebase]", workflow)
         # Release candidates and later alphas rename the debug APK. Guard
         # consistency of filename, checksum and artifact rather than RC1 spelling.
-        match = re.search(r'artifacts/(ult-[a-z0-9-]+-foss-arm64-debug\\.apk)', workflow)
+        match = re.search(r'artifacts/(ult-[a-z0-9-]+-foss-arm64-debug\.apk)', workflow)
         self.assertIsNotNone(match, "No FOSS ARM64 debug APK staged")
         apk = match.group(1)
         self.assertIn("sha256sum " + apk + " > SHA256SUMS", workflow)
