@@ -477,7 +477,14 @@ public final class UltSettingsActivity extends BaseFragment {
                             saved = UltChatView.changeTabVisibility(saved, modes[i], true);
                         }
                     }
-                    prefs.edit().putString(key, saved).apply();
+                    SharedPreferences.Editor editor = prefs.edit().putString(key, saved);
+                    String active = prefs.getString(UltChatView.accountKey(account), UltChatView.ALL);
+                    if (UltChatView.isQuickTab(active) && !UltChatView.isTabVisible(saved, active)) {
+                        editor.putString(UltChatView.accountKey(account), UltChatView.ALL);
+                    }
+                    editor.apply();
+                    NotificationCenter.getInstance(account).postNotificationName(
+                            NotificationCenter.dialogsNeedReload);
                     showTabOrder(context, account, prefs, key);
                 })
                 .setNeutralButton("Reorder existing", (dialog, which) ->

@@ -25,3 +25,10 @@
 - Successful lightweight contracts **do not** prove Android compilation or routing security. Full FOSS Android CI is mandatory before any APK installation.
 - Final device QA checks: strict proxy ON at cold start without toggling, messages and media, settings/privacy, chat categories, translation fail-closed, screenshot dialog protection.
 - Public distribution still requires owned signing, version/upgrade QA and security/licensing review.
+
+## Combined implementation committed
+
+- Network/DNS: additional `UltNetworkSourceMatrix` is bundled into Settings, giving read-only path labels, static coverage boundaries and capture needs; this does **not** verify real egress.
+- Chat: All remains always visible, while other category chips can be hidden/reordered in per-account local preferences; UI restores a hidden active category to All and allows reset.
+- Translation: read-only engine/provider readiness diagnostics and explicit remote/offline behavior. No new AIDL engine or language model bundled; existing secret chat gating and strict offline failure are unchanged.
+- Actual Android build and Pixel validation occur at the release-candidate stage, not from this commit.
