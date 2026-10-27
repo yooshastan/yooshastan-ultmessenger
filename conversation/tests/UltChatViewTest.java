@@ -9,6 +9,25 @@ public final class UltChatViewTest {
         ok(UltChatView.ALL.equals(UltChatView.sanitize("bogus")), "unknown defaults all");
         ok(UltChatView.MODES.length == UltChatView.LABELS.length, "labels match keys");
         ok(UltChatView.QUICK_TAB_MODES.length == 6, "six categories");
+        ok(UltChatView.visibleTabs(null).length == 6, "default six visible");
+        ok("all,groups,bots".equals(UltChatView.changeTabVisibility(
+                "all,unread,groups,bots", "unread", false)), "hide tab");
+        ok("all,groups,bots,unread".equals(UltChatView.changeTabVisibility(
+                "all,groups,bots", "unread", true)), "show tab");
+        ok("all,bots,groups".equals(UltChatView.moveTab(
+                "all,groups,bots", "bots", -1)), "move earlier");
+        ok("all,bots,groups".equals(UltChatView.moveTab(
+                "all,groups,bots", "groups", 1)), "move later");
+        ok("all,groups".equals(String.join(",", UltChatView.visibleTabs(
+                "groups,groups,evil,all"))), "dedupe malformed inputs");
+        ok("all".equals(String.join(",", UltChatView.visibleTabs("all"))),
+                "all never disappears");
+        ok("all".equals(UltChatView.nextVisibleTab("groups", "all")),
+                "hidden current falls back to All");
+        ok(UltChatView.GROUPS.equals(UltChatView.nextVisibleTab("all", "all,groups")),
+                "cycle only visible");
+        ok(!UltChatView.tabConfigKey(0).equals(UltChatView.tabConfigKey(1)),
+                "tab preferences per account");
         ok(UltChatView.QUICK_TAB_MODES.length == UltChatView.QUICK_TAB_LABELS.length, "category labels match");
         ok(!UltChatView.quickBarKey(0).equals(UltChatView.quickBarKey(1)), "separate per-account bar visibility");
         ok(UltChatView.modeIndex("bots") == 4, "bot index");

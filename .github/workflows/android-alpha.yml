@@ -95,6 +95,8 @@ jobs:
           mkdir -p /tmp/ult-network-report
           javac -d /tmp/ult-network-report settings/src/com/yooshastan/ultmessenger/settings/UltNetworkTestReport.java settings/tests/UltNetworkTestReportTest.java
           java -cp /tmp/ult-network-report UltNetworkTestReportTest
+          javac -d /tmp/ult-network-report settings/src/com/yooshastan/ultmessenger/settings/UltNetworkSourceMatrix.java settings/tests/UltNetworkSourceMatrixTest.java
+          java -cp /tmp/ult-network-report UltNetworkSourceMatrixTest
           mkdir -p /tmp/ult-doq-contract
           javac -d /tmp/ult-doq-contract dns/src/com/yooshastan/ultmessenger/dns/UltDoqEndpoint.java dns/src/com/yooshastan/ultmessenger/dns/UltDoqBootstrap.java dns/src/com/yooshastan/ultmessenger/dns/UltDnsTrackerPolicy.java dns/src/com/yooshastan/ultmessenger/dns/UltDoqResolver.java dns/tests/UltDoqContractTest.java dns/tests/UltDoqBootstrapTest.java dns/tests/UltDnsTrackerPolicyTest.java
           java -cp /tmp/ult-doq-contract UltDoqContractTest

@@ -64,7 +64,10 @@ ACTIVITY_FIELDS = """
         final SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences(
                 UltChatView.PREFERENCES, Context.MODE_PRIVATE);
         final String key = UltChatView.accountKey(currentAccount);
-        final String next = UltChatView.nextQuickTab(preferences.getString(key, UltChatView.ALL));
+        final String next = UltChatView.nextVisibleTab(
+                preferences.getString(key, UltChatView.ALL),
+                preferences.getString(UltChatView.tabConfigKey(currentAccount),
+                        UltChatView.defaultTabConfig()));
         preferences.edit().putString(key, next).apply();
         if (viewPages != null) {
             for (ViewPage page : viewPages) {
@@ -107,12 +110,23 @@ ACTIVITY_FIELDS = """
                 && initialDialogsType == DIALOGS_TYPE_DEFAULT && TextUtils.isEmpty(searchString);
         ultCategoryBar.setVisibility(mainChats && isUltCategoryBarEnabled()
                 ? View.VISIBLE : View.GONE);
-        final String mode = ApplicationLoader.applicationContext.getSharedPreferences(
-                UltChatView.PREFERENCES, Context.MODE_PRIVATE)
-                .getString(UltChatView.accountKey(currentAccount), UltChatView.ALL);
-        for (int i = 0; i < ultCategoryRow.getChildCount(); i++) {
-            android.widget.TextView chip = (android.widget.TextView) ultCategoryRow.getChildAt(i);
-            boolean selected = UltChatView.QUICK_TAB_MODES[i].equals(mode);
+        final SharedPreferences prefs = ApplicationLoader.applicationContext.getSharedPreferences(
+                UltChatView.PREFERENCES, Context.MODE_PRIVATE);
+        final String mode = prefs.getString(UltChatView.accountKey(currentAccount), UltChatView.ALL);
+        final String[] visible = UltChatView.visibleTabs(prefs.getString(
+                UltChatView.tabConfigKey(currentAccount), UltChatView.defaultTabConfig()));
+        ultCategoryRow.removeAllViews();
+        for (String choice : visible) {
+            android.widget.TextView chip = new android.widget.TextView(ultCategoryRow.getContext());
+            chip.setText(UltChatView.quickTabLabel(choice));
+            chip.setGravity(Gravity.CENTER);
+            chip.setTextSize(13);
+            chip.setMinHeight(AndroidUtilities.dp(34));
+            chip.setPadding(AndroidUtilities.dp(14), 0, AndroidUtilities.dp(14), 0);
+            chip.setClickable(true);
+            chip.setFocusable(true);
+            chip.setOnClickListener(v -> setUltCategoryMode(choice));
+            boolean selected = choice.equals(mode);
             chip.setTextColor(getThemedColor(selected
                     ? Theme.key_windowBackgroundWhiteBlueText
                     : Theme.key_windowBackgroundWhiteBlackText));
@@ -121,6 +135,9 @@ ACTIVITY_FIELDS = """
             fill.setCornerRadius(AndroidUtilities.dp(16));
             chip.setBackground(fill);
             chip.setSelected(selected);
+            ultCategoryRow.addView(chip, new android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT));
         }
     }
 
@@ -143,21 +160,6 @@ ACTIVITY_FIELDS = """
         ultCategoryBar.setElevation(AndroidUtilities.dp(3));
         ultCategoryRow = new android.widget.LinearLayout(context);
         ultCategoryRow.setOrientation(android.widget.LinearLayout.HORIZONTAL);
-        for (int i = 0; i < UltChatView.QUICK_TAB_MODES.length; i++) {
-            final String choice = UltChatView.QUICK_TAB_MODES[i];
-            android.widget.TextView chip = new android.widget.TextView(context);
-            chip.setText(UltChatView.QUICK_TAB_LABELS[i]);
-            chip.setGravity(Gravity.CENTER);
-            chip.setTextSize(13);
-            chip.setMinHeight(AndroidUtilities.dp(34));
-            chip.setPadding(AndroidUtilities.dp(14), 0, AndroidUtilities.dp(14), 0);
-            chip.setClickable(true);
-            chip.setFocusable(true);
-            chip.setOnClickListener(v -> setUltCategoryMode(choice));
-            ultCategoryRow.addView(chip, new android.widget.LinearLayout.LayoutParams(
-                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
-                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT));
-        }
         ultCategoryBar.addView(ultCategoryRow, new android.widget.HorizontalScrollView.LayoutParams(
                 android.widget.HorizontalScrollView.LayoutParams.WRAP_CONTENT,
                 android.widget.HorizontalScrollView.LayoutParams.MATCH_PARENT));

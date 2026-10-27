@@ -14,6 +14,7 @@ import android.widget.EditText;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import com.yooshastan.ultmessenger.conversation.UltChatView;
+import com.yooshastan.ultmessenger.translation.UltTranslationPolicy;
 import com.yooshastan.ultmessenger.dns.UltDoqBootstrap;
 import com.yooshastan.ultmessenger.dns.UltDoqEndpoint;
 import com.yooshastan.ultmessenger.dns.UltDnsTrackerPolicy;
@@ -92,6 +93,12 @@ public final class UltSettingsActivity extends BaseFragment {
         addLink(context, content, "Show chat category bar",
                 "Optional All / Unread / Groups / Channels / Bots / People strip on Chats",
                 () -> toggleChatCategoryBar(context));
+        addLink(context, content, "Customize chat category tabs",
+                "Choose visible categories; reorder them locally for this account",
+                () -> showTabCustomization(context));
+        addLink(context, content, "Offline translation status",
+                "Read-only active translation engine and local provider readiness",
+                () -> showOfflineTranslationStatus(context));
         addLink(context, content, "Chat views and sorting",
                 "All, Unread, Groups, Channels, Bots, People and Unread First",
                 () -> showChatViewPicker(context));
@@ -118,6 +125,9 @@ public final class UltSettingsActivity extends BaseFragment {
         addLink(context, content, "Network privacy dashboard",
                 "Current safeguards, unsupported paths and copyable diagnostic summary",
                 () -> showPrivacyDashboard(context));
+        addLink(context, content, "Network/DNS source audit matrix",
+                "Read-only owned-code audit and missing capture evidence",
+                () -> showNetworkSourceMatrix(context));
         addLink(context, content, "Network path audit coverage",
                 "Read-only inventory of native, DNS, HTTP, media/CDN and WebView paths",
                 () -> showNetworkPathCoverage(context));
@@ -438,6 +448,115 @@ public final class UltSettingsActivity extends BaseFragment {
         android.widget.Toast.makeText(context,
                 enabled ? "Category bar enabled in Chats" : "Category bar hidden",
                 android.widget.Toast.LENGTH_SHORT).show();
+    }
+
+
+    private void showTabCustomization(Context context) {
+        final SharedPreferences prefs = context.getSharedPreferences(
+                UltChatView.PREFERENCES, Context.MODE_PRIVATE);
+        final int account = UserConfig.selectedAccount;
+        final String key = UltChatView.tabConfigKey(account);
+        final String current = prefs.getString(key, UltChatView.defaultTabConfig());
+        final String[] modes = {UltChatView.UNREAD, UltChatView.GROUPS,
+                UltChatView.CHANNELS, UltChatView.BOTS, UltChatView.PEOPLE};
+        final String[] labels = {"Unread", "Groups", "Channels", "Bots", "People"};
+        final boolean[] checked = new boolean[modes.length];
+        for (int i = 0; i < modes.length; i++) {
+            checked[i] = UltChatView.isTabVisible(current, modes[i]);
+        }
+        new UltSecureDialogBuilder(context)
+                .setTitle("Visible category tabs (All always shown)")
+                .setMultiChoiceItems(labels, checked, (dialog, index, enabled) -> checked[index] = enabled)
+                .setPositiveButton("Save", (dialog, which) -> {
+                    String saved = current;
+                    for (int i = 0; i < modes.length; i++) {
+                        if (!checked[i]) saved = UltChatView.changeTabVisibility(saved, modes[i], false);
+                    }
+                    for (int i = 0; i < modes.length; i++) {
+                        if (checked[i] && !UltChatView.isTabVisible(saved, modes[i])) {
+                            saved = UltChatView.changeTabVisibility(saved, modes[i], true);
+                        }
+                    }
+                    prefs.edit().putString(key, saved).apply();
+                    showTabOrder(context, account, prefs, key);
+                })
+                .setNeutralButton("Reorder existing", (dialog, which) ->
+                        showTabOrder(context, account, prefs, key))
+                .setNegativeButton("Cancel", null).show();
+    }
+
+    private void showTabOrder(Context context, int account,
+                              SharedPreferences prefs, String key) {
+        final String current = prefs.getString(key, UltChatView.defaultTabConfig());
+        final String[] tabs = UltChatView.visibleTabs(current);
+        final String[] labels = new String[tabs.length];
+        for (int i = 0; i < tabs.length; i++) {
+            labels[i] = (i == 0 ? "All (fixed)" : UltChatView.quickTabLabel(tabs[i]));
+        }
+        new UltSecureDialogBuilder(context)
+                .setTitle("Category order: select a tab to move")
+                .setItems(labels, (dialog, which) -> {
+                    if (which == 0) {
+                        android.widget.Toast.makeText(context, "All stays first",
+                                android.widget.Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    new UltSecureDialogBuilder(context)
+                            .setTitle(UltChatView.quickTabLabel(tabs[which]))
+                            .setItems(new String[] {"Move earlier", "Move later"}, (moveDialog, direction) -> {
+                                String next = UltChatView.moveTab(current, tabs[which],
+                                        direction == 0 ? -1 : 1);
+                                prefs.edit().putString(key, next).apply();
+                                android.widget.Toast.makeText(context,
+                                        "Return to Chats to refresh category order",
+                                        android.widget.Toast.LENGTH_SHORT).show();
+                                showTabOrder(context, account, prefs, key);
+                            })
+                            .setNegativeButton("Cancel", null).show();
+                })
+                .setNeutralButton("Reset categories", (dialog, which) -> {
+                    prefs.edit().remove(key).apply();
+                    android.widget.Toast.makeText(context,
+                            "Default tabs restored; reopen Chats",
+                            android.widget.Toast.LENGTH_SHORT).show();
+                })
+                .setPositiveButton("Done", null).show();
+    }
+
+    private void showOfflineTranslationStatus(Context context) {
+        final String mode = SharedConfig.mg_translateMode;
+        final boolean offline = UltTranslationPolicy.isOfflineMode(mode);
+        final boolean ready =
+                it.belloworld.mercurygram.translate.MgTranslateDispatcher.isOfflineUsable();
+        final String report = "ULTGRAM TRANSLATION STATUS (READ ONLY)\n"
+                + "Selected engine: " + UltTranslationPolicy.engineLabel(mode) + "\n"
+                + "Offline provider: " + (ready ? "available (capability reported)"
+                        : "NOT INSTALLED / NOT AVAILABLE") + "\n"
+                + "Offline mode selected: " + (offline ? "YES" : "NO") + "\n\n"
+                + (offline ? (ready ? "The local provider reports ready; verify a translation on-device."
+                                    : "Fail closed: no remote fallback is permitted while offline mode is selected.")
+                           : "Remote translation may send message text outside the device with consent.")
+                + "\nSecret chats: network translation prohibited by Ultgram policy."
+                + "\nNo language model is bundled by Ultgram.";
+        new UltSecureDialogBuilder(context)
+                .setTitle("Translation engine availability")
+                .setMessage(report)
+                .setPositiveButton("Done", null).show();
+    }
+
+    private void showNetworkSourceMatrix(Context context) {
+        final String report = UltNetworkSourceMatrix.render();
+        new UltSecureDialogBuilder(context)
+                .setTitle("Network/DNS audit: source review only")
+                .setMessage(report)
+                .setNeutralButton("Copy audit", (dialog, which) -> {
+                    ClipboardManager clipboard = (ClipboardManager)
+                            context.getSystemService(Context.CLIPBOARD_SERVICE);
+                    if (clipboard != null) {
+                        clipboard.setPrimaryClip(ClipData.newPlainText("ULT network matrix", report));
+                    }
+                })
+                .setPositiveButton("Done", null).show();
     }
 
     private void showChatViewPicker(Context context) {

@@ -41,5 +41,7 @@ jobs:
           trap 'rm -rf "$classes"' EXIT
           javac -d "$classes" conversation/src/com/yooshastan/ultmessenger/conversation/UltChatView.java conversation/tests/UltChatViewTest.java
           java -cp "$classes" UltChatViewTest
+          javac -d "$classes" settings/src/com/yooshastan/ultmessenger/settings/UltNetworkSourceMatrix.java settings/tests/UltNetworkSourceMatrixTest.java
+          java -cp "$classes" UltNetworkSourceMatrixTest
           javac -d "$classes" translation/src/com/yooshastan/ultmessenger/translation/UltTranslationPolicy.java translation/tests/UltTranslationPolicyTest.java
           java -cp "$classes" UltTranslationPolicyTest
