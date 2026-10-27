@@ -35,6 +35,7 @@ jobs:
           set -euo pipefail
           python3 -m unittest discover -s proxy/tests -p 'test_alpha10g_path_audit.py'
           python3 -m unittest discover -s settings/tests -p 'test_alpha11a_screen_privacy.py'
+          python3 -m unittest discover -s settings/tests -p 'test_alpha11bc_combined_contract.py'
           python3 -m unittest discover -s conversation/tests -p 'test_chat_views_integration.py'
           python3 -m unittest discover -s translation/tests -p 'test_integration.py'
           classes="$(mktemp -d)"

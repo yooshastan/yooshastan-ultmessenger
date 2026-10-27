@@ -88,6 +88,7 @@ jobs:
           python3 -m unittest discover -s settings/tests -p 'test_alpha10i3_combined_contract.py'
           python3 -m unittest discover -s settings/tests -p 'test_alpha10i3_rc1_release_contract.py'
           python3 -m unittest discover -s settings/tests -p 'test_alpha11a_screen_privacy.py'
+          python3 -m unittest discover -s settings/tests -p 'test_alpha11bc_combined_contract.py'
           python3 -m unittest discover -s proxy/tests -p 'test_alpha10g_path_audit.py'
           mkdir -p /tmp/ult-dns-classes
           javac -d /tmp/ult-dns-classes settings/src/com/yooshastan/ultmessenger/settings/UltDnsPosture.java settings/tests/UltDnsPostureTest.java
