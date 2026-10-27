@@ -19,6 +19,7 @@ import com.yooshastan.ultmessenger.dns.UltDoqEndpoint;
 import com.yooshastan.ultmessenger.dns.UltDnsTrackerPolicy;
 import com.yooshastan.ultmessenger.proxy.UltExternalLinkPolicy;
 import com.yooshastan.ultmessenger.proxy.UltStrictProxyPolicy;
+import com.yooshastan.ultmessenger.settings.UltScreenPrivacy;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
@@ -105,6 +106,9 @@ public final class UltSettingsActivity extends BaseFragment {
                 () -> presentFragment(new org.telegram.ui.CacheControlActivity()));
 
         addSection(context, content, "PRIVACY AND NETWORK");
+        addLink(context, content, "Protect Ultgram screenshots",
+                "Opt-in Android FLAG_SECURE for the main window, including recent-app previews",
+                () -> showUltScreenPrivacy(context));
         addLink(context, content, "Network test checklist",
                 "Mark the manual Wonhee/MTProxy tests you performed; no packet capture",
                 () -> showNetworkTestChecklist(context));
@@ -224,6 +228,29 @@ public final class UltSettingsActivity extends BaseFragment {
                 })
                 .setPositiveButton("Done", null)
                 .show();
+    }
+
+    private void showUltScreenPrivacy(Context context) {
+        final boolean enabled = UltScreenPrivacy.isEnabled(context);
+        new android.app.AlertDialog.Builder(context)
+                .setTitle("Ultgram screenshot privacy: " + (enabled ? "On" : "Off"))
+                .setMessage("Optional Android FLAG_SECURE for the main Ultgram window "
+                        + "to discourage screenshots, recordings and app recents previews. "
+                        + "This does not anonymize the Telegram account or cover "
+                        + "notifications, other application windows, compromised devices "
+                        + "or photographs. Telegram's existing secure flags are preserved. "
+                        + "System/app overrides may limit protection.")
+                .setNeutralButton(enabled ? "Disable" : "Enable", (dialog, which) -> {
+                    UltScreenPrivacy.setEnabled(context, !enabled);
+                    if (context instanceof org.telegram.ui.LaunchActivity) {
+                        ((org.telegram.ui.LaunchActivity) context).refreshUltScreenPrivacy();
+                    }
+                    android.widget.Toast.makeText(context,
+                            !enabled ? "Main-window screenshot privacy enabled"
+                                    : "Ultgram screen privacy disabled; Telegram rules still apply",
+                            android.widget.Toast.LENGTH_LONG).show();
+                })
+                .setPositiveButton("Done", null).show();
     }
 
     private void showNetworkPathCoverage(Context context) {
