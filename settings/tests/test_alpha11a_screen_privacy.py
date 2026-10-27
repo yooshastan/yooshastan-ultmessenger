@@ -43,6 +43,20 @@ class ScreenPrivacyTest(TestCase):
             self.assertEqual(target.read_text(), "class LaunchActivity {}")
             self.assertFalse((root / patch.DEST).exists())
 
+    def test_ult_settings_dialog_windows_are_protected_before_show(self):
+        ui = (ROOT / "settings/src/com/yooshastan/ultmessenger/settings/UltSettingsActivity.java").read_text()
+        self.assertEqual(ui.count("new UltSecureDialogBuilder(context)"), 16)
+        self.assertNotIn("new android.app.AlertDialog.Builder(context)", ui)
+        self.assertIn("class UltSecureDialogBuilder extends android.app.AlertDialog.Builder", ui)
+        self.assertIn("public android.app.AlertDialog show()", ui)
+        self.assertIn("final android.app.AlertDialog dialog = create()", ui)
+        self.assertIn("UltScreenPrivacy.isEnabled(getContext())", ui)
+        self.assertIn("SharedConfig.passcodeHash.length() > 0", ui)
+        self.assertIn("!SharedConfig.disableSecureFlags", ui)
+        self.assertIn("android.view.WindowManager.LayoutParams.FLAG_SECURE", ui)
+        self.assertLess(ui.index("dialog.getWindow().addFlags("), ui.index("dialog.show();"))
+        self.assertIn("Other Telegram dialogs and windows", ui)
+
     def test_ui_is_off_by_default_and_can_disable_without_overriding_telegram(self):
         model = (ROOT / "settings/src/com/yooshastan/ultmessenger/settings/UltScreenPrivacy.java").read_text()
         ui = (ROOT / "settings/src/com/yooshastan/ultmessenger/settings/UltSettingsActivity.java").read_text()

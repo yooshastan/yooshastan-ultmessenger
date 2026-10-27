@@ -25,3 +25,16 @@
 - Strict-proxy ON across cold start and reconnect, messaging, downloads, no forced-toggle recovery, existing theme/document behavior.
 - No claims of VPN/DoQ protections or network fail-closed behavior without actual capture.
 - Public distribution needs owned signing, versioning, security/license review.
+
+## 0.11a.1 — Settings dialog screenshot test finding
+
+A Pixel 8a screenshot with Ultgram screenshot protection enabled showed a blacked-out main Activity background, while the Android Private DNS information dialog remained visible. This is consistent with a separate dialog window that did not inherit the main window's FLAG_SECURE setting.
+
+Remedy: all sixteen `android.app.AlertDialog.Builder` sites owned by `UltSettingsActivity` now use a guarded builder that sets FLAG_SECURE **on each dialog window before showing it**, if Ultgram screenshot privacy OR Telegram's own passcode screenshot rule requires secure behavior. The global Telegram `SharedConfig.disableSecureFlags` override is honored. This is a UI-only change, not a change to native MTProto/DNS/Java traffic.
+
+### QA after patch
+1. On Pixel 8a, turn **Protect Ultgram screenshots** ON. Open the **Android Private DNS (DoT)** dialog and take a system screenshot. The dialog should be hidden, blank, or blocked. No personal network or account details should be exposed.
+2. Repeat on **Network privacy dashboard**, **Network path audit coverage**, proxy-related Settings dialogs, and the screen-privacy Settings dialog.
+3. Turn the feature OFF, confirm screenshots of these Ultgram-owned Settings dialogs work again **unless Telegram's independent passcode/secure setting is active**.
+4. Reopen the app with strict proxy continuously ON. Ensure connectivity and messaging still work without toggling it.
+5. This patch does not cover **all Telegram dialogs**, system settings, notifications, the Android share sheet or third-party overlays; audit those separately. Screen privacy is not a traffic leak test or identity masking to Telegram peers.

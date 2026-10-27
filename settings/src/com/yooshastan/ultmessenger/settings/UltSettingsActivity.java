@@ -107,7 +107,7 @@ public final class UltSettingsActivity extends BaseFragment {
 
         addSection(context, content, "PRIVACY AND NETWORK");
         addLink(context, content, "Protect Ultgram screenshots",
-                "Opt-in Android FLAG_SECURE for the main window, including recent-app previews",
+                "Opt-in Android FLAG_SECURE for main window and Ultgram Settings dialogs",
                 () -> showUltScreenPrivacy(context));
         addLink(context, content, "Network test checklist",
                 "Mark the manual Wonhee/MTProxy tests you performed; no packet capture",
@@ -150,7 +150,7 @@ public final class UltSettingsActivity extends BaseFragment {
 
     private void showChatListDensity(Context context) {
         final boolean threeLines = SharedConfig.useThreeLinesLayout;
-        new android.app.AlertDialog.Builder(context)
+        new UltSecureDialogBuilder(context)
                 .setTitle("Telegram chat list preview")
                 .setSingleChoiceItems(new String[] {
                         "Two-line preview (compact)",
@@ -194,7 +194,7 @@ public final class UltSettingsActivity extends BaseFragment {
 
     private void showNetworkTestChecklist(Context context) {
         final boolean[] values = manualChecks(context);
-        new android.app.AlertDialog.Builder(context)
+        new UltSecureDialogBuilder(context)
                 .setTitle("ULT manual network checks")
                 .setMultiChoiceItems(UltNetworkTestReport.CHECKS, values,
                         (dialog, which, checked) -> values[which] = checked)
@@ -215,7 +215,7 @@ public final class UltSettingsActivity extends BaseFragment {
                 ConnectionsManager.isUltStrictNativeProxyEnabled(),
                 ConnectionsManager.native_isStrictProxyModeEnabled(UserConfig.selectedAccount),
                 android.os.Build.VERSION.SDK_INT, manualChecks(context));
-        new android.app.AlertDialog.Builder(context)
+        new UltSecureDialogBuilder(context)
                 .setTitle("Ultgram network test report")
                 .setMessage(report)
                 .setNeutralButton("Copy report", (dialog, which) -> {
@@ -232,14 +232,15 @@ public final class UltSettingsActivity extends BaseFragment {
 
     private void showUltScreenPrivacy(Context context) {
         final boolean enabled = UltScreenPrivacy.isEnabled(context);
-        new android.app.AlertDialog.Builder(context)
+        new UltSecureDialogBuilder(context)
                 .setTitle("Ultgram screenshot privacy: " + (enabled ? "On" : "Off"))
                 .setMessage("Optional Android FLAG_SECURE for the main Ultgram window "
-                        + "to discourage screenshots, recordings and app recents previews. "
-                        + "This does not anonymize the Telegram account or cover "
-                        + "notifications, other application windows, compromised devices "
-                        + "or photographs. Telegram's existing secure flags are preserved. "
-                        + "System/app overrides may limit protection.")
+                        + "and Ultgram Settings dialogs. Screenshots, recordings and "
+                        + "app recents previews can be blocked for these windows. "
+                        + "Other Telegram dialogs and windows, notifications, external "
+                        + "apps, compromised devices and photographs are not covered "
+                        + "by this change. Account identity is not anonymized. "
+                        + "Telegram secure flags and system overrides still apply.")
                 .setNeutralButton(enabled ? "Disable" : "Enable", (dialog, which) -> {
                     UltScreenPrivacy.setEnabled(context, !enabled);
                     if (context instanceof org.telegram.ui.LaunchActivity) {
@@ -265,7 +266,7 @@ public final class UltSettingsActivity extends BaseFragment {
                 + "a proxy-host capture alone cannot rule out direct traffic. "
                 + "Android VPN indicator does not identify the app route. "
                 + "No new packet capture, DNS filtering, or traffic monitoring is active.";
-        new android.app.AlertDialog.Builder(context)
+        new UltSecureDialogBuilder(context)
                 .setTitle("Ultgram network path coverage")
                 .setMessage(report)
                 .setNeutralButton("Copy coverage", (dialog, which) -> {
@@ -299,7 +300,7 @@ public final class UltSettingsActivity extends BaseFragment {
                 + "A native proxy guard is not a whole-app VPN or a proven kill switch. "
                 + "No DNS encryption or tracker filtering is enabled by this preview. "
                 + "Do not treat this summary as proof against traffic leaks.";
-        new android.app.AlertDialog.Builder(context)
+        new UltSecureDialogBuilder(context)
                 .setTitle("Ultgram network privacy")
                 .setMessage(report)
                 .setNeutralButton("Copy status", (dialog, which) -> {
@@ -331,7 +332,7 @@ public final class UltSettingsActivity extends BaseFragment {
         bootstrap.setInputType(InputType.TYPE_CLASS_TEXT);
         bootstrap.setText(prefs.getString(DNS_BOOTSTRAP, ""));
         fields.addView(bootstrap);
-        new android.app.AlertDialog.Builder(context)
+        new UltSecureDialogBuilder(context)
                 .setTitle("DoQ resolver draft — NOT ACTIVE")
                 .setMessage("Save a DoQ server hostname and its trusted numeric bootstrap "
                         + "address. These settings do not send queries; the native QUIC backend "
@@ -399,7 +400,7 @@ public final class UltSettingsActivity extends BaseFragment {
         allowed.setMaxLines(4);
         allowed.setText(prefs.getString(DNS_ALLOWED, ""));
         fields.addView(allowed);
-        new android.app.AlertDialog.Builder(context)
+        new UltSecureDialogBuilder(context)
                 .setTitle("Tracker DNS rules — NOT ACTIVE")
                 .setMessage("Save candidate block and allow rules. Suffix matching uses DNS "
                         + "label boundaries; allow rules take precedence. These rules are not "
@@ -446,7 +447,7 @@ public final class UltSettingsActivity extends BaseFragment {
         final String key = UltChatView.accountKey(account);
         final int selected = UltChatView.modeIndex(
                 preferences.getString(key, UltChatView.ALL));
-        new android.app.AlertDialog.Builder(context)
+        new UltSecureDialogBuilder(context)
                 .setTitle("ULT Chat Views")
                 .setSingleChoiceItems(UltChatView.LABELS, selected, (dialog, choice) -> {
                     preferences.edit().putString(key, UltChatView.MODES[choice]).apply();
@@ -460,7 +461,7 @@ public final class UltSettingsActivity extends BaseFragment {
 
     private void showExternalLinkGuard(Context context) {
         final boolean enabled = UltExternalLinkPolicy.isEnabled(context);
-        new android.app.AlertDialog.Builder(context)
+        new UltSecureDialogBuilder(context)
                 .setTitle("External link confirmations: " + (enabled ? "On" : "Off"))
                 .setMessage("Ask before opening HTTP(S) links from Ultgram. "
                         + "This does not block automatic web content, DNS or native Telegram traffic.")
@@ -475,7 +476,7 @@ public final class UltSettingsActivity extends BaseFragment {
         final boolean observed = ConnectionsManager.native_isStrictProxyModeEnabled(UserConfig.selectedAccount);
         // Keep OFF accessible even when saved settings and native state disagree,
         // the configured proxy was removed, or Tor was turned on later.
-        new android.app.AlertDialog.Builder(context)
+        new UltSecureDialogBuilder(context)
                 .setTitle("Experimental native proxy-only: " + (requested ? "On" : "Off"))
                 .setMessage("Saved strict switch: " + (requested ? "ON" : "OFF")
                         + ". Native state for this account: " + (observed ? "ON" : "OFF")
@@ -490,14 +491,14 @@ public final class UltSettingsActivity extends BaseFragment {
                 .setNegativeButton(requested || observed ? null : "Enable (experimental)",
                         (dialog, which) -> {
                             if (SharedConfig.mg_useTor) {
-                                new android.app.AlertDialog.Builder(context)
+                                new UltSecureDialogBuilder(context)
                                         .setTitle("Native strict mode unavailable with Tor")
                                         .setMessage("Mercurygram Tor owns the native proxy slot. "
                                                 + "Turn Tor off before testing the native guard.")
                                         .setPositiveButton("OK", null)
                                         .show();
                             } else if (!ConnectionsManager.canEnableUltStrictNativeProxy()) {
-                                new android.app.AlertDialog.Builder(context)
+                                new UltSecureDialogBuilder(context)
                                         .setTitle("Select a proxy before strict mode")
                                         .setMessage("Strict mode cannot be enabled while Use Proxy is OFF "
                                                 + "or the selected proxy is invalid. Open ULT Proxy Manager, "
@@ -506,7 +507,7 @@ public final class UltSettingsActivity extends BaseFragment {
                                         .setPositiveButton("OK", null)
                                         .show();
                             } else {
-                                new android.app.AlertDialog.Builder(context)
+                                new UltSecureDialogBuilder(context)
                                         .setTitle("Confirm experimental strict mode")
                                         .setMessage("Telegram native sockets will be restricted. A proxy "
                                                 + "failure can interrupt messages. This does not enforce "
@@ -514,7 +515,7 @@ public final class UltSettingsActivity extends BaseFragment {
                                         .setNegativeButton("Cancel", null)
                                         .setPositiveButton("Enable", (confirm, button) -> {
                                             if (!ConnectionsManager.setUltStrictNativeProxyEnabled(true)) {
-                                                new android.app.AlertDialog.Builder(context)
+                                                new UltSecureDialogBuilder(context)
                                                         .setTitle("Strict mode was not enabled")
                                                         .setMessage("Proxy configuration changed. "
                                                                 + "Select and enable a valid proxy first.")
@@ -530,7 +531,7 @@ public final class UltSettingsActivity extends BaseFragment {
     }
 
     private void showAndroidPrivateDns(Context context) {
-        new android.app.AlertDialog.Builder(context)
+        new UltSecureDialogBuilder(context)
                 .setTitle("Android Private DNS (DoT)")
                 .setMessage(UltAndroidDnsInspector.inspect(context)
                         + "\n\nThis is Android's current network DNS status, not an "
@@ -553,6 +554,31 @@ public final class UltSettingsActivity extends BaseFragment {
                 })
                 .setPositiveButton("Done", null)
                 .show();
+    }
+
+    /**
+     * Ultgram Settings dialogs have separate windows from LaunchActivity.
+     * Apply screenshot privacy to the dialog window before showing it.
+     * Do not override Telegram passcode restrictions or the global bypass.
+     */
+    private static final class UltSecureDialogBuilder extends android.app.AlertDialog.Builder {
+        UltSecureDialogBuilder(Context context) {
+            super(context);
+        }
+
+        @Override
+        public android.app.AlertDialog show() {
+            final android.app.AlertDialog dialog = create();
+            final boolean telegramPasscodeSecure = SharedConfig.passcodeHash.length() > 0
+                    && !SharedConfig.allowScreenCapture;
+            if ((telegramPasscodeSecure || UltScreenPrivacy.isEnabled(getContext()))
+                    && !SharedConfig.disableSecureFlags && dialog.getWindow() != null) {
+                dialog.getWindow().addFlags(
+                        android.view.WindowManager.LayoutParams.FLAG_SECURE);
+            }
+            dialog.show();
+            return dialog;
+        }
     }
 
     private static void addSection(Context context, LinearLayout parent, String title) {
