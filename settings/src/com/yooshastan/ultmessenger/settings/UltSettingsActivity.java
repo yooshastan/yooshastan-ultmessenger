@@ -79,6 +79,17 @@ public final class UltSettingsActivity extends BaseFragment {
         scroll.addView(content, new ScrollView.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
+        addSection(context, content, "START HERE");
+        addLink(context, content, "What's new in Ultgram 0.13",
+                "See which features are genuinely new and exactly where to find them",
+                () -> showUltWhatsNew(context));
+        addLink(context, content, "Downloads — open queue",
+                "View active and recent Telegram downloads without searching through settings",
+                () -> presentFragment(new UltDownloadsActivity()));
+        addLink(context, content, "Version and build details",
+                "Show the installed APK version and debug/release build information",
+                () -> showUltBuildDetails(context));
+
         addSection(context, content, "APPEARANCE");
         addLink(context, content, "Chat list preview density",
                 "Switch Telegram's existing compact two-line / expanded three-line preview",
@@ -203,6 +214,54 @@ public final class UltSettingsActivity extends BaseFragment {
 
     // Alpha 0.13a: a real fixed native Telegram theme, not just a color preview.
     // The existing light/dark paired presets and original themes remain unchanged.
+    private void showUltWhatsNew(Context context) {
+        new UltSecureDialogBuilder(context)
+                .setTitle("What's new — Ultgram Alpha 0.13a+b")
+                .setMessage(
+                        "NEW — Custom ULT theme colors: Appearance → Custom ULT theme colors. "
+                        + "Choose a preset and edit accent and outgoing bubble; unsafe contrast is rejected.\n\n"
+                        + "NEW ENTRY — Download queue and recent files: START HERE → Downloads "
+                        + "or Chats and Tools → Download queue. This uses Telegram's existing "
+                        + "download engine, not a new downloader.\n\n"
+                        + "SHORTCUT — Media auto-download controls: Chats and Tools → Media "
+                        + "auto-download controls. These are Telegram's existing mobile/Wi-Fi/roaming "
+                        + "policies, not new download behavior.\n\n"
+                        + "EXPLANATION — Identity and privacy limitations: Privacy and Network. "
+                        + "No identity spoofing, tracker filtering or new enforced DNS protection.\n\n"
+                        + "FROM 0.12 — Optional category swipe navigator, category typography, "
+                        + "copy media citation and message references.\n\n"
+                        + "COMING LATER — Save As/export, a custom file manager, network audit "
+                        + "hardening and broader chat redesign are NOT included.")
+                .setPositiveButton("Got it", null).show();
+    }
+
+    private void showUltBuildDetails(Context context) {
+        String version;
+        long versionCode;
+        try {
+            android.content.pm.PackageInfo info = context.getPackageManager()
+                    .getPackageInfo(context.getPackageName(), 0);
+            version = info.versionName == null ? "unknown" : info.versionName;
+            versionCode = android.os.Build.VERSION.SDK_INT >= 28
+                    ? info.getLongVersionCode() : info.versionCode;
+        } catch (android.content.pm.PackageManager.NameNotFoundException error) {
+            version = "unavailable";
+            versionCode = -1;
+        }
+        final String installed = version + " (code " + versionCode + ")";
+        new UltSecureDialogBuilder(context)
+                .setTitle("Ultgram installed build")
+                .setMessage("Installed package: " + context.getPackageName()
+                        + "\nVersion: " + installed
+                        + "\n\nFeature milestone: Alpha 0.13a+b UI"
+                        + "\nGitHub candidate: release/alpha13ab-combined-rc1"
+                        + "\n\nThe version above comes from the installed APK. "
+                        + "Feature milestone is a source-code label, not a claim "
+                        + "that a debug APK has production signing. Verify signature "
+                        + "and install provenance separately before updating.")
+                .setPositiveButton("Done", null).show();
+    }
+
     private void showUltCustomThemeChooser(Context context) {
         final UltAppearancePreset[] presets = {
                 UltAppearancePreset.MIDNIGHT, UltAppearancePreset.CANDY,
