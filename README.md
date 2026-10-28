@@ -1,5 +1,8 @@
 # Yooshastan ULT Messenger
 
+> **Alpha 0.13d chat discovery:** Adds main Chats menu links to What's New and Downloads plus a once-per-milestone, dismissible feature-discovery notice. A single read-only changelog text is shared with Ultgram Settings; no Telegram account/transport changes. Together with Alpha 0.13c this will be a combined debug RC; there is no new APK from feature-branch checks alone. [QA](docs/ALPHA13CD_RC1_QA.md).
+
+
 > **Alpha 0.13c discoverability:** A top-of-settings START HERE section surfaces What's New, the native download queue and actual installed APK version/build details. The changelog explicitly distinguishes newly implemented features from existing Telegram shortcuts and unfinished roadmap items. Source change only; an Android RC build and device QA are still required. [Changelog](docs/ALPHA13C_DISCOVERABILITY.md).
 
 

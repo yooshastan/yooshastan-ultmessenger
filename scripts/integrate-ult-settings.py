@@ -12,6 +12,7 @@ MODEL = Path("settings/src/com/yooshastan/ultmessenger/settings/UltSettingsActiv
 DEST = Path("TMessagesProj/src/main/java/com/yooshastan/ultmessenger/settings/UltSettingsActivity.java")
 MEDIA_MODELS = (
     Path("settings/src/com/yooshastan/ultmessenger/settings/UltDownloadsActivity.java"),
+    Path("settings/src/com/yooshastan/ultmessenger/settings/UltReleaseNotes.java"),
 )
 DNS_MODELS = (
     Path("settings/src/com/yooshastan/ultmessenger/settings/UltDnsPosture.java"),
