@@ -21,6 +21,57 @@ public final class UltChatView {
         "Bots only", "People / private chats", "Unread first (pinned stay on top)"
     };
 
+    // Alpha 0.12a: appearance only; independent per-account local UI preference.
+    public static final String BAR_COMPACT = "compact";
+    public static final String BAR_COMFORTABLE = "comfortable";
+    public static final String BAR_SPACIOUS = "spacious";
+    public static final String[] BAR_STYLES = {BAR_COMPACT, BAR_COMFORTABLE, BAR_SPACIOUS};
+    public static final String[] BAR_STYLE_LABELS = {
+        "Compact chips", "Comfortable (default)", "Spacious chips"
+    };
+
+    public static String barStyleKey(int account) {
+        if (account < 0) throw new IllegalArgumentException("Invalid account");
+        return "chat_bar_style_account_" + account;
+    }
+
+    public static String sanitizeBarStyle(String saved) {
+        for (String style : BAR_STYLES) if (style.equals(saved)) return style;
+        return BAR_COMFORTABLE;
+    }
+
+    public static int barStyleIndex(String saved) {
+        String safe = sanitizeBarStyle(saved);
+        for (int i = 0; i < BAR_STYLES.length; i++) {
+            if (BAR_STYLES[i].equals(safe)) return i;
+        }
+        return 1;
+    }
+
+    public static int barHeightDp(String saved) {
+        switch (sanitizeBarStyle(saved)) {
+            case BAR_COMPACT: return 38;
+            case BAR_SPACIOUS: return 54;
+            default: return 44;
+        }
+    }
+
+    public static int chipHeightDp(String saved) {
+        switch (sanitizeBarStyle(saved)) {
+            case BAR_COMPACT: return 30;
+            case BAR_SPACIOUS: return 42;
+            default: return 34;
+        }
+    }
+
+    public static int chipPaddingDp(String saved) {
+        switch (sanitizeBarStyle(saved)) {
+            case BAR_COMPACT: return 10;
+            case BAR_SPACIOUS: return 20;
+            default: return 14;
+        }
+    }
+
     private UltChatView() {}
 
     public static String quickBarKey(int account) {

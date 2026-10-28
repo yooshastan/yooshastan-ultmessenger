@@ -49,6 +49,16 @@ public final class UltChatToolsTest {
                 .startsWith("File: .._secret_thing\nSize: 0 B\nMIME: unknown\nBytes: 0")) {
             throw new AssertionError("File summary must sanitize names and sizes");
         }
+        if (!"Message ID: 42\nSender peer ID: -1003\nUTC: 1970-01-01T00:00:01Z\nPublic link: https://t.me/stage_fan/42"
+                .equals(UltChatTools.messageReference(42, -1003, 1, "@Stage_Fan"))) {
+            throw new AssertionError("Public message reference summary failed");
+        }
+        if (!"Message ID: 42".equals(UltChatTools.messageReference(42, 0, 0, null))
+                || UltChatTools.messageReference(0, 12, 2, "@valid") != null
+                || UltChatTools.messageReference(-1, 12, 2, "@valid") != null
+                || UltChatTools.messageReference(3, 0, 0, "bad/link").contains("https://")) {
+            throw new AssertionError("Private or invalid references must exclude public links");
+        }
         System.out.println("ULT chat tools model passed");
     }
 }

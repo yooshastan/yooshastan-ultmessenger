@@ -18,12 +18,16 @@ CONSTANTS = """    public final static int OPTION_ULT_COPY_MESSAGE_ID = 0x554c56
     public final static int OPTION_ULT_COPY_ISO_UTC_TIME = 0x554c5a;
     public final static int OPTION_ULT_COPY_PUBLIC_MESSAGE_LINK = 0x554c5b;
     public final static int OPTION_ULT_COPY_FILE_SUMMARY = 0x554c5c;
+    public final static int OPTION_ULT_COPY_MESSAGE_REFERENCE = 0x554c5d;
 """
 MENU = """        // ULT: local read-only metadata; never copy private message content.
         if (selectedObject != null && selectedObject.messageOwner != null
                 && selectedObject.getId() != 0 && !selectedObject.isSponsored()) {
             items.add("ULT: Copy message ID");
             options.add(OPTION_ULT_COPY_MESSAGE_ID);
+            icons.add(R.drawable.msg_copy);
+            items.add("ULT: Copy message reference");
+            options.add(OPTION_ULT_COPY_MESSAGE_REFERENCE);
             icons.add(R.drawable.msg_copy);
             if (selectedObject.getFromChatId() != 0) {
                 items.add("ULT: Copy sender peer ID");
@@ -59,7 +63,26 @@ MENU = """        // ULT: local read-only metadata; never copy private message c
         }
 
 """
-HANDLERS = """            case OPTION_ULT_COPY_MESSAGE_ID: {
+HANDLERS = """            case OPTION_ULT_COPY_MESSAGE_REFERENCE: {
+                // Only supply a username for a public channel/supergroup.
+                // Never generate a link for private chats or secret chats.
+                if (selectedObject != null && selectedObject.messageOwner != null
+                        && !selectedObject.isSponsored()) {
+                    final String publicName = currentEncryptedChat == null && currentChat != null
+                            && ChatObject.isChannel(currentChat)
+                            ? ChatObject.getPublicUsername(currentChat) : null;
+                    final String reference = UltChatTools.messageReference(
+                            selectedObject.getId(), selectedObject.getFromChatId(),
+                            selectedObject.messageOwner.date, publicName);
+                    if (reference != null) {
+                        AndroidUtilities.addToClipboard(reference);
+                        android.widget.Toast.makeText(getParentActivity(), "Message reference copied",
+                                android.widget.Toast.LENGTH_SHORT).show();
+                    }
+                }
+                break;
+            }
+            case OPTION_ULT_COPY_MESSAGE_ID: {
                 AndroidUtilities.addToClipboard(UltChatTools.numericId(selectedObject.getId()));
                 android.widget.Toast.makeText(getParentActivity(), "Message ID copied",
                         android.widget.Toast.LENGTH_SHORT).show();

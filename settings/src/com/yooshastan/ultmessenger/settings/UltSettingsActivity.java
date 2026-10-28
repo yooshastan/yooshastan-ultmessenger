@@ -96,6 +96,9 @@ public final class UltSettingsActivity extends BaseFragment {
         addLink(context, content, "Customize chat category tabs",
                 "Choose visible categories; reorder them locally for this account",
                 () -> showTabCustomization(context));
+        addLink(context, content, "Category bar appearance",
+                "Compact, comfortable or spacious chips for this account",
+                () -> showCategoryBarAppearance(context));
         addLink(context, content, "Offline translation status",
                 "Read-only active translation engine and local provider readiness",
                 () -> showOfflineTranslationStatus(context));
@@ -450,6 +453,31 @@ public final class UltSettingsActivity extends BaseFragment {
                 android.widget.Toast.LENGTH_SHORT).show();
     }
 
+
+    private void showCategoryBarAppearance(Context context) {
+        final int account = UserConfig.selectedAccount;
+        final SharedPreferences prefs = context.getSharedPreferences(
+                UltChatView.PREFERENCES, Context.MODE_PRIVATE);
+        final String key = UltChatView.barStyleKey(account);
+        final int selected = UltChatView.barStyleIndex(
+                prefs.getString(key, UltChatView.BAR_COMFORTABLE));
+        new UltSecureDialogBuilder(context)
+                .setTitle("ULT category bar appearance")
+                .setSingleChoiceItems(UltChatView.BAR_STYLE_LABELS, selected, (dialog, which) -> {
+                    prefs.edit().putString(key, UltChatView.BAR_STYLES[which]).apply();
+                    android.widget.Toast.makeText(context,
+                            "Return to Chats to refresh category chips",
+                            android.widget.Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+                })
+                .setNeutralButton("Restore default", (dialog, which) -> {
+                    prefs.edit().remove(key).apply();
+                    android.widget.Toast.makeText(context,
+                            "Comfortable category chips restored",
+                            android.widget.Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("Cancel", null).show();
+    }
 
     private void showTabCustomization(Context context) {
         final SharedPreferences prefs = context.getSharedPreferences(

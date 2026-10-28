@@ -10,6 +10,18 @@ public final class UltChatViewTest {
         ok(UltChatView.MODES.length == UltChatView.LABELS.length, "labels match keys");
         ok(UltChatView.QUICK_TAB_MODES.length == 6, "six categories");
         ok(UltChatView.visibleTabs(null).length == 6, "default six visible");
+        ok("comfortable".equals(UltChatView.sanitizeBarStyle("untrusted")),
+                "invalid category appearance uses the existing default");
+        ok("compact".equals(UltChatView.sanitizeBarStyle("compact")), "compact style");
+        ok(UltChatView.barHeightDp("compact") < UltChatView.barHeightDp("spacious"),
+                "density visibly changes category strip height");
+        ok(UltChatView.chipHeightDp("compact") < UltChatView.chipHeightDp("spacious"),
+                "density changes chip height");
+        ok(UltChatView.chipPaddingDp("compact") < UltChatView.chipPaddingDp("spacious"),
+                "density changes chip spacing");
+        ok(UltChatView.barStyleIndex("invalid") == 1, "comfortable default selected");
+        ok(!UltChatView.barStyleKey(0).equals(UltChatView.barStyleKey(1)),
+                "category appearance is per-account");
         ok("all,groups,bots".equals(UltChatView.changeTabVisibility(
                 "all,unread,groups,bots", "unread", false)), "hide tab");
         ok("all,groups,bots,unread".equals(UltChatView.changeTabVisibility(
