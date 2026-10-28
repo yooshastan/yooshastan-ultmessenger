@@ -20,8 +20,7 @@ public final class UltReleaseNotes {
                 + "Telegram's existing settings, not a new downloader.\n\n"
                 + "EARLIER 0.12: Category swipe pad/typography and message/media "
                 + "reference copying.\n\n"
-                + "NOT INCLUDED: Save As/export, custom file manager, No identity "
-                + "masking, complete network leak protection, DoQ/DoH3 or "
-                + "enforced tracker filtering.";
+                + "NOT INCLUDED: Save As/export, custom file manager, No identity masking, "
+                + "complete network leak protection, DoQ/DoH3 or enforced tracker filtering.";
     }
 }
