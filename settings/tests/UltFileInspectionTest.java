@@ -1,5 +1,6 @@
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import com.yooshastan.ultmessenger.settings.UltFileInspection;
 
