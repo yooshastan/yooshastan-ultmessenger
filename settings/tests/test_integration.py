@@ -27,6 +27,8 @@ class SettingsIntegrationTest(TestCase):
             model = root / integration.DEST
             self.assertTrue(model.is_file())
             self.assertIn("ULT chat layout presets", model.read_text())
+            self.assertIn("What's New / build information", model.read_text())
+            self.assertIn("UltReleaseNotes.seenKey(", model.read_text())
             self.assertIn("Archive row visibility", model.read_text())
             self.assertIn("Experimental native proxy-only mode", model.read_text())
             self.assertIn("ConnectionsManager.setUltStrictNativeProxyEnabled", model.read_text())

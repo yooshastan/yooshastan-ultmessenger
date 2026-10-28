@@ -39,6 +39,8 @@ class ChatViewIntegrationTest(TestCase):
             activity = a.read_text()
             adapter = b.read_text()
             self.assertIn("ULT: Chat Views", activity)
+            self.assertIn("ULT: Downloads", activity)
+            self.assertIn("new com.yooshastan.ultmessenger.settings.UltDownloadsActivity()", activity)
             self.assertIn("ultSwipeTarget.setOnTouchListener", activity)
             self.assertIn("stepUltCategoryMode(dx < 0 ? 1 : -1)", activity)
             self.assertIn("ultSwipeTarget.setVisibility(enableSwipePad ? View.VISIBLE : View.GONE)", activity)
