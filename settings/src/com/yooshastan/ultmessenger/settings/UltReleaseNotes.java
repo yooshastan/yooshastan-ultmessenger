@@ -22,6 +22,6 @@ public final class UltReleaseNotes {
                 + "reference copying.\n\n"
                 + "NOT INCLUDED: Save As/export, custom file manager, No identity "
                 + "masking, complete network leak protection, DoQ/DoH3 or "
-                + "enforced tracker blocking.";
+                + "enforced tracker filtering.";
     }
 }
