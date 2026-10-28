@@ -25,13 +25,24 @@ class Alpha13CD(TestCase):
         for needle in ("Intent.ACTION_CREATE_DOCUMENT", "Intent.CATEGORY_OPENABLE",
                        "UltScreenPrivacy.isEnabled(", "DialogObject.isEncryptedDialog(",
                        "message.messageOwner.noforwards", "chat.noforwards",
-                       "source.isFile()", "FileLoader.getPathToMessage(",
+                       "source.isFile()", "FileLoader.getInstance(currentAccount).getPathToMessage(",
                        "getContentResolver()", "FileInputStream(source)",
                        "new Thread(", "onActivityResultFragment", "CREATE_DOCUMENT_REQUEST"):
             self.assertIn(needle, downloads)
         for forbidden in ("READ_EXTERNAL_STORAGE", "MANAGE_EXTERNAL_STORAGE",
                           "sendMessage(", "new java.net.Socket(", "loadFile("):
             self.assertNotIn(forbidden, downloads)
+
+    def test_apk_metadata_shell_quoting(self):
+        # The 0.13c+d Gradle build previously succeeded but artifact staging
+        # failed because the apostrophe in What's New broke a single-quoted printf.
+        ci = source(".github/workflows/android-alpha.yml")
+        self.assertIn('printf \'%s\\n\' "Candidate: Ultgram Alpha 0.13c+d What\'s New', ci)
+        self.assertNotIn("printf 'Candidate: Ultgram Alpha 0.13c+d What's New", ci)
+        self.assertIn("ult-alpha13cd-combined-foss-arm64-debug.apk", ci)
+        self.assertIn("SHA256SUMS", ci)
+        self.assertIn("BUILD_INFO.txt", ci)
+
     def test_no_full_android_build_on_feature_push(self):
         ci = source(".github/workflows/scaffold-check.yml")
         full = source(".github/workflows/android-alpha.yml")
