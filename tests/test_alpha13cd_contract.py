@@ -25,7 +25,7 @@ class Alpha13CD(TestCase):
         for needle in ("Intent.ACTION_CREATE_DOCUMENT", "Intent.CATEGORY_OPENABLE",
                        "UltScreenPrivacy.isEnabled(", "DialogObject.isEncryptedDialog(",
                        "message.messageOwner.noforwards", "chat.noforwards",
-                       "source.isFile()", "FileLoader.getPathToMessage(",
+                       "source.isFile()", "FileLoader.getInstance(currentAccount).getPathToMessage(",
                        "getContentResolver()", "FileInputStream(source)",
                        "new Thread(", "onActivityResultFragment", "CREATE_DOCUMENT_REQUEST"):
             self.assertIn(needle, downloads)

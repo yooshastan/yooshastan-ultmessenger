@@ -120,7 +120,7 @@ public final class UltDownloadsActivity extends BaseFragment
             Toast.makeText(activity, "This media cannot be exported", Toast.LENGTH_LONG).show();
             return;
         }
-        final File source = FileLoader.getPathToMessage(message.messageOwner);
+        final File source = FileLoader.getInstance(currentAccount).getPathToMessage(message.messageOwner);
         if (source == null || !source.isFile() || !source.canRead()) {
             Toast.makeText(activity, "Download the document completely before Save As",
                     Toast.LENGTH_LONG).show();
