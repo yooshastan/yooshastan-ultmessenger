@@ -1,5 +1,8 @@
 # Yooshastan ULT Messenger
 
+> **Alpha 0.14a+b combined FOSS ARM64 RC1:** Explicit local file inspector/checksum and non-destructive fixed-theme color preview. Full Android CI and Pixel 8a / Samsung A36 checks required before promoting; debug-signed internal test candidate. [Release QA](docs/ALPHA14AB_RC1_QA.md).
+
+
 > **Alpha 0.14a+b feature work (not yet an Android release):** A user-triggered downloaded-file inspector with local SHA-256 digest and explicit copy; visually preview accent and message bubbles before applying a fixed theme. Preserves Telegram FileLoader, protected-media checks, and previously tested Alpha 0.13c+d. [Staged milestone](docs/ALPHA14_BATCHED.md).
 
 

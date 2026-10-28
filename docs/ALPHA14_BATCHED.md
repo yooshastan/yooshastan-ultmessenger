@@ -9,6 +9,6 @@ Baseline: `release/alpha13cd-combined-rc1`, commit `1a1350f0dc93b24d1588bab72ee8
 
 ## Remaining / next milestone
 - Real per-chat local display identity masking, media sending metadata privacy preview (EXIF location stripping only opt-in), richer navigation polish, improved export progress/cancellation, whole-app network egress audit. None is claimed implemented.
-- One combined ARM64 FOSS build **after** tests pass and source integration is reviewed, not per minor feature edit.
+- One combined ARM64 FOSS build from `release/alpha14ab-combined-rc1` after source-level checks; no rebuild per minor feature edit. Artifact must include `ult-alpha14ab-combined-foss-arm64-debug.apk`, SHA256SUMS and BUILD_INFO.txt.
 - Device QA: Pixel 8a GrapheneOS + Samsung A36; protected media must be refused; large-file limit must be clear; Settings theme preview must never apply inadvertently; system day/night themes and existing Downloads, Save As, messaging and strict proxy must work.
 - Release signing/distribution, APK upgrade certificate check, GPL notices and privacy review are separate gates.

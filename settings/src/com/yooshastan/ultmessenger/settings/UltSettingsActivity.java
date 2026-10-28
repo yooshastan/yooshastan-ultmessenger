@@ -81,7 +81,7 @@ public final class UltSettingsActivity extends BaseFragment {
 
         addSection(context, content, "NEW IN THIS BUILD");
         addLink(context, content, "What's New / build information",
-                "See Alpha 0.13c+d highlights and the installed Android package version",
+                "See Alpha 0.14a+b file inspector, theme preview and installed build details",
                 () -> showUltWhatsNew(context));
         addLink(context, content, "Downloads",
                 "Active and recent files; long-press a downloaded document for Save As",
