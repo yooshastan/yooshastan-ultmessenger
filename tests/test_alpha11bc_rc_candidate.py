@@ -14,7 +14,7 @@ class RC1(TestCase):
     def test_foss_artifact_and_integrity_provenance(self):
         w = WORKFLOW.read_text()
         # Check the active combined release, not a frozen old Alpha 0.11 name.
-        branch = re.search(r"branches: \\[release/(alpha[0-9]+[a-z]+-combined-rc[0-9]+)\\]", w)
+        branch = re.search(r"branches: \[release/(alpha[0-9]+[a-z]+-combined-rc[0-9]+)\]", w)
         self.assertIsNotNone(branch, "Expected versioned combined candidate branch")
         artifact_prefix = branch.group(1).rsplit("-rc", 1)[0]
         for required in ("matrix:", "variant: [foss]", "SHA256SUMS",
