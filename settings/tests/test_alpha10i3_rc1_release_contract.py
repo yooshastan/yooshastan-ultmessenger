@@ -18,7 +18,7 @@ class RC1Contract(TestCase):
                          "retention-days: 30"):
             with self.subTest(required=required):
                 self.assertIn(required, workflow)
-        self.assertRegex(workflow, r"branches: \[release/alpha(?:11bc|12ab|12cd)-combined-rc1\]")
+        self.assertRegex(workflow, r"branches: \[release/alpha(?:11bc|12ab|12cd|13ab)-combined-rc1\]")
         self.assertNotIn("variant: [foss, firebase]", workflow)
         # Release candidates and later alphas rename the debug APK. Guard
         # consistency of filename, checksum and artifact rather than RC1 spelling.
