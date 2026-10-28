@@ -47,6 +47,19 @@ jobs:
           javac -d "$classes" translation/src/com/yooshastan/ultmessenger/translation/UltTranslationPolicy.java translation/tests/UltTranslationPolicyTest.java
           java -cp "$classes" UltTranslationPolicyTest
 
+      - name: Alpha 0.14 media inspector and visual theme preview contracts
+        if: github.ref == 'refs/heads/feature/alpha14-media-inspector-theme-preview' || github.head_ref == 'feature/alpha14-media-inspector-theme-preview'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests -p 'test_alpha14_contract.py'
+          python3 -m unittest discover -s tests -p 'test_alpha13cd_contract.py'
+          python3 -m unittest discover -s settings/tests -p 'test_integration.py'
+          classes="$(mktemp -d)"
+          trap 'rm -rf "$classes"' EXIT
+          javac -d "$classes" settings/src/com/yooshastan/ultmessenger/settings/UltFileInspection.java settings/tests/UltFileInspectionTest.java
+          java -cp "$classes" UltFileInspectionTest
+
       - name: Fast Alpha 0.13c+d release UX and user-selected Save As contracts
         if: github.ref == 'refs/heads/feature/alpha13cd-discoverability-saveas' || github.head_ref == 'feature/alpha13cd-discoverability-saveas'
         shell: bash

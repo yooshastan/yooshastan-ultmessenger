@@ -1,5 +1,8 @@
 # Yooshastan ULT Messenger
 
+> **Alpha 0.14a+b feature work (not yet an Android release):** A user-triggered downloaded-file inspector with local SHA-256 digest and explicit copy; visually preview accent and message bubbles before applying a fixed theme. Preserves Telegram FileLoader, protected-media checks, and previously tested Alpha 0.13c+d. [Staged milestone](docs/ALPHA14_BATCHED.md).
+
+
 > **Alpha 0.13c+d RC1 (debug internal candidate):** What's New and installed package version inside Ultgram Settings, Chats overflow Downloads link, and user-selected Android Save As for already-downloaded permitted documents. Prepared on `release/alpha13cd-combined-rc1`; must pass full native Android CI and on-device testing before claiming the APK is ready. [RC QA](docs/ALPHA13CD_RC1_QA.md).
 
 
