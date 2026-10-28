@@ -38,6 +38,8 @@ class SettingsIntegrationTest(TestCase):
             self.assertIn("DNS-over-QUIC configuration (preview)", model.read_text())
             self.assertIn("Tracker domain rules (preview)", model.read_text())
             self.assertIn("DoQ QUIC backend: NOT INSTALLED", model.read_text())
+            for extra in integration.MEDIA_MODELS:
+                self.assertTrue((model.parent / extra.name).is_file())
             for extra in integration.DNS_MODELS:
                 self.assertTrue((model.parent / extra.name).is_file())
             policy = root / "TMessagesProj/src/main/java/com/yooshastan/ultmessenger/dns"

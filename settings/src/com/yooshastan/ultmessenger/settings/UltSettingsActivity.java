@@ -15,6 +15,8 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import com.yooshastan.ultmessenger.conversation.UltChatView;
 import com.yooshastan.ultmessenger.appearance.UltAppearancePreset;
+import com.yooshastan.ultmessenger.appearance.UltAppearanceThemeAdapter;
+import com.yooshastan.ultmessenger.appearance.UltCustomTheme;
 import com.yooshastan.ultmessenger.translation.UltTranslationPolicy;
 import com.yooshastan.ultmessenger.dns.UltDoqBootstrap;
 import com.yooshastan.ultmessenger.dns.UltDoqEndpoint;
@@ -89,6 +91,9 @@ public final class UltSettingsActivity extends BaseFragment {
         addLink(context, content, "Preview ULT theme palettes",
                 "Inspect original light and dark bubble colors without applying a theme",
                 () -> showUltThemePreview(context));
+        addLink(context, content, "Custom ULT theme colors",
+                "Create a fixed theme with your own accent and outgoing message bubble",
+                () -> showUltCustomThemeChooser(context));
 
         addSection(context, content, "CHATS AND TOOLS");
         addLink(context, content, "ULT chat layout presets",
@@ -121,9 +126,15 @@ public final class UltSettingsActivity extends BaseFragment {
                 "Use a chat's ⋮ menu → ULT Chat Translation. Language and consent are per chat.");
         addNote(context, content, "Message and chat tools",
                 "Long-press a document for an optional readable file summary; nothing downloads automatically.");
+        addLink(context, content, "Download queue and recent files",
+                "Open Telegram's native downloads view for this account; tap to open/download/cancel",
+                () -> presentFragment(new UltDownloadsActivity()));
         addLink(context, content, "Media storage and cache",
                 "Open Telegram's native storage manager; deleting anything requires a separate tap",
                 () -> presentFragment(new org.telegram.ui.CacheControlActivity()));
+        addLink(context, content, "Media auto-download controls",
+                "Use Telegram's existing mobile, Wi-Fi and roaming download policies",
+                () -> showNativeMediaDownloadSettings(context));
 
         addSection(context, content, "PRIVACY AND NETWORK");
         addLink(context, content, "Protect Ultgram screenshots",
@@ -138,6 +149,9 @@ public final class UltSettingsActivity extends BaseFragment {
         addLink(context, content, "Network privacy dashboard",
                 "Current safeguards, unsupported paths and copyable diagnostic summary",
                 () -> showPrivacyDashboard(context));
+        addLink(context, content, "Identity and privacy limitations",
+                "What a proxy, local display settings, and Telegram account identity actually protect",
+                () -> showIdentityPrivacyLimits(context));
         addLink(context, content, "Network/DNS source audit matrix",
                 "Read-only owned-code audit and missing capture evidence",
                 () -> showNetworkSourceMatrix(context));
@@ -185,6 +199,96 @@ public final class UltSettingsActivity extends BaseFragment {
         fill.setCornerRadius(AndroidUtilities.dp(13));
         bubble.setBackground(fill);
         return bubble;
+    }
+
+    // Alpha 0.13a: a real fixed native Telegram theme, not just a color preview.
+    // The existing light/dark paired presets and original themes remain unchanged.
+    private void showUltCustomThemeChooser(Context context) {
+        final UltAppearancePreset[] presets = {
+                UltAppearancePreset.MIDNIGHT, UltAppearancePreset.CANDY,
+                UltAppearancePreset.STAGE, UltAppearancePreset.MINIMAL,
+                UltAppearancePreset.AURORA, UltAppearancePreset.OBSIDIAN
+        };
+        final String[] labels = new String[presets.length];
+        for (int i = 0; i < presets.length; i++) labels[i] = presets[i].displayName;
+        new UltSecureDialogBuilder(context)
+                .setTitle("Custom ULT theme — choose a base")
+                .setItems(labels, (dialog, which) ->
+                        showUltCustomThemeEditor(context, presets[which]))
+                .setNegativeButton("Cancel", null).show();
+    }
+
+    private void showUltCustomThemeEditor(Context context, UltAppearancePreset preset) {
+        final UltAppearancePreset.Palette base = preset.forMode(preset.dark);
+        final LinearLayout controls = new LinearLayout(context);
+        controls.setOrientation(LinearLayout.VERTICAL);
+        controls.setPadding(AndroidUtilities.dp(16), AndroidUtilities.dp(8),
+                AndroidUtilities.dp(16), AndroidUtilities.dp(8));
+        TextView intro = new TextView(context);
+        intro.setText("Fixed day/night appearance from " + preset.displayName
+                + ". Use #RRGGBB colors. Text contrast is checked before applying. "
+                + "System-following paired palettes are unchanged.");
+        controls.addView(intro);
+        final EditText accent = new EditText(context);
+        accent.setSingleLine(true);
+        accent.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        accent.setHint("Accent e.g. #E86BCB");
+        accent.setText(UltCustomTheme.toHex(base.accentArgb));
+        controls.addView(accent);
+        final EditText outgoing = new EditText(context);
+        outgoing.setSingleLine(true);
+        outgoing.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        outgoing.setHint("Outgoing bubble e.g. #422C50");
+        outgoing.setText(UltCustomTheme.toHex(base.outgoingBubbleArgb));
+        controls.addView(outgoing);
+        new UltSecureDialogBuilder(context)
+                .setTitle(preset.displayName + " custom colors")
+                .setView(controls)
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Apply fixed theme", (dialog, ignored) -> {
+                    try {
+                        if (UltAppearanceThemeAdapter.applyCustom(context, preset,
+                                accent.getText().toString(), outgoing.getText().toString())) {
+                            if (parentLayout != null) {
+                                parentLayout.rebuildAllFragmentViews(true, true);
+                            }
+                            android.widget.Toast.makeText(context,
+                                    "Custom fixed theme applied; original presets retained",
+                                    android.widget.Toast.LENGTH_SHORT).show();
+                        } else {
+                            android.widget.Toast.makeText(context,
+                                    "Theme import failed; previous theme retained",
+                                    android.widget.Toast.LENGTH_LONG).show();
+                        }
+                    } catch (IllegalArgumentException | java.io.IOException error) {
+                        android.widget.Toast.makeText(context,
+                                "Theme not applied: " + error.getMessage(),
+                                android.widget.Toast.LENGTH_LONG).show();
+                    }
+                }).show();
+    }
+
+    private void showNativeMediaDownloadSettings(Context context) {
+        new UltSecureDialogBuilder(context)
+                .setTitle("Telegram media auto-download")
+                .setItems(new String[]{"Mobile data", "Wi-Fi", "Roaming"},
+                        (dialog, which) -> presentFragment(
+                                new org.telegram.ui.DataAutoDownloadActivity(which)))
+                .setNegativeButton("Cancel", null).show();
+    }
+
+    private void showIdentityPrivacyLimits(Context context) {
+        new UltSecureDialogBuilder(context)
+                .setTitle("Identity and privacy: real scope")
+                .setMessage("Changing your local app appearance or account label does not "
+                        + "hide your Telegram account from Telegram or chat recipients. "
+                        + "A Telegram proxy can hide your home IP from some Telegram endpoints, "
+                        + "but it is not a whole-device VPN or a verified whole-app kill switch. "
+                        + "Calls, WebViews, DNS, media/CDN and Java networking need independent "
+                        + "testing. No identity spoofing, DoQ transport or tracker enforcement "
+                        + "is enabled here. Keep phone-number visibility and account discovery "
+                        + "settings configured in Telegram Privacy and Security.")
+                .setPositiveButton("Understood", null).show();
     }
 
     private void showUltThemePreview(Context context) {
