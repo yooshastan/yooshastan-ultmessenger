@@ -1,5 +1,7 @@
 # Yooshastan ULT Messenger
 
+> **Alpha 0.12c+d RC1 build candidate:** The combined FOSS ARM64 debug APK is prepared on `release/alpha12cd-combined-rc1` for CI and internal testing. Includes the optional category swipe target, per-account category typography, and additional document clipboard utilities. This is not a public release, full download manager or native chat-list swipe integration. [RC1 device QA](docs/ALPHA12CD_RC1_QA.md).
+
 > **Alpha 0.12c+d development:** Dedicated opt-in swipe navigator for visible category tabs, per-account category typography and read-only, explicitly copied media citations/file names. Built atop the Samsung/Pixel-working Alpha 0.12a+b RC1; native strict proxy, Telegram storage, screenshot protections and DNS are not altered. Full Android APK not yet compiled for this branch. [Development QA](docs/ALPHA12CD_BATCHED.md).
 
 
