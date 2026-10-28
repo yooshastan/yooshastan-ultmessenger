@@ -13,11 +13,12 @@ NATIVE = ROOT / "scripts/integrate-native-strict.py"
 class RC1Contract(TestCase):
     def test_foss_only_candidate_has_integrity_metadata(self):
         workflow = WORKFLOW.read_text(encoding="utf-8")
-        for required in ("release/alpha11bc-combined-rc1", "variant: [foss]",
+        for required in ("variant: [foss]",
                          "SHA256SUMS", "BUILD_INFO.txt", "artifacts/*",
                          "retention-days: 30"):
             with self.subTest(required=required):
                 self.assertIn(required, workflow)
+        self.assertRegex(workflow, r"branches: \[release/alpha(?:11bc|12ab)-combined-rc1\]")
         self.assertNotIn("variant: [foss, firebase]", workflow)
         # Release candidates and later alphas rename the debug APK. Guard
         # consistency of filename, checksum and artifact rather than RC1 spelling.
