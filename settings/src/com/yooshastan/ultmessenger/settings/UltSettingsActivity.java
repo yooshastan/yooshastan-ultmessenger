@@ -103,6 +103,12 @@ public final class UltSettingsActivity extends BaseFragment {
         addLink(context, content, "Category bar appearance",
                 "Compact, comfortable or spacious chips for this account",
                 () -> showCategoryBarAppearance(context));
+        addLink(context, content, "Category typography",
+                "Small, normal or large category labels; follows Android font scaling",
+                () -> showCategoryTypography(context));
+        addLink(context, content, "Swipe category navigator",
+                "Optional dedicated gesture surface; never intercepts chat-row swipes",
+                () -> showSwipeNavigator(context));
         addLink(context, content, "Offline translation status",
                 "Read-only active translation engine and local provider readiness",
                 () -> showOfflineTranslationStatus(context));
@@ -547,6 +553,46 @@ public final class UltSettingsActivity extends BaseFragment {
                             "Comfortable category chips restored",
                             android.widget.Toast.LENGTH_SHORT).show();
                 })
+                .setNegativeButton("Cancel", null).show();
+    }
+
+
+    private void showCategoryTypography(Context context) {
+        final SharedPreferences prefs = context.getSharedPreferences(
+                UltChatView.PREFERENCES, Context.MODE_PRIVATE);
+        final String key = UltChatView.barFontKey(UserConfig.selectedAccount);
+        final int selected = UltChatView.barFontIndex(
+                prefs.getString(key, UltChatView.FONT_NORMAL));
+        new UltSecureDialogBuilder(context)
+                .setTitle("Category bar typography")
+                .setSingleChoiceItems(UltChatView.FONT_STYLE_LABELS, selected, (dialog, which) -> {
+                    prefs.edit().putString(key, UltChatView.FONT_STYLES[which]).apply();
+                    android.widget.Toast.makeText(context,
+                            "Return to Chats to refresh category label size",
+                            android.widget.Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+                })
+                .setNeutralButton("Restore default", (dialog, which) ->
+                        prefs.edit().remove(key).apply())
+                .setNegativeButton("Cancel", null).show();
+    }
+
+    private void showSwipeNavigator(Context context) {
+        final SharedPreferences prefs = context.getSharedPreferences(
+                UltChatView.PREFERENCES, Context.MODE_PRIVATE);
+        final String key = UltChatView.swipePadKey(UserConfig.selectedAccount);
+        final int selected = prefs.getBoolean(key, false) ? 1 : 0;
+        new UltSecureDialogBuilder(context)
+                .setTitle("Dedicated swipe category navigator")
+                .setMessage("Off by default. When enabled, a narrow ↔ control appears next to the optional category strip. Swipe on that control to change only local visible categories, or tap for next. Normal chat rows, Telegram folders and Android back gestures are never intercepted.")
+                .setSingleChoiceItems(new String[] {"Disabled", "Enabled"}, selected,
+                        (dialog, which) -> {
+                            prefs.edit().putBoolean(key, which == 1).apply();
+                            android.widget.Toast.makeText(context,
+                                    "Return to Chats to update the category navigator",
+                                    android.widget.Toast.LENGTH_SHORT).show();
+                            dialog.dismiss();
+                        })
                 .setNegativeButton("Cancel", null).show();
     }
 

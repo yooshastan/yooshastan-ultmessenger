@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """RC1 smoke contracts; does not replace Android compilation or capture tests."""
 from pathlib import Path
+import re
 from unittest import TestCase, main
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -12,12 +13,17 @@ UI = ROOT / "settings/src/com/yooshastan/ultmessenger/settings/UltSettingsActivi
 class RC1(TestCase):
     def test_foss_artifact_and_integrity_provenance(self):
         w = WORKFLOW.read_text()
-        for required in ("release/alpha11bc-combined-rc1", "matrix:", "variant: [foss]",
-                         "ult-alpha11bc-combined-foss-arm64-debug.apk",
-                         "ult-alpha11bc-combined-foss-android", "SHA256SUMS",
+        # Check the active combined release, not a frozen old Alpha 0.11 name.
+        branch = re.search(r"branches: \[release/(alpha[0-9]+[a-z]+-combined-rc[0-9]+)\]", w)
+        self.assertIsNotNone(branch, "Expected versioned combined candidate branch")
+        artifact_prefix = branch.group(1).rsplit("-rc", 1)[0]
+        for required in ("matrix:", "variant: [foss]", "SHA256SUMS",
                          "BUILD_INFO.txt", "scripts/integrate-native-strict.py",
-                         "scripts/integrate-screen-privacy.py"):
-            self.assertIn(required, w)
+                         "scripts/integrate-screen-privacy.py",
+                         f"ult-{artifact_prefix}-foss-arm64-debug.apk",
+                         f"ult-{artifact_prefix}-foss-android"):
+            with self.subTest(required=required):
+                self.assertIn(required, w)
 
     def test_alpha11bc_source_scope_and_caveats(self):
         self.assertIn("visibleTabs(String saved)", CHAT.read_text())

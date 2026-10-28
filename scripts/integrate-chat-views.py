@@ -81,6 +81,21 @@ ACTIVITY_FIELDS = """
                 "ULT View: " + UltChatView.LABELS[UltChatView.modeIndex(next)],
                 android.widget.Toast.LENGTH_SHORT).show();
     }
+    private android.widget.TextView ultSwipeTarget;
+    private float ultSwipeDownX;
+    private float ultSwipeDownY;
+
+    /** Navigate only through the account's visible local categories. */
+    private void stepUltCategoryMode(int direction) {
+        final SharedPreferences prefs = ApplicationLoader.applicationContext.getSharedPreferences(
+                UltChatView.PREFERENCES, Context.MODE_PRIVATE);
+        final String next = UltChatView.stepVisibleTab(
+                prefs.getString(UltChatView.accountKey(currentAccount), UltChatView.ALL),
+                prefs.getString(UltChatView.tabConfigKey(currentAccount),
+                        UltChatView.defaultTabConfig()), direction);
+        setUltCategoryMode(next);
+    }
+
     private android.widget.HorizontalScrollView ultCategoryBar;
     private android.widget.LinearLayout ultCategoryRow;
 
@@ -113,12 +128,29 @@ ACTIVITY_FIELDS = """
         final SharedPreferences prefs = ApplicationLoader.applicationContext.getSharedPreferences(
                 UltChatView.PREFERENCES, Context.MODE_PRIVATE);
         final String mode = prefs.getString(UltChatView.accountKey(currentAccount), UltChatView.ALL);
+        // Gesture handling is confined to a dedicated, opt-in target.
+        final boolean enableSwipePad = mainChats && isUltCategoryBarEnabled()
+                && prefs.getBoolean(UltChatView.swipePadKey(currentAccount), false);
+        if (ultSwipeTarget != null) {
+            ultSwipeTarget.setVisibility(enableSwipePad ? View.VISIBLE : View.GONE);
+        }
         final String barStyle = UltChatView.sanitizeBarStyle(prefs.getString(
                 UltChatView.barStyleKey(currentAccount), UltChatView.BAR_COMFORTABLE));
         final android.view.ViewGroup.LayoutParams barParams = ultCategoryBar.getLayoutParams();
         if (barParams != null) {
             barParams.height = AndroidUtilities.dp(UltChatView.barHeightDp(barStyle));
+            if (barParams instanceof android.widget.FrameLayout.LayoutParams) {
+                ((android.widget.FrameLayout.LayoutParams) barParams).rightMargin =
+                        AndroidUtilities.dp(enableSwipePad ? 84 : 12);
+            }
             ultCategoryBar.setLayoutParams(barParams);
+        }
+        if (ultSwipeTarget != null) {
+            final android.view.ViewGroup.LayoutParams swipeParams = ultSwipeTarget.getLayoutParams();
+            if (swipeParams != null) {
+                swipeParams.height = AndroidUtilities.dp(UltChatView.barHeightDp(barStyle));
+                ultSwipeTarget.setLayoutParams(swipeParams);
+            }
         }
         ultCategoryBar.setPadding(AndroidUtilities.dp(5),
                 AndroidUtilities.dp(UltChatView.BAR_COMPACT.equals(barStyle) ? 2 : 4),
@@ -131,7 +163,8 @@ ACTIVITY_FIELDS = """
             android.widget.TextView chip = new android.widget.TextView(ultCategoryRow.getContext());
             chip.setText(UltChatView.quickTabLabel(choice));
             chip.setGravity(Gravity.CENTER);
-            chip.setTextSize(13);
+            chip.setTextSize(UltChatView.barFontSp(
+                    prefs.getString(UltChatView.barFontKey(currentAccount), UltChatView.FONT_NORMAL)));
             chip.setMinHeight(AndroidUtilities.dp(UltChatView.chipHeightDp(barStyle)));
             chip.setPadding(AndroidUtilities.dp(UltChatView.chipPaddingDp(barStyle)), 0,
                     AndroidUtilities.dp(UltChatView.chipPaddingDp(barStyle)), 0);
@@ -180,6 +213,49 @@ ACTIVITY_FIELDS = """
         container.addView(ultCategoryBar, LayoutHelper.createFrame(
                 LayoutHelper.MATCH_PARENT, UltChatView.barHeightDp(UltChatView.BAR_COMFORTABLE),
                 Gravity.BOTTOM, 12, 0, 12, 92));
+
+        // Dedicated swipe surface: never intercept chat-row scrolling, folder swipes
+        // or Android edge-back. A tap also advances for accessibility.
+        ultSwipeTarget = new android.widget.TextView(context);
+        ultSwipeTarget.setText("↔");
+        ultSwipeTarget.setTextSize(24);
+        ultSwipeTarget.setGravity(Gravity.CENTER);
+        ultSwipeTarget.setContentDescription(
+                "Ultgram category navigator: swipe left or right, tap for next category");
+        ultSwipeTarget.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteBlueText));
+        android.graphics.drawable.GradientDrawable navPanel =
+                new android.graphics.drawable.GradientDrawable();
+        navPanel.setColor(getThemedColor(Theme.key_windowBackgroundWhite));
+        navPanel.setCornerRadius(AndroidUtilities.dp(18));
+        ultSwipeTarget.setBackground(navPanel);
+        ultSwipeTarget.setClickable(true);
+        ultSwipeTarget.setOnClickListener(view -> stepUltCategoryMode(1));
+        ultSwipeTarget.setOnTouchListener((view, event) -> {
+            switch (event.getActionMasked()) {
+                case android.view.MotionEvent.ACTION_DOWN:
+                    ultSwipeDownX = event.getX();
+                    ultSwipeDownY = event.getY();
+                    return true;
+                case android.view.MotionEvent.ACTION_UP:
+                    final float dx = event.getX() - ultSwipeDownX;
+                    final float dy = event.getY() - ultSwipeDownY;
+                    if (Math.abs(dx) >= AndroidUtilities.dp(24)
+                            && Math.abs(dx) > Math.abs(dy) * 1.4f) {
+                        stepUltCategoryMode(dx < 0 ? 1 : -1);
+                    } else if (Math.abs(dx) < AndroidUtilities.dp(12)
+                            && Math.abs(dy) < AndroidUtilities.dp(12)) {
+                        view.performClick();
+                    }
+                    return true;
+                case android.view.MotionEvent.ACTION_CANCEL:
+                    return true;
+                default:
+                    return true;
+            }
+        });
+        container.addView(ultSwipeTarget, LayoutHelper.createFrame(
+                64, UltChatView.barHeightDp(UltChatView.BAR_COMFORTABLE),
+                Gravity.RIGHT | Gravity.BOTTOM, 0, 0, 12, 92));
         refreshUltCategoryBar();
     }
 

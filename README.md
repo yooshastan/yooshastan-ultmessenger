@@ -1,5 +1,8 @@
 # Yooshastan ULT Messenger
 
+> **Alpha 0.12c+d development:** Dedicated opt-in swipe navigator for visible category tabs, per-account category typography and read-only, explicitly copied media citations/file names. Built atop the Samsung/Pixel-working Alpha 0.12a+b RC1; native strict proxy, Telegram storage, screenshot protections and DNS are not altered. Full Android APK not yet compiled for this branch. [Development QA](docs/ALPHA12CD_BATCHED.md).
+
+
 > **Alpha 0.12a+b RC1 Android build:** Initial Pixel-compatible FOSS ARM64 **debug test candidate** on `release/alpha12ab-combined-rc1`. Includes category bar density, paired ULT theme previews and explicit Copy message reference; swipe navigation and file manager remain planned. The candidate requires full Android CI and on-device QA before acceptance; not production-signed. [RC1 QA](docs/ALPHA12_RC1_QA.md).
 
 > **Alpha 0.12a+b development (Nullgram/Nekogram-inspired UX):** The first local batch adds selectable per-account category-strip density, read-only ULT light/dark palette previews, and an explicit one-tap message reference copy action. Lightweight Python/Java checks run on feature commits; no Alpha 0.12 Android APK has been compiled yet. This does not modify strict proxy, DNS routing, Telegram server data or Premium entitlements. [Scope and test plan](docs/ALPHA12_BATCHED_BUILD.md).

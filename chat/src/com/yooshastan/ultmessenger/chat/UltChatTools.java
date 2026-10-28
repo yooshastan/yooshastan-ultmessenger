@@ -86,6 +86,21 @@ public final class UltChatTools {
         return "File: " + safeName + "\nSize: " + size + "\n" + details;
     }
 
+    /** A single sanitized, display-only file name. No disk access. */
+    public static String safeFileName(String filename) {
+        String safe = filename == null ? "" : filename.trim();
+        safe = safe.replaceAll("[\\\\/\\r\\n\\t\\p{Cntrl}]", "_");
+        if (safe.length() > 120) safe = safe.substring(0, 120);
+        return safe.isEmpty() ? "unnamed" : safe;
+    }
+
+    /** Explicit clipboard citation, not a downloader or a private permalink. */
+    public static String mediaCitation(String filename, String mime, long bytes,
+                                       long messageId, long seconds, String publicUsername) {
+        String reference = messageReference(messageId, 0, seconds, publicUsername);
+        return reference == null ? null : reference + "\n" + mediaSummary(filename, mime, bytes);
+    }
+
     /** One-tap, explicitly requested metadata reference; no message body or private links. */
     public static String messageReference(long messageId, long senderPeerId,
                                           long timestamp, String publicUsername) {

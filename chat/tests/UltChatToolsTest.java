@@ -59,6 +59,23 @@ public final class UltChatToolsTest {
                 || UltChatTools.messageReference(3, 0, 0, "bad/link").contains("https://")) {
             throw new AssertionError("Private or invalid references must exclude public links");
         }
+        if (!"sample_flac".equals(UltChatTools.safeFileName("sample/flac"))
+                || !"unnamed".equals(UltChatTools.safeFileName(null))) {
+            throw new AssertionError("Clipboard filename sanitization");
+        }
+        String mediaCitation = UltChatTools.mediaCitation(
+                "track.flac", "audio/flac", 2048, 7, 1, "@PublicChannel");
+        if (mediaCitation == null || !mediaCitation.contains("File: track.flac")
+                || !mediaCitation.contains("https://t.me/publicchannel/7")
+                || !mediaCitation.contains("UTC: 1970-01-01T00:00:01Z")) {
+            throw new AssertionError("Public media citation");
+        }
+        String privateCitation = UltChatTools.mediaCitation(
+                "private.flac", "audio/flac", 100, 7, 1, null);
+        if (privateCitation == null || privateCitation.contains("https://")
+                || UltChatTools.mediaCitation("x", "audio/flac", 1, 0, 0, null) != null) {
+            throw new AssertionError("Private media citation must not create links");
+        }
         System.out.println("ULT chat tools model passed");
     }
 }
