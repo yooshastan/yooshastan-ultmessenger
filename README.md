@@ -1,6 +1,6 @@
 # Yooshastan ULT Messenger
 
-> **Alpha 0.12a+b development (Nullgram/Nekogram-inspired UX):** The first local batch adds selectable per-account category-strip density and an explicit one-tap message reference copy action. Lightweight Python/Java checks run on feature commits; no Alpha 0.12 Android APK has been compiled yet. This does not modify strict proxy, DNS routing, Telegram server data or Premium entitlements. [Scope and test plan](docs/ALPHA12_BATCHED_BUILD.md).
+> **Alpha 0.12a+b development (Nullgram/Nekogram-inspired UX):** The first local batch adds selectable per-account category-strip density, read-only ULT light/dark palette previews, and an explicit one-tap message reference copy action. Lightweight Python/Java checks run on feature commits; no Alpha 0.12 Android APK has been compiled yet. This does not modify strict proxy, DNS routing, Telegram server data or Premium entitlements. [Scope and test plan](docs/ALPHA12_BATCHED_BUILD.md).
 
 > **Alpha 0.11b+c combined development (build-efficiency setup):** Opt-in screenshot privacy (0.11a.1) is the tested baseline. DNS/HTTP/media-path auditing (0.11b) and advanced chat navigation / translation (0.11c) are being developed together for a **single later FOSS ARM64 test APK**. Intermediate commits run lightweight contract tests, not the full Gradle/native compile. This batching change itself does **not** implement DoQ, tracker filtering, or new offline language models. The working native strict proxy is unchanged. [Combined-stage plan](docs/ALPHA11_BATCHED_BUILD.md).
 

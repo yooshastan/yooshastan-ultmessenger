@@ -21,6 +21,19 @@ class Alpha12BatchContract(TestCase):
         self.assertIn('prefs.edit().remove(key).apply()', settings)
         self.assertNotIn("setDialogFilter(", patch)
 
+    def test_theme_previews_are_read_only_and_offer_both_modes(self):
+        settings = (ROOT / "settings/src/com/yooshastan/ultmessenger/settings/UltSettingsActivity.java").read_text()
+        self.assertIn("showUltThemePreview(context)", settings)
+        self.assertIn("preset.forMode(night)", settings)
+        self.assertIn("new boolean[] {false, true}", settings)
+        self.assertIn("colors.incomingBubbleArgb", settings)
+        self.assertIn("colors.outgoingBubbleArgb", settings)
+        preview = settings[settings.index("private void showUltThemePreview("):
+                           settings.index("private void showChatListDensity(")]
+        self.assertNotIn("saveTheme(", preview)
+        self.assertNotIn("applyTheme(", preview)
+        self.assertNotIn("setUseThreeLinesLayout", preview)
+
     def test_explicit_metadata_copy_has_no_private_permalink_or_network_request(self):
         model = (ROOT / "chat/src/com/yooshastan/ultmessenger/chat/UltChatTools.java").read_text()
         integration = (ROOT / "scripts/integrate-message-tools.py").read_text()

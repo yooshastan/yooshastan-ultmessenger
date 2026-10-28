@@ -11,6 +11,11 @@
 - Changes only bar height and chip height/padding in the existing guarded DialogsActivity integration; does not change Telegram chat-list cells, server folders, dialog order, message storage or themes.
 - Reopening Chats refreshes the chip layout. This is not yet swipe navigation, an editable theme engine, or general chat-list density.
 
+### 0.12a — read-only paired theme previews
+- Ultgram Settings offers original day/night palette previews of the six existing ULT presets.
+- Uses immutable `UltAppearancePreset.forMode(boolean)` colors already compiled into the app.
+- Does not apply or save a theme, borrow third-party assets, or change native day/night settings.
+
 ### 0.12b — message reference utility
 - Explicit long-press **ULT: Copy message reference** combining message ID, sender peer ID (if present), UTC timestamp (if valid), and link only for an actual public channel/supergroup with validated username and positive message ID.
 - No message text, attached media or file content copied. Never synthesizes secret/private links.
@@ -24,7 +29,7 @@
 
 ## Next additions in this combined milestone
 - Review safe swipe gestures around horizontally scrollable category bar (avoid hijacking chat list and Android back gestures).
-- Extend appearance with theme previews and font/accessibility checks.
+- Continue appearance improvements with font/accessibility checks and optional accent editing.
 - Expand media/file action UX using Telegram's existing permission-aware storage manager; do not bypass protected-content controls or auto-download/export messages.
 - Record upstream Nullgram/Nekogram revision and licenses before any code borrowing. This increment uses original Ultgram code only.
 

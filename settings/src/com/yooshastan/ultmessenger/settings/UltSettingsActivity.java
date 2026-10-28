@@ -14,6 +14,7 @@ import android.widget.EditText;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import com.yooshastan.ultmessenger.conversation.UltChatView;
+import com.yooshastan.ultmessenger.appearance.UltAppearancePreset;
 import com.yooshastan.ultmessenger.translation.UltTranslationPolicy;
 import com.yooshastan.ultmessenger.dns.UltDoqBootstrap;
 import com.yooshastan.ultmessenger.dns.UltDoqEndpoint;
@@ -85,6 +86,9 @@ public final class UltSettingsActivity extends BaseFragment {
                 () -> setCompactRows(context, !compactRows));
         addLink(context, content, "ULT theme presets", "Six presets, fixed colors and light/dark pairing",
                 () -> presentFragment(new ThemeActivity(ThemeActivity.THEME_TYPE_BASIC)));
+        addLink(context, content, "Preview ULT theme palettes",
+                "Inspect original light and dark bubble colors without applying a theme",
+                () -> showUltThemePreview(context));
 
         addSection(context, content, "CHATS AND TOOLS");
         addLink(context, content, "ULT chat layout presets",
@@ -160,6 +164,73 @@ public final class UltSettingsActivity extends BaseFragment {
         return fragmentView;
     }
 
+
+    private static TextView ultPreviewBubble(Context context, String caption,
+                                              int textColor, int backgroundColor) {
+        TextView bubble = new TextView(context);
+        bubble.setText(caption);
+        bubble.setTextColor(textColor);
+        bubble.setTextSize(14);
+        bubble.setPadding(AndroidUtilities.dp(12), AndroidUtilities.dp(8),
+                AndroidUtilities.dp(12), AndroidUtilities.dp(8));
+        android.graphics.drawable.GradientDrawable fill =
+                new android.graphics.drawable.GradientDrawable();
+        fill.setColor(backgroundColor);
+        fill.setCornerRadius(AndroidUtilities.dp(13));
+        bubble.setBackground(fill);
+        return bubble;
+    }
+
+    private void showUltThemePreview(Context context) {
+        final UltAppearancePreset[] presets = {
+                UltAppearancePreset.MIDNIGHT, UltAppearancePreset.CANDY,
+                UltAppearancePreset.STAGE, UltAppearancePreset.MINIMAL,
+                UltAppearancePreset.AURORA, UltAppearancePreset.OBSIDIAN
+        };
+        final String[] labels = new String[presets.length];
+        for (int i = 0; i < presets.length; i++) labels[i] = presets[i].displayName;
+        new UltSecureDialogBuilder(context)
+                .setTitle("ULT palette previews")
+                .setItems(labels, (dialog, which) -> {
+                    final UltAppearancePreset preset = presets[which];
+                    final LinearLayout preview = new LinearLayout(context);
+                    preview.setOrientation(LinearLayout.VERTICAL);
+                    preview.setPadding(AndroidUtilities.dp(16), AndroidUtilities.dp(8),
+                            AndroidUtilities.dp(16), AndroidUtilities.dp(8));
+                    for (boolean night : new boolean[] {false, true}) {
+                        final UltAppearancePreset.Palette colors = preset.forMode(night);
+                        final LinearLayout panel = new LinearLayout(context);
+                        panel.setOrientation(LinearLayout.VERTICAL);
+                        panel.setPadding(AndroidUtilities.dp(12), AndroidUtilities.dp(10),
+                                AndroidUtilities.dp(12), AndroidUtilities.dp(10));
+                        android.graphics.drawable.GradientDrawable card =
+                                new android.graphics.drawable.GradientDrawable();
+                        card.setColor(colors.backgroundArgb);
+                        card.setCornerRadius(AndroidUtilities.dp(14));
+                        panel.setBackground(card);
+                        final TextView title = new TextView(context);
+                        title.setText(night ? "Night palette" : "Day palette");
+                        title.setTextColor(colors.accentArgb);
+                        title.setTextSize(14);
+                        panel.addView(title);
+                        panel.addView(ultPreviewBubble(context, "Incoming message preview",
+                                colors.textArgb, colors.incomingBubbleArgb));
+                        panel.addView(ultPreviewBubble(context, "Outgoing message preview",
+                                colors.textArgb, colors.outgoingBubbleArgb));
+                        LinearLayout.LayoutParams box = new LinearLayout.LayoutParams(
+                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                ViewGroup.LayoutParams.WRAP_CONTENT);
+                        box.bottomMargin = AndroidUtilities.dp(10);
+                        preview.addView(panel, box);
+                    }
+                    new UltSecureDialogBuilder(context)
+                            .setTitle(preset.displayName + " (preview only)")
+                            .setView(preview)
+                            .setPositiveButton("Done", null)
+                            .show();
+                })
+                .setNegativeButton("Cancel", null).show();
+    }
 
     private void showChatListDensity(Context context) {
         final boolean threeLines = SharedConfig.useThreeLinesLayout;
