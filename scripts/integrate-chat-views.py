@@ -113,6 +113,17 @@ ACTIVITY_FIELDS = """
         final SharedPreferences prefs = ApplicationLoader.applicationContext.getSharedPreferences(
                 UltChatView.PREFERENCES, Context.MODE_PRIVATE);
         final String mode = prefs.getString(UltChatView.accountKey(currentAccount), UltChatView.ALL);
+        final String barStyle = UltChatView.sanitizeBarStyle(prefs.getString(
+                UltChatView.barStyleKey(currentAccount), UltChatView.BAR_COMFORTABLE));
+        final android.view.ViewGroup.LayoutParams barParams = ultCategoryBar.getLayoutParams();
+        if (barParams != null) {
+            barParams.height = AndroidUtilities.dp(UltChatView.barHeightDp(barStyle));
+            ultCategoryBar.setLayoutParams(barParams);
+        }
+        ultCategoryBar.setPadding(AndroidUtilities.dp(5),
+                AndroidUtilities.dp(UltChatView.BAR_COMPACT.equals(barStyle) ? 2 : 4),
+                AndroidUtilities.dp(5),
+                AndroidUtilities.dp(UltChatView.BAR_COMPACT.equals(barStyle) ? 2 : 4));
         final String[] visible = UltChatView.visibleTabs(prefs.getString(
                 UltChatView.tabConfigKey(currentAccount), UltChatView.defaultTabConfig()));
         ultCategoryRow.removeAllViews();
@@ -121,8 +132,9 @@ ACTIVITY_FIELDS = """
             chip.setText(UltChatView.quickTabLabel(choice));
             chip.setGravity(Gravity.CENTER);
             chip.setTextSize(13);
-            chip.setMinHeight(AndroidUtilities.dp(34));
-            chip.setPadding(AndroidUtilities.dp(14), 0, AndroidUtilities.dp(14), 0);
+            chip.setMinHeight(AndroidUtilities.dp(UltChatView.chipHeightDp(barStyle)));
+            chip.setPadding(AndroidUtilities.dp(UltChatView.chipPaddingDp(barStyle)), 0,
+                    AndroidUtilities.dp(UltChatView.chipPaddingDp(barStyle)), 0);
             chip.setClickable(true);
             chip.setFocusable(true);
             chip.setOnClickListener(v -> setUltCategoryMode(choice));
@@ -166,7 +178,8 @@ ACTIVITY_FIELDS = """
         // Floating, opt-in strip above the bottom message composer/primary action area.
         // It does not replace or mutate Telegram folder tabs.
         container.addView(ultCategoryBar, LayoutHelper.createFrame(
-                LayoutHelper.MATCH_PARENT, 44, Gravity.BOTTOM, 12, 0, 12, 92));
+                LayoutHelper.MATCH_PARENT, UltChatView.barHeightDp(UltChatView.BAR_COMFORTABLE),
+                Gravity.BOTTOM, 12, 0, 12, 92));
         refreshUltCategoryBar();
     }
 

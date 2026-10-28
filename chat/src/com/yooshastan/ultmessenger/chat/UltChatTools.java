@@ -86,6 +86,21 @@ public final class UltChatTools {
         return "File: " + safeName + "\nSize: " + size + "\n" + details;
     }
 
+    /** One-tap, explicitly requested metadata reference; no message body or private links. */
+    public static String messageReference(long messageId, long senderPeerId,
+                                          long timestamp, String publicUsername) {
+        if (messageId <= 0) return null;
+        StringBuilder text = new StringBuilder("Message ID: ").append(messageId);
+        if (senderPeerId != 0) {
+            text.append("\nSender peer ID: ").append(senderPeerId);
+        }
+        String utc = utcTimestamp(timestamp);
+        if (utc != null) text.append("\nUTC: ").append(utc);
+        String link = publicMessageLink(publicUsername, messageId);
+        if (link != null) text.append("\nPublic link: ").append(link);
+        return text.toString();
+    }
+
     public static boolean hasTopic(long topicId) {
         return topicId > 0;
     }
