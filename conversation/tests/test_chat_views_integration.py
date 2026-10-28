@@ -63,7 +63,11 @@ class ChatViewIntegrationTest(TestCase):
             self.assertIn("initialDialogsType == DIALOGS_TYPE_DEFAULT", activity)
             self.assertNotIn("addDialogFilter", activity)
             self.assertIn("setSingleChoiceItems(UltChatView.LABELS", activity)
-            self.assertNotIn("setMessage(", activity)
+            # A read-only What's New dialog now legitimately uses setMessage().
+            # Continue to reject Telegram message transmission or account mutations.
+            self.assertIn("setMessage(UltReleaseNotes.summary())", activity)
+            self.assertNotIn("sendMessage(", activity + adapter)
+            self.assertNotIn("setMessage(", adapter)
             self.assertIn("accountKey(currentAccount)", activity)
             self.assertIn("isUltChatViewActive()", adapter)
             self.assertIn("array = ultFilteredDialogs(array, messagesController)", adapter)
