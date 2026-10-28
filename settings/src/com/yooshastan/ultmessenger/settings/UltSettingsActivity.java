@@ -285,6 +285,52 @@ public final class UltSettingsActivity extends BaseFragment {
         outgoing.setHint("Outgoing bubble e.g. #422C50");
         outgoing.setText(UltCustomTheme.toHex(base.outgoingBubbleArgb));
         controls.addView(outgoing);
+
+        // Live preview is opt-in and never mutates Telegram's current theme.
+        final android.widget.Button previewButton = new android.widget.Button(context);
+        previewButton.setText("Preview colors (does not apply)");
+        previewButton.setOnClickListener(view -> {
+            try {
+                final UltAppearancePreset.Palette previewPalette = UltCustomTheme.edit(
+                        preset, accent.getText().toString(), outgoing.getText().toString());
+                final LinearLayout sample = new LinearLayout(context);
+                sample.setOrientation(LinearLayout.VERTICAL);
+                sample.setPadding(AndroidUtilities.dp(16), AndroidUtilities.dp(16),
+                        AndroidUtilities.dp(16), AndroidUtilities.dp(16));
+                sample.setBackgroundColor(previewPalette.backgroundArgb);
+                TextView top = new TextView(context);
+                top.setText("ULT theme preview — " + preset.displayName);
+                top.setPadding(AndroidUtilities.dp(12), AndroidUtilities.dp(12),
+                        AndroidUtilities.dp(12), AndroidUtilities.dp(12));
+                top.setBackgroundColor(previewPalette.accentArgb);
+                top.setTextColor(UltCustomTheme.contrast(0xFFFFFFFF, previewPalette.accentArgb)
+                        >= 4.5 ? 0xFFFFFFFF : 0xFF000000);
+                sample.addView(top);
+                TextView incomingSample = new TextView(context);
+                incomingSample.setText("Incoming message preview");
+                incomingSample.setPadding(AndroidUtilities.dp(12), AndroidUtilities.dp(12),
+                        AndroidUtilities.dp(12), AndroidUtilities.dp(12));
+                incomingSample.setBackgroundColor(previewPalette.incomingBubbleArgb);
+                incomingSample.setTextColor(previewPalette.textArgb);
+                sample.addView(incomingSample);
+                TextView outgoingSample = new TextView(context);
+                outgoingSample.setText("Outgoing message preview");
+                outgoingSample.setPadding(AndroidUtilities.dp(12), AndroidUtilities.dp(12),
+                        AndroidUtilities.dp(12), AndroidUtilities.dp(12));
+                outgoingSample.setBackgroundColor(previewPalette.outgoingBubbleArgb);
+                outgoingSample.setTextColor(previewPalette.textArgb);
+                sample.addView(outgoingSample);
+                new UltSecureDialogBuilder(context)
+                        .setTitle("Color preview — no changes applied")
+                        .setView(sample)
+                        .setPositiveButton("Close", null).show();
+            } catch (IllegalArgumentException error) {
+                android.widget.Toast.makeText(context,
+                        "Preview unavailable: " + error.getMessage(),
+                        android.widget.Toast.LENGTH_LONG).show();
+            }
+        });
+        controls.addView(previewButton);
         new UltSecureDialogBuilder(context)
                 .setTitle(preset.displayName + " custom colors")
                 .setView(controls)

@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import org.telegram.messenger.AndroidUtilities;
 
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.FileLoader;
@@ -81,7 +82,7 @@ public final class UltDownloadsActivity extends BaseFragment
     @Override
     public void toggleItemSelection(MessageObject item, View view, int a) {
         selectingSaveAs = false;
-        showSaveAs(item);
+        showDocumentActions(item);
     }
 
     @Override
@@ -111,6 +112,88 @@ public final class UltDownloadsActivity extends BaseFragment
             }
         }
         return true;
+    }
+
+    /** Explicit choices for a downloaded, permitted document, no automatic export. */
+    private void showDocumentActions(MessageObject message) {
+        final Activity activity = getParentActivity();
+        if (activity == null) return;
+        if (!isExportAllowed(message, currentAccount)) {
+            Toast.makeText(activity, "This document is protected or unavailable",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+        new UltSecureDialogBuilder(activity)
+                .setTitle("ULT document tools")
+                .setItems(new String[]{"Inspect file and SHA-256", "Save As…"},
+                        (dialog, option) -> {
+                            if (option == 0) inspectDocument(message);
+                            else if (option == 1) showSaveAs(message);
+                        })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    /** Hashes only an already-downloaded local file on a worker thread.
+     * Never reads the source chat or sends anything to the network. */
+    private void inspectDocument(MessageObject message) {
+        final Activity activity = getParentActivity();
+        if (activity == null || !isExportAllowed(message, currentAccount)) return;
+        final File source = FileLoader.getInstance(currentAccount)
+                .getPathToMessage(message.messageOwner);
+        if (source == null || !source.isFile() || !source.canRead()) {
+            Toast.makeText(activity, "Download the document before inspecting",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+        final long expectedSize = source.length();
+        if (expectedSize > UltFileInspection.MAX_INSPECT_BYTES) {
+            Toast.makeText(activity, "File is too large for in-app checksum inspection",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+        final String fileName = UltChatTools.safeFileName(
+                FileLoader.getDocumentFileName(message.getDocument()));
+        final String mime = message.getDocument().mime_type;
+        Toast.makeText(activity, "Calculating local SHA-256…",
+                Toast.LENGTH_SHORT).show();
+        new Thread(() -> {
+            try {
+                final UltFileInspection.Result result;
+                try (InputStream input = new FileInputStream(source)) {
+                    result = UltFileInspection.digest(input);
+                }
+                if (result.bytesRead != expectedSize || source.length() != expectedSize) {
+                    throw new java.io.IOException("Document changed while inspecting; retry");
+                }
+                activity.runOnUiThread(() -> {
+                    if (getParentActivity() != activity) return;
+                    new UltSecureDialogBuilder(activity)
+                            .setTitle("Downloaded document inspector")
+                            .setMessage(UltFileInspection.describe(fileName, mime, result))
+                            .setNegativeButton("Close", null)
+                            .setPositiveButton("Copy SHA-256", (dialog, ignored) -> {
+                                android.content.ClipboardManager clipboard =
+                                        (android.content.ClipboardManager) activity.getSystemService(
+                                                Context.CLIPBOARD_SERVICE);
+                                if (clipboard != null) {
+                                    clipboard.setPrimaryClip(android.content.ClipData.newPlainText(
+                                            "ULT SHA-256", result.sha256));
+                                    Toast.makeText(activity,
+                                            "Checksum copied; clipboard is visible to Android",
+                                            Toast.LENGTH_LONG).show();
+                                }
+                            }).show();
+                });
+            } catch (java.io.IOException error) {
+                activity.runOnUiThread(() -> {
+                    if (getParentActivity() == activity) {
+                        Toast.makeText(activity, "Inspection failed: " + error.getMessage(),
+                                Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
+        }, "ULT-Media-Inspect").start();
     }
 
     private void showSaveAs(MessageObject message) {
