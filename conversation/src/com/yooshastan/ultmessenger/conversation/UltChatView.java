@@ -72,6 +72,55 @@ public final class UltChatView {
         }
     }
 
+
+    // Alpha 0.12c: per-account optional gesture target and category typography.
+    // These control only a floating Ultgram view, not Telegram list interactions.
+    public static String swipePadKey(int account) {
+        if (account < 0) throw new IllegalArgumentException("Invalid account");
+        return "chat_swipe_pad_account_" + account;
+    }
+
+    public static String barFontKey(int account) {
+        if (account < 0) throw new IllegalArgumentException("Invalid account");
+        return "chat_bar_font_account_" + account;
+    }
+
+    public static final String FONT_SMALL = "small";
+    public static final String FONT_NORMAL = "normal";
+    public static final String FONT_LARGE = "large";
+    public static final String[] FONT_STYLES = {FONT_SMALL, FONT_NORMAL, FONT_LARGE};
+    public static final String[] FONT_STYLE_LABELS = {
+        "Small (12 sp)", "Normal (13 sp)", "Large (16 sp)"
+    };
+
+    public static int barFontIndex(String saved) {
+        for (int i = 0; i < FONT_STYLES.length; i++) {
+            if (FONT_STYLES[i].equals(saved)) return i;
+        }
+        return 1;
+    }
+
+    public static int barFontSp(String saved) {
+        switch (barFontIndex(saved)) {
+            case 0: return 12;
+            case 2: return 16;
+            default: return 13;
+        }
+    }
+
+    public static String stepVisibleTab(String current, String saved, int direction) {
+        if (direction != -1 && direction != 1) {
+            throw new IllegalArgumentException("Direction must be -1 or 1");
+        }
+        String[] tabs = visibleTabs(saved);
+        for (int i = 0; i < tabs.length; i++) {
+            if (tabs[i].equals(current)) {
+                return tabs[(i + direction + tabs.length) % tabs.length];
+            }
+        }
+        return ALL;
+    }
+
     private UltChatView() {}
 
     public static String quickBarKey(int account) {

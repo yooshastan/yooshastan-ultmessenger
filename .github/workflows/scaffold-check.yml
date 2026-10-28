@@ -47,6 +47,21 @@ jobs:
           javac -d "$classes" translation/src/com/yooshastan/ultmessenger/translation/UltTranslationPolicy.java translation/tests/UltTranslationPolicyTest.java
           java -cp "$classes" UltTranslationPolicyTest
 
+      - name: Fast Alpha 0.12c+d swipe navigator and media utilities
+        if: github.ref == 'refs/heads/feature/alpha12cd-swipe-media-ux' || github.head_ref == 'feature/alpha12cd-swipe-media-ux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests -p 'test_alpha12cd_contract.py'
+          python3 -m unittest discover -s chat/tests -p 'test_message_tools_integration.py'
+          python3 -m unittest discover -s conversation/tests -p 'test_chat_views_integration.py'
+          classes="$(mktemp -d)"
+          trap 'rm -rf "$classes"' EXIT
+          javac -d "$classes" conversation/src/com/yooshastan/ultmessenger/conversation/UltChatView.java conversation/tests/UltChatViewTest.java
+          java -cp "$classes" UltChatViewTest
+          javac -d "$classes" chat/src/com/yooshastan/ultmessenger/chat/UltChatTools.java chat/tests/UltChatToolsTest.java
+          java -cp "$classes" UltChatToolsTest
+
       - name: Fast Alpha 0.12a+b appearance and message contracts
         if: github.ref == 'refs/heads/feature/alpha12-nullgram-nekogram' || github.head_ref == 'feature/alpha12-nullgram-nekogram'
         shell: bash

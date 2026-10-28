@@ -10,6 +10,23 @@ public final class UltChatViewTest {
         ok(UltChatView.MODES.length == UltChatView.LABELS.length, "labels match keys");
         ok(UltChatView.QUICK_TAB_MODES.length == 6, "six categories");
         ok(UltChatView.visibleTabs(null).length == 6, "default six visible");
+        ok("groups".equals(UltChatView.stepVisibleTab("all", "all,groups,bots", 1)),
+                "swipe forward visible only");
+        ok("bots".equals(UltChatView.stepVisibleTab("all", "all,groups,bots", -1)),
+                "swipe backwards wraps");
+        ok("all".equals(UltChatView.stepVisibleTab("missing", "all,bots", -1)),
+                "missing active tab falls back");
+        boolean badDirection = false;
+        try { UltChatView.stepVisibleTab("all", null, 0); }
+        catch (IllegalArgumentException expected) { badDirection = true; }
+        ok(badDirection, "swipe direction constrained");
+        ok(UltChatView.barFontSp("small") == 12 && UltChatView.barFontSp("large") == 16,
+                "category text sizes");
+        ok(UltChatView.barFontSp("bogus") == 13, "unknown font fallback");
+        ok(!UltChatView.swipePadKey(0).equals(UltChatView.swipePadKey(1)),
+                "gesture prefs account isolated");
+        ok(!UltChatView.barFontKey(0).equals(UltChatView.barFontKey(1)),
+                "typography prefs account isolated");
         ok("comfortable".equals(UltChatView.sanitizeBarStyle("untrusted")),
                 "invalid category appearance uses the existing default");
         ok("compact".equals(UltChatView.sanitizeBarStyle("compact")), "compact style");
