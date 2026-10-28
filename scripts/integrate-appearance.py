@@ -110,7 +110,8 @@ def integrate(root: Path) -> Path:
         "                } else if (id == ULT_PRESET_MENU_ID) {\n"
         "                    showUltPresetChooser();\n" + CLICK_ANCHOR)
     target.write_text(source, encoding="utf-8")
-    for filename in ("UltAppearancePreset.java", "UltAppearanceThemeAdapter.java"):
+    for filename in ("UltAppearancePreset.java", "UltAppearanceThemeAdapter.java",
+                     "UltCustomTheme.java"):
         model_src = Path(__file__).resolve().parents[1] / "appearance/src/com/yooshastan/ultmessenger/appearance" / filename
         model_dst = root / "TMessagesProj/src/main/java/com/yooshastan/ultmessenger/appearance" / filename
         model_dst.parent.mkdir(parents=True, exist_ok=True)

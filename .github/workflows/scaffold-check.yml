@@ -47,6 +47,19 @@ jobs:
           javac -d "$classes" translation/src/com/yooshastan/ultmessenger/translation/UltTranslationPolicy.java translation/tests/UltTranslationPolicyTest.java
           java -cp "$classes" UltTranslationPolicyTest
 
+      - name: Fast Alpha 0.13 native theme color and media-control contracts
+        if: github.ref == 'refs/heads/feature/alpha13-custom-theme-media' || github.head_ref == 'feature/alpha13-custom-theme-media'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests -p 'test_alpha13_contract.py'
+          python3 -m unittest discover -s appearance/tests -p 'test_integration.py'
+          python3 -m unittest discover -s settings/tests -p 'test_integration.py'
+          classes="$(mktemp -d)"
+          trap 'rm -rf "$classes"' EXIT
+          javac -d "$classes" appearance/src/com/yooshastan/ultmessenger/appearance/UltAppearancePreset.java appearance/src/com/yooshastan/ultmessenger/appearance/UltCustomTheme.java appearance/tests/UltCustomThemeTest.java
+          java -cp "$classes" UltCustomThemeTest
+
       - name: Fast Alpha 0.12c+d swipe navigator and media utilities
         if: github.ref == 'refs/heads/feature/alpha12cd-swipe-media-ux' || github.head_ref == 'feature/alpha12cd-swipe-media-ux'
         shell: bash

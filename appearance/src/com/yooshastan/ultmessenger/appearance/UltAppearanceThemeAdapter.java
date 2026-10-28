@@ -41,6 +41,24 @@ public final class UltAppearanceThemeAdapter {
     /** Select either the tested fixed theme or a paired day/night system theme. */
     public static boolean apply(Context context, UltAppearancePreset preset,
                                 boolean followSystem) throws IOException {
+        return applyInternal(context, preset, followSystem, null);
+    }
+
+    /** Separate, fixed custom theme. Never overwrites the immutable original ULT preset. */
+    public static boolean applyCustom(Context context, UltAppearancePreset preset,
+                                      String accentHex, String outgoingHex)
+            throws IOException {
+        UltAppearancePreset.Palette custom = UltCustomTheme.edit(
+                preset, accentHex, outgoingHex);
+        return applyInternal(context, preset, false, custom);
+    }
+
+    private static boolean applyInternal(Context context, UltAppearancePreset preset,
+                                         boolean followSystem,
+                                         UltAppearancePreset.Palette custom) throws IOException {
+        if (custom != null && followSystem) {
+            throw new IllegalArgumentException("Custom fixed colors cannot follow system dark mode");
+        }
         SharedPreferences prefs = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE);
         // Telegram's in-app sun/moon toggle reads these legacy targets, not
         // getCurrentTheme()/getCurrentNightTheme() or the auto-night settings.
@@ -124,15 +142,17 @@ public final class UltAppearanceThemeAdapter {
         } else {
             // The original fixed palette remains available for users who do
             // not want Telegram/Android to automatically change the colors.
-            UltAppearancePreset.Palette fixed = new UltAppearancePreset.Palette(
-                    preset.accentArgb, preset.textArgb, preset.backgroundArgb,
-                    preset.incomingBubbleArgb, preset.outgoingBubbleArgb, preset.dark);
-            File file = writeThemeFile(context, preset, fixed, "");
+            UltAppearancePreset.Palette fixed = custom != null ? custom
+                    : new UltAppearancePreset.Palette(
+                            preset.accentArgb, preset.textArgb, preset.backgroundArgb,
+                            preset.incomingBubbleArgb, preset.outgoingBubbleArgb, preset.dark);
+            File file = writeThemeFile(context, preset, fixed, custom != null ? "-custom" : "");
             if (file == null) {
                 return false;
             }
             Theme.ThemeInfo installedTheme = Theme.applyThemeFile(
-                    file, preset.displayName, null, false);
+                    file, custom != null ? preset.displayName + " Custom" : preset.displayName,
+                    null, false);
             if (installedTheme == null) {
                 return false;
             }
