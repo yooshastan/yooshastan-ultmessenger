@@ -13,11 +13,13 @@ class Discoverability(TestCase):
         self.assertIn('() -> presentFragment(new UltDownloadsActivity())', s)
         self.assertIn('getPackageInfo(context.getPackageName(), 0)', s)
         self.assertIn('getLongVersionCode()', s)
-        self.assertIn('not a new downloader', s)
-        self.assertIn('COMING LATER', s)
-        self.assertIn('No identity spoofing', s)
+        release_notes = (ROOT / "settings/src/com/yooshastan/ultmessenger/settings/UltReleaseNotes.java").read_text()
+        self.assertIn('UltReleaseNotes.summary()', s)
+        self.assertIn('not a new downloader', release_notes)
+        self.assertIn('NOT INCLUDED', release_notes)
+        self.assertIn('identity masking', release_notes)
 
     def test_no_fake_network_feature(self):
         s = (ROOT / "settings/src/com/yooshastan/ultmessenger/settings/UltSettingsActivity.java").read_text()
-        self.assertIn('tracker filtering or new enforced DNS protection', s)
+        self.assertIn('tracker filtering', (ROOT / "settings/src/com/yooshastan/ultmessenger/settings/UltReleaseNotes.java").read_text())
         self.assertNotIn('new java.net.Socket(', s)

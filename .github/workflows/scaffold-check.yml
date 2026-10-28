@@ -47,6 +47,20 @@ jobs:
           javac -d "$classes" translation/src/com/yooshastan/ultmessenger/translation/UltTranslationPolicy.java translation/tests/UltTranslationPolicyTest.java
           java -cp "$classes" UltTranslationPolicyTest
 
+      - name: Alpha 0.13c+d chat entry and first-launch discovery checks
+        if: github.ref == 'refs/heads/feature/alpha13d-chats-discovery' || github.head_ref == 'feature/alpha13d-chats-discovery'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests -p 'test_alpha13c_discoverability.py'
+          python3 -m unittest discover -s tests -p 'test_alpha13d_chat_discovery.py'
+          python3 -m unittest discover -s conversation/tests -p 'test_chat_views_integration.py'
+          python3 -m unittest discover -s settings/tests -p 'test_integration.py'
+          classes="$(mktemp -d)"
+          trap 'rm -rf "$classes"' EXIT
+          javac -d "$classes" settings/src/com/yooshastan/ultmessenger/settings/UltReleaseNotes.java settings/tests/UltReleaseNotesTest.java
+          java -cp "$classes" UltReleaseNotesTest
+
       - name: Alpha 0.13c discoverability contracts
         if: github.ref == 'refs/heads/feature/alpha13c-discoverability' || github.head_ref == 'feature/alpha13c-discoverability'
         shell: bash

@@ -25,6 +25,60 @@ ADAPTER_MOVE = "        if (shouldHideUltArchiveRow()) {\n            // Resolve
 ADAPTER_ARCHIVE = "            boolean hasArchive = !shouldHideUltArchiveRow() && folderId == 0 && dialogsType == 0 && MessagesController.getInstance(currentAccount).dialogs_dict.get(DialogObject.makeFolderDialogId(1)) != null;\n"
 
 ACTIVITY_FIELDS = """
+    // Alpha 0.13d: discover features without digging through settings.
+    // This is a local one-time notice, not a network event or Telegram account change.
+    private boolean ultReleaseNoteScheduled;
+
+    private boolean isUltMainChatScreen() {
+        return folderId == 0 && communityId == 0 && !onlySelect
+                && initialDialogsType == DIALOGS_TYPE_DEFAULT && TextUtils.isEmpty(searchString);
+    }
+
+    private void showUltReleaseNotes() {
+        final Activity activity = getParentActivity();
+        if (activity == null) return;
+        new android.app.AlertDialog.Builder(activity)
+                .setTitle("What's new — Ultgram " + UltReleaseNotes.MILESTONE)
+                .setMessage(UltReleaseNotes.summary())
+                .setPositiveButton("Downloads", (dialog, which) ->
+                        presentFragment(new UltDownloadsActivity()))
+                .setNeutralButton("Ultgram Settings", (dialog, which) ->
+                        presentFragment(new UltSettingsActivity()))
+                .setNegativeButton("Close", null)
+                .show();
+    }
+
+    private void maybeShowUltReleaseNotes() {
+        if (ultReleaseNoteScheduled || !isUltMainChatScreen() || getParentActivity() == null) {
+            return;
+        }
+        final SharedPreferences prefs =
+                ApplicationLoader.applicationContext.getSharedPreferences(
+                        UltReleaseNotes.PREFS, Context.MODE_PRIVATE);
+        if (prefs.getBoolean(UltReleaseNotes.SEEN_KEY, false)) return;
+        ultReleaseNoteScheduled = true;
+        AndroidUtilities.runOnUIThread(() -> {
+            ultReleaseNoteScheduled = false;
+            if (!isUltMainChatScreen() || getParentActivity() == null
+                    || fragmentView == null || prefs.getBoolean(UltReleaseNotes.SEEN_KEY, false)) {
+                return;
+            }
+            final Activity activity = getParentActivity();
+            // Show only once per milestone; all other sessions use the Chats menu.
+            new android.app.AlertDialog.Builder(activity)
+                    .setTitle("New in Ultgram " + UltReleaseNotes.MILESTONE)
+                    .setMessage(UltReleaseNotes.summary())
+                    .setPositiveButton("Explore", (dialog, which) ->
+                            presentFragment(new UltSettingsActivity()))
+                    .setNeutralButton("Downloads", (dialog, which) ->
+                            presentFragment(new UltDownloadsActivity()))
+                    .setNegativeButton("Later", null)
+                    .setOnDismissListener(dialog ->
+                            prefs.edit().putBoolean(UltReleaseNotes.SEEN_KEY, true).apply())
+                    .show();
+        }, 650);
+    }
+
     // Local, account-specific display preset. The server's folders and dialog order are untouched.
     private void showUltChatViewPicker() {
         final Activity activity = getParentActivity();
@@ -262,6 +316,9 @@ ACTIVITY_FIELDS = """
 """
 ACTIVITY_MENU_ITEMS = """        if (folderId == 0 && communityId == 0 && !onlySelect
                 && initialDialogsType == DIALOGS_TYPE_DEFAULT) {
+            io.add(R.drawable.msg_customize, "ULT: What's New", this::showUltReleaseNotes);
+            io.add(R.drawable.msg_customize, "ULT: Downloads", () ->
+                    presentFragment(new UltDownloadsActivity()));
             io.add(R.drawable.msg_customize, "ULT: Chat Views", this::showUltChatViewPicker);
             io.add(R.drawable.msg_customize, "ULT: Next Chat Tab", this::advanceUltChatView);
             io.addChecked(isUltCategoryBarEnabled(), "ULT: Show category bar", () -> {
@@ -358,14 +415,18 @@ def integrate(root: Path) -> tuple[Path, Path]:
     model_bytes = (Path(__file__).resolve().parents[1] / MODEL).read_bytes()
 
     activity = once(activity, ACTIVITY_IMPORT, ACTIVITY_IMPORT +
-                    "import com.yooshastan.ultmessenger.conversation.UltChatView;\n")
+                    "import com.yooshastan.ultmessenger.conversation.UltChatView;\n"
+                    "import com.yooshastan.ultmessenger.settings.UltSettingsActivity;\n"
+                    "import com.yooshastan.ultmessenger.settings.UltDownloadsActivity;\n"
+                    "import com.yooshastan.ultmessenger.settings.UltReleaseNotes;\n")
     activity = once(activity, ACTIVITY_METHOD, ACTIVITY_FIELDS + ACTIVITY_METHOD)
     activity = once(activity, ACTIVITY_MENU, ACTIVITY_MENU_ITEMS + ACTIVITY_MENU)
     activity = once(activity, ACTIVITY_RETURN,
                     ACTIVITY_RETURN.replace("        return fragmentView;",
                                             "        installUltCategoryBar(context, contentView);\\n        return fragmentView;".replace("\\n", "\n")))
     activity = once(activity, ACTIVITY_RESUME,
-                    ACTIVITY_RESUME + "        refreshUltCategoryBar();\n")
+                    ACTIVITY_RESUME + "        refreshUltCategoryBar();\n"
+                    + "        maybeShowUltReleaseNotes();\n")
 
     adapter = once(adapter, ADAPTER_IMPORT, ADAPTER_IMPORT +
                    "import com.yooshastan.ultmessenger.conversation.UltChatView;\n")

@@ -216,22 +216,8 @@ public final class UltSettingsActivity extends BaseFragment {
     // The existing light/dark paired presets and original themes remain unchanged.
     private void showUltWhatsNew(Context context) {
         new UltSecureDialogBuilder(context)
-                .setTitle("What's new — Ultgram Alpha 0.13a+b")
-                .setMessage(
-                        "NEW — Custom ULT theme colors: Appearance → Custom ULT theme colors. "
-                        + "Choose a preset and edit accent and outgoing bubble; unsafe contrast is rejected.\n\n"
-                        + "NEW ENTRY — Download queue and recent files: START HERE → Downloads "
-                        + "or Chats and Tools → Download queue. This uses Telegram's existing "
-                        + "download engine, not a new downloader.\n\n"
-                        + "SHORTCUT — Media auto-download controls: Chats and Tools → Media "
-                        + "auto-download controls. These are Telegram's existing mobile/Wi-Fi/roaming "
-                        + "policies, not new download behavior.\n\n"
-                        + "EXPLANATION — Identity and privacy limitations: Privacy and Network. "
-                        + "No identity spoofing, tracker filtering or new enforced DNS protection.\n\n"
-                        + "FROM 0.12 — Optional category swipe navigator, category typography, "
-                        + "copy media citation and message references.\n\n"
-                        + "COMING LATER — Save As/export, a custom file manager, network audit "
-                        + "hardening and broader chat redesign are NOT included.")
+                .setTitle("What's new — Ultgram " + UltReleaseNotes.MILESTONE)
+                .setMessage(UltReleaseNotes.summary())
                 .setPositiveButton("Got it", null).show();
     }
 
@@ -253,8 +239,8 @@ public final class UltSettingsActivity extends BaseFragment {
                 .setTitle("Ultgram installed build")
                 .setMessage("Installed package: " + context.getPackageName()
                         + "\nVersion: " + installed
-                        + "\n\nFeature milestone: Alpha 0.13a+b UI"
-                        + "\nGitHub candidate: release/alpha13ab-combined-rc1"
+                        + "\n\nFeature milestone: " + UltReleaseNotes.MILESTONE
+                        + "\nGitHub candidate: release/alpha13cd-combined-rc1"
                         + "\n\nThe version above comes from the installed APK. "
                         + "Feature milestone is a source-code label, not a claim "
                         + "that a debug APK has production signing. Verify signature "
