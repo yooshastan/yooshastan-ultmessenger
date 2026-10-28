@@ -221,7 +221,7 @@ jobs:
             sha256sum ult-alpha13cd-combined-foss-arm64-debug.apk > SHA256SUMS
           )
           {
-            printf 'Candidate: Ultgram Alpha 0.13c+d What's New / visible Downloads / explicit SAF Save As (internal test APK)\n'
+            printf '%s\n' "Candidate: Ultgram Alpha 0.13c+d What's New / visible Downloads / explicit SAF Save As (internal test APK)"
             printf 'Repo: yooshastan/yooshastan-ultmessenger\n'
             printf 'Repo commit: %s\n' "$GITHUB_SHA"
             printf 'Pinned Mercurygram source: %s\n' "$(tr -d '\r\n ' < upstream/mercurygram.sha)"
