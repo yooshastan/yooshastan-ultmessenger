@@ -18,4 +18,4 @@ Save As requires an existing readable local file, no `noforwards`/restricted cha
 5. Check Pixel 8a GrapheneOS and Samsung A36, both with and without screen privacy enabled, strict-proxy cold start + bad proxy, translation, themes, and per-account tabs.
 6. Full ARM64 compilation, artifact SHA256SUMS + BUILD_INFO.txt, signing continuity and licensing review before public release.
 
-**Status:** feature branch source only until a full Android build finishes. Not a stable or signed-public release.
+**Status:** RC1 source staged; full Android compilation and device QA pending. Not a stable or signed-public release.

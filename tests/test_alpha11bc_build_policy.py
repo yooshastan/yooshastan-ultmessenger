@@ -12,11 +12,11 @@ class BatchBuildPolicy(TestCase):
     def test_android_only_on_combined_candidate_or_dispatch(self):
         wf = ANDROID.read_text()
         triggers = wf.split("\nconcurrency:", 1)[0]
-        self.assertRegex(triggers, r"branches: \[release/alpha(?:11bc|12ab|12cd|13ab)-combined-rc1\]")
+        self.assertRegex(triggers, r"branches: \[release/alpha(?:11bc|12ab|12cd|13ab|13cd)-combined-rc1\]")
         self.assertNotIn("feature/alpha11bc-batched", triggers)
         self.assertIn("workflow_dispatch:", triggers)
-        self.assertRegex(wf, r"ult-alpha(?:11bc|12ab|12cd|13ab)-combined-foss-arm64-debug\.apk")
-        self.assertRegex(wf, r"ult-alpha(?:11bc|12ab|12cd|13ab)-combined-foss-android")
+        self.assertRegex(wf, r"ult-alpha(?:11bc|12ab|12cd|13ab|13cd)-combined-foss-arm64-debug\.apk")
+        self.assertRegex(wf, r"ult-alpha(?:11bc|12ab|12cd|13ab|13cd)-combined-foss-android")
         self.assertIn("SHA256SUMS", wf)
         self.assertIn("BUILD_INFO.txt", wf)
         self.assertIn("python3 scripts/integrate-native-strict.py", wf)

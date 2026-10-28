@@ -1,5 +1,8 @@
 # Yooshastan ULT Messenger
 
+> **Alpha 0.13c+d RC1 (debug internal candidate):** What's New and installed package version inside Ultgram Settings, Chats overflow Downloads link, and user-selected Android Save As for already-downloaded permitted documents. Prepared on `release/alpha13cd-combined-rc1`; must pass full native Android CI and on-device testing before claiming the APK is ready. [RC QA](docs/ALPHA13CD_RC1_QA.md).
+
+
 > **Alpha 0.13c+d feature branch:** A What's New / exact package version screen, one-time notes when Ultgram Settings first opens after installing this candidate, and **Chats → ⋮ → ULT: Downloads** shortcut. Downloads long-press adds an explicit user-selected Android SAF Save As action for an already downloaded, non-protected document; no new downloader or broad storage permission. Lightweight tests first; no Alpha 0.13c+d APK until full combined Android CI. [Scope and QA](docs/ALPHA13CD_DISCOVERABILITY.md).
 
 
