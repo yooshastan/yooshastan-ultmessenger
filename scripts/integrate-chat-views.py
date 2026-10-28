@@ -262,6 +262,9 @@ ACTIVITY_FIELDS = """
 """
 ACTIVITY_MENU_ITEMS = """        if (folderId == 0 && communityId == 0 && !onlySelect
                 && initialDialogsType == DIALOGS_TYPE_DEFAULT) {
+            // Direct from Chats: no longer buried in Ultgram Settings.
+            io.add(R.drawable.msg_customize, "ULT: Downloads", () ->
+                    presentFragment(new com.yooshastan.ultmessenger.settings.UltDownloadsActivity()));
             io.add(R.drawable.msg_customize, "ULT: Chat Views", this::showUltChatViewPicker);
             io.add(R.drawable.msg_customize, "ULT: Next Chat Tab", this::advanceUltChatView);
             io.addChecked(isUltCategoryBarEnabled(), "ULT: Show category bar", () -> {

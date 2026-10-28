@@ -1,0 +1,40 @@
+#!/usr/bin/env python3
+"""Source contracts for Alpha 0.13c+d; not a substitute for full Android build."""
+from pathlib import Path
+from unittest import TestCase
+ROOT = Path(__file__).resolve().parents[1]
+def source(path):
+    return (ROOT / path).read_text(encoding="utf-8")
+
+class Alpha13CD(TestCase):
+    def test_real_version_and_discoverability(self):
+        settings = source("settings/src/com/yooshastan/ultmessenger/settings/UltSettingsActivity.java")
+        notes = source("settings/src/com/yooshastan/ultmessenger/settings/UltReleaseNotes.java")
+        chats = source("scripts/integrate-chat-views.py")
+        installer = source("scripts/integrate-ult-settings.py")
+        for needle in ("UltReleaseNotes.seenKey", "getPackageInfo(",
+                       "getLongVersionCode()", "showUltWhatsNew(",
+                       "What's New / build information", "new UltDownloadsActivity()"):
+            self.assertIn(needle, settings)
+        self.assertIn("ULT: Downloads", chats)
+        self.assertIn("UltDownloadsActivity()", chats)
+        self.assertIn("UltReleaseNotes.java", installer)
+        self.assertIn("0.13c+d", notes)
+    def test_save_as_is_explicit_saf_and_fail_closed(self):
+        downloads = source("settings/src/com/yooshastan/ultmessenger/settings/UltDownloadsActivity.java")
+        for needle in ("Intent.ACTION_CREATE_DOCUMENT", "Intent.CATEGORY_OPENABLE",
+                       "UltScreenPrivacy.isEnabled(", "DialogObject.isEncryptedDialog(",
+                       "message.messageOwner.noforwards", "chat.noforwards",
+                       "source.isFile()", "FileLoader.getPathToMessage(",
+                       "getContentResolver()", "FileInputStream(source)",
+                       "new Thread(", "onActivityResultFragment", "CREATE_DOCUMENT_REQUEST"):
+            self.assertIn(needle, downloads)
+        for forbidden in ("READ_EXTERNAL_STORAGE", "MANAGE_EXTERNAL_STORAGE",
+                          "sendMessage(", "new java.net.Socket(", "loadFile("):
+            self.assertNotIn(forbidden, downloads)
+    def test_no_full_android_build_on_feature_push(self):
+        ci = source(".github/workflows/scaffold-check.yml")
+        full = source(".github/workflows/android-alpha.yml")
+        self.assertIn("feature/alpha13cd-discoverability-saveas", ci)
+        self.assertIn("UltReleaseNotesTest", ci)
+        self.assertNotIn("feature/alpha13cd-discoverability-saveas", full)

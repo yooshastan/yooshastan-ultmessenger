@@ -79,6 +79,14 @@ public final class UltSettingsActivity extends BaseFragment {
         scroll.addView(content, new ScrollView.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
+        addSection(context, content, "NEW IN THIS BUILD");
+        addLink(context, content, "What's New / build information",
+                "See Alpha 0.13c+d highlights and the installed Android package version",
+                () -> showUltWhatsNew(context));
+        addLink(context, content, "Downloads",
+                "Active and recent files; long-press a downloaded document for Save As",
+                () -> presentFragment(new UltDownloadsActivity()));
+
         addSection(context, content, "APPEARANCE");
         addLink(context, content, "Chat list preview density",
                 "Switch Telegram's existing compact two-line / expanded three-line preview",
@@ -203,6 +211,42 @@ public final class UltSettingsActivity extends BaseFragment {
 
     // Alpha 0.13a: a real fixed native Telegram theme, not just a color preview.
     // The existing light/dark paired presets and original themes remain unchanged.
+    @Override
+    public void onResume() {
+        super.onResume();
+        final android.app.Activity activity = getParentActivity();
+        if (activity == null) return;
+        final SharedPreferences prefs = activity.getSharedPreferences(
+                UltReleaseNotes.PREFERENCES, Context.MODE_PRIVATE);
+        final String key = UltReleaseNotes.seenKey(installedAndroidVersion(activity));
+        if (!prefs.getBoolean(key, false)) {
+            prefs.edit().putBoolean(key, true).apply();
+            showUltWhatsNew(activity);
+        }
+    }
+
+    private String installedAndroidVersion(Context context) {
+        try {
+            final android.content.pm.PackageInfo pkg = context.getPackageManager()
+                    .getPackageInfo(context.getPackageName(), 0);
+            final long code = android.os.Build.VERSION.SDK_INT >= 28
+                    ? pkg.getLongVersionCode() : pkg.versionCode;
+            return UltReleaseNotes.androidPackageVersion(pkg.versionName, code);
+        } catch (android.content.pm.PackageManager.NameNotFoundException e) {
+            return "Unavailable";
+        }
+    }
+
+    private void showUltWhatsNew(Context context) {
+        new UltSecureDialogBuilder(context)
+                .setTitle(UltReleaseNotes.DISPLAY_VERSION + " — What's New")
+                .setMessage(UltReleaseNotes.message(installedAndroidVersion(context)))
+                .setNeutralButton("Open Downloads", (dialog, which) ->
+                        presentFragment(new UltDownloadsActivity()))
+                .setPositiveButton("Done", null)
+                .show();
+    }
+
     private void showUltCustomThemeChooser(Context context) {
         final UltAppearancePreset[] presets = {
                 UltAppearancePreset.MIDNIGHT, UltAppearancePreset.CANDY,
