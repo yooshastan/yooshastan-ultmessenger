@@ -4,12 +4,13 @@ Base: `release/alpha12cd-combined-rc1`, commit `d9aeb676`, reported functionally
 
 ## Alpha 0.13a — implemented in first feature batch
 - Fixed custom themes: select one of the six original ULT palettes; edit **accent** and **outgoing message bubble** using strict #RRGGBB fields. Contrast rules: accent/background >=3.0; message text/outgoing bubble >=4.5. Calls the existing Telegram-native theme-file adapter with a **different filename and theme name**, preserving the immutable original preset and standard auto day/night pairing.
+- **Native download queue:** an Ultgram navigation screen reuses the pinned Mercurygram `SearchDownloadsContainer`, `DownloadController` and `FileLoader` for active/recent downloads. The pinned upstream view controls open/download/cancel on explicit taps; no second transfer engine or protected-content override. Long-press selection is not implemented by Ultgram's wrapper; Telegram native search remains available.
 - Native media controls: jump to upstream Telegram's mobile, Wi-Fi or roaming auto-download settings and existing storage/cache manager rather than installing a second downloader or reading private storage.
 - Identity/safety scope: an explicit privacy limitations explanation; no deceptive account identity spoofing or new network enforcement.
 - Local policy tests and fast CI. Full pinned Android build and Pixel/Samsung tests still pending.
 
 ## Planned Alpha 0.13b/c/d (not implemented yet)
-- Review pinned Mercurygram downloads and FileLoader integration to implement a real visible queue/status screen using existing download state. Do not duplicate transport, silently download, or bypass protected content.
+- Review download queue UX on physical devices and determine safe account-specific multi-select and progress actions, preserving upstream FileLoader and content restrictions.
 - Permission-aware Save As with Android Storage Access Framework, user opt-in, supported already-downloaded media only; avoid exposing private/secret content.
 - Improved chat-list layout customization and a safe native preview/reset/rollback path for theme editing.
 - Network source-path audit, privacy hardening and device capture checks, without claiming anonymous identity, leak proof, working DoQ/DoH3, tracker enforcement or Premium bypass.

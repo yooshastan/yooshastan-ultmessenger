@@ -10,6 +10,9 @@ from pathlib import Path
 TARGET = Path("TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java")
 MODEL = Path("settings/src/com/yooshastan/ultmessenger/settings/UltSettingsActivity.java")
 DEST = Path("TMessagesProj/src/main/java/com/yooshastan/ultmessenger/settings/UltSettingsActivity.java")
+MEDIA_MODELS = (
+    Path("settings/src/com/yooshastan/ultmessenger/settings/UltDownloadsActivity.java"),
+)
 DNS_MODELS = (
     Path("settings/src/com/yooshastan/ultmessenger/settings/UltDnsPosture.java"),
     Path("settings/src/com/yooshastan/ultmessenger/settings/UltAndroidDnsInspector.java"),
@@ -59,6 +62,8 @@ def integrate(root: Path) -> Path:
     updated = once(updated, CLICK_ANCHOR, ULT_CLICK + CLICK_ANCHOR)
     root_models = Path(__file__).resolve().parents[1]
     model_data = (root_models / MODEL).read_bytes()
+    media_models = [(relative.name, (root_models / relative).read_bytes())
+                    for relative in MEDIA_MODELS]
     dns_models = [(relative.name, (root_models / relative).read_bytes())
                   for relative in DNS_MODELS]
     dns_policy_models = [(relative.name, (root_models / relative).read_bytes())
@@ -68,6 +73,8 @@ def integrate(root: Path) -> Path:
     dest = root / DEST
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_bytes(model_data)
+    for name, data in media_models:
+        (dest.parent / name).write_bytes(data)
     for name, data in dns_models:
         (dest.parent / name).write_bytes(data)
     dns_policy_dest = root / "TMessagesProj/src/main/java/com/yooshastan/ultmessenger/dns"

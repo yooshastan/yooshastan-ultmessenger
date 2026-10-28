@@ -29,6 +29,22 @@ class Alpha13Contract(TestCase):
             self.assertIn(token, settings)
         self.assertNotIn('new android.app.AlertDialog.Builder(context)', settings[
             settings.index('private void showUltCustomThemeEditor'):settings.index('private void showUltThemePreview')])
+    def test_upstream_download_queue_reused_with_account_scope(self):
+        activity = source("settings/src/com/yooshastan/ultmessenger/settings/UltDownloadsActivity.java")
+        settings = source("settings/src/com/yooshastan/ultmessenger/settings/UltSettingsActivity.java")
+        script = source("scripts/integrate-ult-settings.py")
+        for expected in ("new SearchDownloadsContainer(this, currentAccount)",
+                         "FilteredSearchView.UiCallback",
+                         "downloads.setUiCallback(this)",
+                         "actionModeShowing()", "getFolderId()"):
+            self.assertIn(expected, activity)
+        self.assertIn("Download queue and recent files", settings)
+        self.assertIn("new UltDownloadsActivity()", settings)
+        self.assertIn("UltDownloadsActivity.java", script)
+        self.assertNotIn("new java.net.", activity)
+        self.assertNotIn("FileOutputStream", activity)
+        self.assertNotIn("sendMessage(", activity)
+
     def test_native_proxy_and_download_integrations_not_replaced(self):
         android = source(".github/workflows/android-alpha.yml")
         scaffold = source(".github/workflows/scaffold-check.yml")

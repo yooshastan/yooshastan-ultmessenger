@@ -1,6 +1,6 @@
 # Yooshastan ULT Messenger
 
-> **Alpha 0.13a development:** Custom, contrast-checked fixed theme accent/outgoing-bubble colors imported using Telegram's native theme engine; original paired presets remain untouched. Adds native Telegram mobile/Wi-Fi/roaming auto-download settings shortcuts and accurate identity/privacy scope guidance. The full download queue and file export manager are still future work. This branch has lightweight tests only; no Alpha 0.13 APK yet. [Alpha 0.13 plan](docs/ALPHA13_MILESTONE.md).
+> **Alpha 0.13a development:** Custom, contrast-checked fixed theme accent/outgoing-bubble colors imported using Telegram's native theme engine; original paired presets remain untouched. Adds a native Telegram download queue/recent-files screen plus mobile/Wi-Fi/roaming auto-download settings shortcuts and accurate identity/privacy scope guidance. The full download queue and file export manager are still future work. This branch has lightweight tests only; no Alpha 0.13 APK yet. [Alpha 0.13 plan](docs/ALPHA13_MILESTONE.md).
 
 
 > **Alpha 0.12c+d RC1 build candidate:** The combined FOSS ARM64 debug APK is prepared on `release/alpha12cd-combined-rc1` for CI and internal testing. Includes the optional category swipe target, per-account category typography, and additional document clipboard utilities. This is not a public release, full download manager or native chat-list swipe integration. [RC1 device QA](docs/ALPHA12CD_RC1_QA.md).

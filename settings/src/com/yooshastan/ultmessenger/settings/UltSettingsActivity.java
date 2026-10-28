@@ -126,6 +126,9 @@ public final class UltSettingsActivity extends BaseFragment {
                 "Use a chat's ⋮ menu → ULT Chat Translation. Language and consent are per chat.");
         addNote(context, content, "Message and chat tools",
                 "Long-press a document for an optional readable file summary; nothing downloads automatically.");
+        addLink(context, content, "Download queue and recent files",
+                "Open Telegram's native downloads view for this account; tap to open/download/cancel",
+                () -> presentFragment(new UltDownloadsActivity()));
         addLink(context, content, "Media storage and cache",
                 "Open Telegram's native storage manager; deleting anything requires a separate tap",
                 () -> presentFragment(new org.telegram.ui.CacheControlActivity()));
