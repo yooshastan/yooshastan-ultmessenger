@@ -114,6 +114,25 @@ public final class UltDownloadsActivity extends BaseFragment
         return true;
     }
 
+    /**
+     * Local secure-dialog helper. UltSettingsActivity.UltSecureDialogBuilder is
+     * private to the settings screen, so Downloads must protect its own windows.
+     * Preserve the same Telegram passcode and opt-in FLAG_SECURE policy used
+     * for the existing Save As prompt.
+     */
+    private static void showSecureDialog(Activity activity,
+                                         android.app.AlertDialog.Builder builder) {
+        final android.app.AlertDialog dialog = builder.create();
+        final boolean telegramSecure = SharedConfig.passcodeHash.length() > 0
+                && !SharedConfig.allowScreenCapture;
+        if ((telegramSecure || UltScreenPrivacy.isEnabled(activity))
+                && !SharedConfig.disableSecureFlags && dialog.getWindow() != null) {
+            dialog.getWindow().addFlags(
+                    android.view.WindowManager.LayoutParams.FLAG_SECURE);
+        }
+        dialog.show();
+    }
+
     /** Explicit choices for a downloaded, permitted document, no automatic export. */
     private void showDocumentActions(MessageObject message) {
         final Activity activity = getParentActivity();
@@ -123,15 +142,14 @@ public final class UltDownloadsActivity extends BaseFragment
                     Toast.LENGTH_LONG).show();
             return;
         }
-        new UltSecureDialogBuilder(activity)
+        showSecureDialog(activity, new android.app.AlertDialog.Builder(activity)
                 .setTitle("ULT document tools")
                 .setItems(new String[]{"Inspect file and SHA-256", "Save As…"},
                         (dialog, option) -> {
                             if (option == 0) inspectDocument(message);
                             else if (option == 1) showSaveAs(message);
                         })
-                .setNegativeButton("Cancel", null)
-                .show();
+                .setNegativeButton("Cancel", null));
     }
 
     /** Hashes only an already-downloaded local file on a worker thread.
@@ -168,7 +186,7 @@ public final class UltDownloadsActivity extends BaseFragment
                 }
                 activity.runOnUiThread(() -> {
                     if (getParentActivity() != activity) return;
-                    new UltSecureDialogBuilder(activity)
+                    showSecureDialog(activity, new android.app.AlertDialog.Builder(activity)
                             .setTitle("Downloaded document inspector")
                             .setMessage(UltFileInspection.describe(fileName, mime, result))
                             .setNegativeButton("Close", null)
@@ -183,7 +201,7 @@ public final class UltDownloadsActivity extends BaseFragment
                                             "Checksum copied; clipboard is visible to Android",
                                             Toast.LENGTH_LONG).show();
                                 }
-                            }).show();
+                            }));
                 });
             } catch (java.io.IOException error) {
                 activity.runOnUiThread(() -> {
