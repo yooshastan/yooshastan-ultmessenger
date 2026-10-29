@@ -1,5 +1,8 @@
 # Yooshastan ULT Messenger
 
+> **Alpha 0.14c combined ARM64 RC1:** Adds a visible, policy-gated story Gallery save icon to the previously tested media inspector/theme preview build. Native full Android test build and device verification required before treating as installable. [RC QA](docs/ALPHA14C_RC1_QA.md).
+
+
 > **Alpha 0.14c draft (source only):** Adds a visible Story Save-to-Gallery icon beside the story menu for unprotected own stories or Premium-eligible public stories, using Telegram's existing MediaController and cached media. No Premium entitlement spoofing, protected-content bypass or new download transport. [Story save plan](docs/ALPHA14C_STORY_SAVE.md).
 
 

@@ -1,10 +1,10 @@
-name: Ultgram Alpha 0.14a+b combined FOSS ARM64 test candidate
+name: Ultgram Alpha 0.14c combined FOSS ARM64 test candidate
 
 # Compile the pinned native Android source only for the combined RC branch or
 # an explicit manual dispatch. Feature commits receive fast scaffold + JVM tests.
 on:
   push:
-    branches: [release/alpha14ab-combined-rc1]
+    branches: [release/alpha14c-combined-rc1]
     paths:
       - '.github/workflows/android-alpha.yml'
       - 'scripts/**'
@@ -100,6 +100,10 @@ jobs:
           python3 -m unittest discover -s tests -p 'test_alpha13_contract.py'
           python3 -m unittest discover -s tests -p 'test_alpha13cd_contract.py'
           python3 -m unittest discover -s tests -p 'test_alpha14_contract.py'
+          python3 -m unittest discover -s tests -p 'test_alpha14c_story_save.py'
+          mkdir -p /tmp/ult-story-save-classes
+          javac -d /tmp/ult-story-save-classes stories/src/com/yooshastan/ultmessenger/stories/UltStorySavePolicy.java stories/tests/UltStorySavePolicyTest.java
+          java -cp /tmp/ult-story-save-classes UltStorySavePolicyTest
           python3 -m unittest discover -s conversation/tests -p 'test_chat_views_integration.py'
           python3 -m unittest discover -s appearance/tests -p 'test_integration.py'
           python3 -m unittest discover -s settings/tests -p 'test_integration.py'
@@ -204,7 +208,7 @@ jobs:
           set -euo pipefail
           if [[ "${{ matrix.variant }}" == 'foss' ]]; then
             cd .work/mercurygram-upstream
-            ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug -PMG_BUILD_TAG=14.0.1.0.1 --no-daemon --console=plain
+            ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug -PMG_BUILD_TAG=14.0.2.0.1 --no-daemon --console=plain
           else
             cd .work/telegram-upstream
             ./gradlew :TMessagesProj_App:assembleAfatDebug --no-daemon --console=plain
@@ -220,13 +224,13 @@ jobs:
             echo "::error::Expected one compiled APK, found ${#apks[@]}"
             exit 1
           fi
-          cp -- "${apks[0]}" "artifacts/ult-alpha14ab-combined-foss-arm64-debug.apk"
+          cp -- "${apks[0]}" "artifacts/ult-alpha14c-combined-foss-arm64-debug.apk"
           (
             cd artifacts
-            sha256sum ult-alpha14ab-combined-foss-arm64-debug.apk > SHA256SUMS
+            sha256sum ult-alpha14c-combined-foss-arm64-debug.apk > SHA256SUMS
           )
           {
-            printf '%s\n' "Candidate: Ultgram Alpha 0.14a+b local SHA-256 document inspector / non-destructive color preview (internal test APK)"
+            printf '%s\n' "Candidate: Ultgram Alpha 0.14c visible eligible story Gallery save shortcut (internal test APK)"
             printf 'Repo: yooshastan/yooshastan-ultmessenger\n'
             printf 'Repo commit: %s\n' "$GITHUB_SHA"
             printf 'Pinned Mercurygram source: %s\n' "$(tr -d '\r\n ' < upstream/mercurygram.sha)"
@@ -239,7 +243,7 @@ jobs:
         if: steps.prerequisites.outputs.ready == 'true' && success()
         uses: actions/upload-artifact@v4
         with:
-          name: ult-alpha14ab-combined-foss-android
+          name: ult-alpha14c-combined-foss-android
           path: artifacts/*
           if-no-files-found: error
           retention-days: 30
