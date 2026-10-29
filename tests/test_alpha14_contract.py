@@ -29,7 +29,7 @@ class Alpha14Contract(TestCase):
         self.assertIn('UltScreenPrivacy.isEnabled(activity)', s)
         self.assertIn('SharedConfig.passcodeHash', s)
         self.assertIn('WindowManager.LayoutParams.FLAG_SECURE', s)
-        self.assertEqual(s.count('showSecureDialog(activity, new android.app.AlertDialog.Builder(activity)'), 2)
+        self.assertEqual(s.count('showSecureDialog(activity, new android.app.AlertDialog.Builder(activity)'), 3)
         self.assertNotIn('new java.net.', s+d)
         self.assertNotIn('sendMessage(', s)
     def test_non_destructive_theme_preview(self):
