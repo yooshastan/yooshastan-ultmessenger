@@ -3,7 +3,7 @@ package com.yooshastan.ultmessenger.settings;
 /** Source-owned, truthful release notes for the 0.13c+d candidate. */
 public final class UltReleaseNotes {
     public static final String PREFERENCES = "ult_release_notes";
-    public static final String DISPLAY_VERSION = "Ultgram Alpha 0.14c RC1";
+    public static final String DISPLAY_VERSION = "Ultgram Alpha 0.14d+ RC1";
 
     private UltReleaseNotes() {}
 
@@ -21,7 +21,15 @@ public final class UltReleaseNotes {
 
     public static String message(String androidVersion) {
         return "WHAT'S NEW\n\n"
-                + "• NEW Alpha 0.14c: Open an eligible photo/video story and tap "
+                + "• NEW: ULT Downloads → long-press permitted file → Verify saved copy. "
+                + "Choose a file in Android picker; compare size and local SHA-256 "
+                + "without uploading or overwriting either file (max 512 MiB).\n"
+                + "• NEW: Ultgram Settings → Message font and bubble corners. "
+                + "Edit native Telegram chat text size and bubble shape; Apply or Reset.\n"
+                + "• NEW: Privacy and Network → Local account identity cover "
+                + "(Ultgram Settings only); Manual network egress evidence "
+                + "(user-marked checklist, NOT route verified).\n"
+                + "• From 0.14c: Open an eligible photo/video story and tap "
                 + "the Gallery icon beside ⋮ to Save Story to Gallery. "
                 + "Your own or Premium-eligible public stories only; no protected "
                 + "or live stories. Already cached media is required.\n"

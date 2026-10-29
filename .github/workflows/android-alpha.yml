@@ -1,10 +1,10 @@
-name: Ultgram Alpha 0.14c combined FOSS ARM64 test candidate
+name: Ultgram Alpha 0.14d+ combined FOSS ARM64 test candidate
 
 # Compile the pinned native Android source only for the combined RC branch or
 # an explicit manual dispatch. Feature commits receive fast scaffold + JVM tests.
 on:
   push:
-    branches: [release/alpha14c-combined-rc1]
+    branches: [release/alpha14def-combined-rc1]
     paths:
       - '.github/workflows/android-alpha.yml'
       - 'scripts/**'
@@ -101,6 +101,10 @@ jobs:
           python3 -m unittest discover -s tests -p 'test_alpha13cd_contract.py'
           python3 -m unittest discover -s tests -p 'test_alpha14_contract.py'
           python3 -m unittest discover -s tests -p 'test_alpha14c_story_save.py'
+          python3 -m unittest discover -s tests -p 'test_alpha14def_contract.py'
+          mkdir -p /tmp/ult-alpha14def-classes
+          javac -d /tmp/ult-alpha14def-classes settings/src/com/yooshastan/ultmessenger/settings/UltFileInspection.java settings/src/com/yooshastan/ultmessenger/settings/UltChatAppearancePolicy.java settings/src/com/yooshastan/ultmessenger/settings/UltIdentityCover.java settings/src/com/yooshastan/ultmessenger/settings/UltNetworkEvidence.java settings/tests/UltAlpha14DefTest.java
+          java -cp /tmp/ult-alpha14def-classes UltAlpha14DefTest
           mkdir -p /tmp/ult-story-save-classes
           javac -d /tmp/ult-story-save-classes stories/src/com/yooshastan/ultmessenger/stories/UltStorySavePolicy.java stories/tests/UltStorySavePolicyTest.java
           java -cp /tmp/ult-story-save-classes UltStorySavePolicyTest
@@ -208,7 +212,7 @@ jobs:
           set -euo pipefail
           if [[ "${{ matrix.variant }}" == 'foss' ]]; then
             cd .work/mercurygram-upstream
-            ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug -PMG_BUILD_TAG=14.0.2.0.1 --no-daemon --console=plain
+            ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug -PMG_BUILD_TAG=14.0.3.0.1 --no-daemon --console=plain
           else
             cd .work/telegram-upstream
             ./gradlew :TMessagesProj_App:assembleAfatDebug --no-daemon --console=plain
@@ -224,13 +228,13 @@ jobs:
             echo "::error::Expected one compiled APK, found ${#apks[@]}"
             exit 1
           fi
-          cp -- "${apks[0]}" "artifacts/ult-alpha14c-combined-foss-arm64-debug.apk"
+          cp -- "${apks[0]}" "artifacts/ult-alpha14def-combined-foss-arm64-debug.apk"
           (
             cd artifacts
-            sha256sum ult-alpha14c-combined-foss-arm64-debug.apk > SHA256SUMS
+            sha256sum ult-alpha14def-combined-foss-arm64-debug.apk > SHA256SUMS
           )
           {
-            printf '%s\n' "Candidate: Ultgram Alpha 0.14c visible eligible story Gallery save shortcut (internal test APK)"
+            printf '%s\n' "Candidate: Ultgram Alpha 0.14d+ unified media appearance privacy (internal test APK)"
             printf 'Repo: yooshastan/yooshastan-ultmessenger\n'
             printf 'Repo commit: %s\n' "$GITHUB_SHA"
             printf 'Pinned Mercurygram source: %s\n' "$(tr -d '\r\n ' < upstream/mercurygram.sha)"
@@ -243,7 +247,7 @@ jobs:
         if: steps.prerequisites.outputs.ready == 'true' && success()
         uses: actions/upload-artifact@v4
         with:
-          name: ult-alpha14c-combined-foss-android
+          name: ult-alpha14def-combined-foss-android
           path: artifacts/*
           if-no-files-found: error
           retention-days: 30
