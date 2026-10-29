@@ -1,5 +1,7 @@
 # Ultgram Alpha 0.14c — story saving shortcut
 
+Release candidate: `release/alpha14c-combined-rc1`; FOSS ARM64 debug artifact `ult-alpha14c-combined-foss-android` with APK, SHA256SUMS and BUILD_INFO.txt **only after successful full native CI**. Test notes: [Alpha 0.14c RC1 QA](ALPHA14C_RC1_QA.md).
+
 This stage adds a visible Gallery/download icon immediately beside the story's ⋮ menu, available only where native Telegram's saving permissions allow it.
 
 **Supported:** User-owned, available unprotected photo/video stories; other users' public, share-eligible stories if the account is Premium. It uses the existing `PeerStoriesView.saveToGallery()` and `MediaController.saveFile()` path, which saves photo/video to Gallery/Photos. No external downloader, scraping, alternate media request or new file permissions.
