@@ -60,6 +60,18 @@ jobs:
           javac -d "$classes" settings/src/com/yooshastan/ultmessenger/settings/UltFileInspection.java settings/tests/UltFileInspectionTest.java
           java -cp "$classes" UltFileInspectionTest
 
+      - name: Alpha 0.14d+ unified media appearance privacy contracts
+        if: github.ref == 'refs/heads/feature/alpha14def-unified-media-appearance-privacy' || github.head_ref == 'feature/alpha14def-unified-media-appearance-privacy'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests -p 'test_alpha14def_contract.py'
+          python3 -m unittest discover -s settings/tests -p 'test_integration.py'
+          classes="$(mktemp -d)"
+          trap 'rm -rf "$classes"' EXIT
+          javac -d "$classes" settings/src/com/yooshastan/ultmessenger/settings/UltFileInspection.java settings/src/com/yooshastan/ultmessenger/settings/UltChatAppearancePolicy.java settings/src/com/yooshastan/ultmessenger/settings/UltIdentityCover.java settings/src/com/yooshastan/ultmessenger/settings/UltNetworkEvidence.java settings/tests/UltAlpha14DefTest.java
+          java -cp "$classes" UltAlpha14DefTest
+
       - name: Alpha 0.14c story save quick-action checks
         if: github.ref == 'refs/heads/feature/alpha14c-story-save-quick-action' || github.head_ref == 'feature/alpha14c-story-save-quick-action'
         shell: bash

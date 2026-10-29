@@ -44,6 +44,15 @@ public final class UltFileInspection {
         return new Result(size, hex.toString());
     }
 
+    /** Constant-length hash comparison after both bounded streams are read. */
+    public static boolean sameContent(Result source, Result selected) {
+        return source != null && selected != null
+                && source.bytesRead == selected.bytesRead
+                && java.security.MessageDigest.isEqual(
+                    source.sha256.getBytes(java.nio.charset.StandardCharsets.US_ASCII),
+                    selected.sha256.getBytes(java.nio.charset.StandardCharsets.US_ASCII));
+    }
+
     public static String describe(String safeName, String mime, Result result) {
         if (result == null) throw new IllegalArgumentException("No checksum");
         String name = safeName == null ? "unnamed" : safeName.replaceAll("[\\r\\n\\t]", "_");
