@@ -1,5 +1,8 @@
 # Yooshastan ULT Messenger
 
+> **Alpha 0.14d+ combined FOSS ARM64 RC1:** One candidate includes saved-copy SHA-256 verification, native Telegram font/bubble controls, a settings-only identity cover, and manual network evidence checklist. This is a debug-signed internal candidate; Android CI, device tests and separate public-release security gates apply. [QA](docs/ALPHA14DEF_RC1_QA.md).
+
+
 > **Alpha 0.14d+ unified feature batch (not yet Android-compiled):** Add user-initiated **Verify saved copy** (bounded local SHA-256 comparison via Android file picker), actual Telegram message font/bubble-radius controls, a settings-only account identity cover, and manually marked network path capture evidence. No new traffic routing or identity anonymization. [Scope and test plan](docs/ALPHA14DEF_BATCH.md).
 
 
