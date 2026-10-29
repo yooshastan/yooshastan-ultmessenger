@@ -192,6 +192,7 @@ jobs:
             python3 scripts/integrate-archive-visibility.py "$source_dir"
             python3 scripts/integrate-translation.py "$source_dir"
             python3 scripts/integrate-chat-views.py "$source_dir"
+            python3 scripts/integrate-story-save.py "$source_dir"
             python3 scripts/integrate-ult-settings.py "$source_dir"
             python3 scripts/integrate-native-strict.py "$source_dir"
             python3 scripts/integrate-screen-privacy.py "$source_dir"
