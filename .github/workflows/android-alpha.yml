@@ -1,10 +1,10 @@
-name: Ultgram Alpha 0.13c+d combined FOSS ARM64 test candidate
+name: Ultgram Alpha 0.14a+b combined FOSS ARM64 test candidate
 
 # Compile the pinned native Android source only for the combined RC branch or
 # an explicit manual dispatch. Feature commits receive fast scaffold + JVM tests.
 on:
   push:
-    branches: [release/alpha13cd-combined-rc1]
+    branches: [release/alpha14ab-combined-rc1]
     paths:
       - '.github/workflows/android-alpha.yml'
       - 'scripts/**'
@@ -81,6 +81,9 @@ jobs:
           python3 -m unittest discover -s proxy/tests -p 'test_netwatch.py'
           python3 -m unittest discover -s proxy/tests -p 'test_external_links.py'
           python3 -m unittest discover -s settings/tests -p 'test_integration.py'
+          mkdir -p /tmp/ult-media-inspector-classes
+          javac -d /tmp/ult-media-inspector-classes settings/src/com/yooshastan/ultmessenger/settings/UltFileInspection.java settings/tests/UltFileInspectionTest.java
+          java -cp /tmp/ult-media-inspector-classes UltFileInspectionTest
           python3 -m unittest discover -s settings/tests -p 'test_native_strict.py'
           python3 -m unittest discover -s settings/tests -p 'test_alpha10h2_contract.py'
           python3 -m unittest discover -s settings/tests -p 'test_alpha10i1a_startup_contract.py'
@@ -96,6 +99,7 @@ jobs:
           python3 -m unittest discover -s tests -p 'test_alpha12cd_contract.py'
           python3 -m unittest discover -s tests -p 'test_alpha13_contract.py'
           python3 -m unittest discover -s tests -p 'test_alpha13cd_contract.py'
+          python3 -m unittest discover -s tests -p 'test_alpha14_contract.py'
           python3 -m unittest discover -s conversation/tests -p 'test_chat_views_integration.py'
           python3 -m unittest discover -s appearance/tests -p 'test_integration.py'
           python3 -m unittest discover -s settings/tests -p 'test_integration.py'
@@ -199,7 +203,7 @@ jobs:
           set -euo pipefail
           if [[ "${{ matrix.variant }}" == 'foss' ]]; then
             cd .work/mercurygram-upstream
-            ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug -PMG_BUILD_TAG=13.0.3.0.1 --no-daemon --console=plain
+            ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug -PMG_BUILD_TAG=14.0.1.0.1 --no-daemon --console=plain
           else
             cd .work/telegram-upstream
             ./gradlew :TMessagesProj_App:assembleAfatDebug --no-daemon --console=plain
@@ -215,13 +219,13 @@ jobs:
             echo "::error::Expected one compiled APK, found ${#apks[@]}"
             exit 1
           fi
-          cp -- "${apks[0]}" "artifacts/ult-alpha13cd-combined-foss-arm64-debug.apk"
+          cp -- "${apks[0]}" "artifacts/ult-alpha14ab-combined-foss-arm64-debug.apk"
           (
             cd artifacts
-            sha256sum ult-alpha13cd-combined-foss-arm64-debug.apk > SHA256SUMS
+            sha256sum ult-alpha14ab-combined-foss-arm64-debug.apk > SHA256SUMS
           )
           {
-            printf '%s\n' "Candidate: Ultgram Alpha 0.13c+d What's New / visible Downloads / explicit SAF Save As (internal test APK)"
+            printf '%s\n' "Candidate: Ultgram Alpha 0.14a+b local SHA-256 document inspector / non-destructive color preview (internal test APK)"
             printf 'Repo: yooshastan/yooshastan-ultmessenger\n'
             printf 'Repo commit: %s\n' "$GITHUB_SHA"
             printf 'Pinned Mercurygram source: %s\n' "$(tr -d '\r\n ' < upstream/mercurygram.sha)"
@@ -234,7 +238,7 @@ jobs:
         if: steps.prerequisites.outputs.ready == 'true' && success()
         uses: actions/upload-artifact@v4
         with:
-          name: ult-alpha13cd-combined-foss-android
+          name: ult-alpha14ab-combined-foss-android
           path: artifacts/*
           if-no-files-found: error
           retention-days: 30

@@ -3,7 +3,7 @@ package com.yooshastan.ultmessenger.settings;
 /** Source-owned, truthful release notes for the 0.13c+d candidate. */
 public final class UltReleaseNotes {
     public static final String PREFERENCES = "ult_release_notes";
-    public static final String DISPLAY_VERSION = "Ultgram Alpha 0.13c+d RC1";
+    public static final String DISPLAY_VERSION = "Ultgram Alpha 0.14a+b RC1";
 
     private UltReleaseNotes() {}
 
@@ -21,11 +21,13 @@ public final class UltReleaseNotes {
 
     public static String message(String androidVersion) {
         return "WHAT'S NEW\n\n"
-                + "• Download shortcut: Chats → ⋮ → ULT: Downloads.\n"
-                + "• Real Save As: long-press an already downloaded, permitted document "
-                + "in ULT Downloads, then choose an Android document location.\n"
-                + "• Custom theme colors and native download queue from Alpha 0.13a+b "
-                + "remain available in Ultgram Settings.\n\n"
+                + "• NEW: ULT Downloads → long-press a permitted downloaded document "
+                + "→ Inspect file and SHA-256 or Save As. A local checksum is only "
+                + "copied when you tap Copy SHA-256 (up to 512 MiB).\n"
+                + "• NEW: Ultgram Settings → Custom ULT theme colors → Preview colors. "
+                + "See accent and both bubble samples without applying.\n"
+                + "• From 0.13c+d: Chats → ⋮ → ULT: Downloads, and user-selected "
+                + "Save As for eligible files still work.\n\n"
                 + "Android package: " + androidVersion + "\n"
                 + "Ultgram source candidate: " + DISPLAY_VERSION + "\n\n"
                 + "Debug-signed internal testing build. A proxy is not a "

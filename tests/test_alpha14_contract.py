@@ -20,6 +20,16 @@ class Alpha14Contract(TestCase):
         self.assertIn('SHA-256 (local file)', d)
         self.assertIn('MAX_INSPECT_BYTES', d)
         self.assertIn('This does not verify', d)
+        # UltSettingsActivity's builder is a private nested class. The
+        # Downloads screen instead owns its secure windows so the Android
+        # compiler can resolve every dialog reference.
+        self.assertNotIn('new UltSecureDialogBuilder(', s)
+        self.assertIn('showSecureDialog(activity, new android.app.AlertDialog.Builder(activity)', s)
+        self.assertIn('private static void showSecureDialog(', s)
+        self.assertIn('UltScreenPrivacy.isEnabled(activity)', s)
+        self.assertIn('SharedConfig.passcodeHash', s)
+        self.assertIn('WindowManager.LayoutParams.FLAG_SECURE', s)
+        self.assertEqual(s.count('showSecureDialog(activity, new android.app.AlertDialog.Builder(activity)'), 2)
         self.assertNotIn('new java.net.', s+d)
         self.assertNotIn('sendMessage(', s)
     def test_non_destructive_theme_preview(self):
