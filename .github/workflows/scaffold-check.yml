@@ -60,6 +60,17 @@ jobs:
           javac -d "$classes" settings/src/com/yooshastan/ultmessenger/settings/UltFileInspection.java settings/tests/UltFileInspectionTest.java
           java -cp "$classes" UltFileInspectionTest
 
+      - name: Alpha 0.14c story save quick-action checks
+        if: github.ref == 'refs/heads/feature/alpha14c-story-save-quick-action' || github.head_ref == 'feature/alpha14c-story-save-quick-action'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests -p 'test_alpha14c_story_save.py'
+          classes="$(mktemp -d)"
+          trap 'rm -rf "$classes"' EXIT
+          javac -d "$classes" stories/src/com/yooshastan/ultmessenger/stories/UltStorySavePolicy.java stories/tests/UltStorySavePolicyTest.java
+          java -cp "$classes" UltStorySavePolicyTest
+
       - name: Fast Alpha 0.13c+d release UX and user-selected Save As contracts
         if: github.ref == 'refs/heads/feature/alpha13cd-discoverability-saveas' || github.head_ref == 'feature/alpha13cd-discoverability-saveas'
         shell: bash
