@@ -23,7 +23,11 @@ class CombinedContract(TestCase):
         self.assertIn("SharedConfig.setUseThreeLinesLayout(selected == 1)", u)
         self.assertIn("SharedConfig.useThreeLinesLayout", u)
         self.assertIn("Two-line preview (compact)", u)
-        self.assertNotIn('setMessage("Uses Telegram', u)
+        # New native font/bubble controls are real SharedConfig changes, not a fake preview.
+        self.assertIn("SharedConfig.fontSize = f", u)
+        self.assertIn("SharedConfig.bubbleRadius = r", u)
+        self.assertIn('putInt("fons_size", f)', u)
+        self.assertIn('putInt("bubbleRadius", r)', u)
         self.assertIn("Three-line preview (more text)", u)
     def test_audit_is_diagnostic_only_and_native_guard_is_unmodified(self):
         u = UI.read_text()
