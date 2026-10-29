@@ -1,5 +1,8 @@
 # Yooshastan ULT Messenger
 
+> **Alpha 0.14d+ unified feature batch (not yet Android-compiled):** Add user-initiated **Verify saved copy** (bounded local SHA-256 comparison via Android file picker), actual Telegram message font/bubble-radius controls, a settings-only account identity cover, and manually marked network path capture evidence. No new traffic routing or identity anonymization. [Scope and test plan](docs/ALPHA14DEF_BATCH.md).
+
+
 > **Alpha 0.14c combined ARM64 RC1:** Adds a visible, policy-gated story Gallery save icon to the previously tested media inspector/theme preview build. Native full Android test build and device verification required before treating as installable. [RC QA](docs/ALPHA14C_RC1_QA.md).
 
 

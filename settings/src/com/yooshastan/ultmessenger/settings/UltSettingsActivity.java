@@ -29,6 +29,9 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.MessagesController;
+import org.telegram.messenger.ApplicationLoader;
+import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.BaseFragment;
@@ -84,10 +87,13 @@ public final class UltSettingsActivity extends BaseFragment {
                 "See Alpha 0.14a+b file inspector, theme preview and installed build details",
                 () -> showUltWhatsNew(context));
         addLink(context, content, "Downloads",
-                "Active and recent files; long-press a downloaded document for Save As",
+                "Inspect, Save As and verify a user-selected downloaded copy",
                 () -> presentFragment(new UltDownloadsActivity()));
 
         addSection(context, content, "APPEARANCE");
+        addLink(context, content, "Message font and bubble corners",
+                "Change Telegram's actual chat text size and bubble radius; includes Reset",
+                () -> showMessageAppearance(context));
         addLink(context, content, "Chat list preview density",
                 "Switch Telegram's existing compact two-line / expanded three-line preview",
                 () -> showChatListDensity(context));
@@ -149,6 +155,12 @@ public final class UltSettingsActivity extends BaseFragment {
                 () -> showNativeMediaDownloadSettings(context));
 
         addSection(context, content, "PRIVACY AND NETWORK");
+        addLink(context, content, "Local account identity cover",
+                "Show a local masked account card or reveal once; does not hide identity in chats",
+                () -> showLocalIdentityCover(context));
+        addLink(context, content, "Manual network egress evidence",
+                "Mark packet-capture observations for six paths and copy a redacted report",
+                () -> showNetworkEgressEvidence(context));
         addLink(context, content, "Protect Ultgram screenshots",
                 "Opt-in Android FLAG_SECURE for main window and Ultgram Settings dialogs",
                 () -> showUltScreenPrivacy(context));
@@ -434,6 +446,132 @@ public final class UltSettingsActivity extends BaseFragment {
                             .show();
                 })
                 .setNegativeButton("Cancel", null).show();
+    }
+
+    private void showMessageAppearance(Context context) {
+        final LinearLayout form = new LinearLayout(context);
+        form.setOrientation(LinearLayout.VERTICAL);
+        form.setPadding(AndroidUtilities.dp(20), AndroidUtilities.dp(8),
+                AndroidUtilities.dp(20), AndroidUtilities.dp(8));
+
+        final TextView fontLabel = new TextView(context);
+        final android.widget.SeekBar font = new android.widget.SeekBar(context);
+        font.setMax(UltChatAppearancePolicy.MAX_FONT - UltChatAppearancePolicy.MIN_FONT);
+        font.setProgress(UltChatAppearancePolicy.font(SharedConfig.fontSize)
+                - UltChatAppearancePolicy.MIN_FONT);
+        fontLabel.setText("Chat text: " + UltChatAppearancePolicy.font(SharedConfig.fontSize)
+                + " sp");
+        form.addView(fontLabel);
+        form.addView(font);
+        font.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(android.widget.SeekBar bar, int value,
+                                                       boolean fromUser) {
+                fontLabel.setText("Chat text: "
+                        + (UltChatAppearancePolicy.MIN_FONT + value) + " sp");
+            }
+            @Override public void onStartTrackingTouch(android.widget.SeekBar bar) {}
+            @Override public void onStopTrackingTouch(android.widget.SeekBar bar) {}
+        });
+
+        final TextView bubbleLabel = new TextView(context);
+        final android.widget.SeekBar radius = new android.widget.SeekBar(context);
+        radius.setMax(UltChatAppearancePolicy.MAX_RADIUS);
+        radius.setProgress(UltChatAppearancePolicy.radius(SharedConfig.bubbleRadius));
+        bubbleLabel.setText("Bubble corners: " + radius.getProgress() + " dp");
+        form.addView(bubbleLabel);
+        form.addView(radius);
+        radius.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(android.widget.SeekBar bar, int value,
+                                                       boolean fromUser) {
+                bubbleLabel.setText("Bubble corners: " + value + " dp");
+            }
+            @Override public void onStartTrackingTouch(android.widget.SeekBar bar) {}
+            @Override public void onStopTrackingTouch(android.widget.SeekBar bar) {}
+        });
+        new UltSecureDialogBuilder(context)
+                .setTitle("Telegram message appearance")
+                .setMessage("Uses Telegram's own chat text and bubble settings, "
+                        + "not an alternate renderer. Changes apply app-wide. "
+                        + "Use Reset to return to the normal defaults.")
+                .setView(form)
+                .setNeutralButton("Reset", (dialog, which) ->
+                        applyMessageAppearance(context, 16, 17))
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Apply", (dialog, which) ->
+                        applyMessageAppearance(context,
+                                UltChatAppearancePolicy.MIN_FONT + font.getProgress(),
+                                radius.getProgress()))
+                .show();
+    }
+
+    private void applyMessageAppearance(Context context, int font, int radius) {
+        final int f = UltChatAppearancePolicy.font(font);
+        final int r = UltChatAppearancePolicy.radius(radius);
+        SharedConfig.fontSize = f;
+        SharedConfig.fontSizeIsDefault = false;
+        ApplicationLoader.applicationContext.getSharedPreferences(
+                "mainconfig", Context.MODE_PRIVATE).edit().putInt("fons_size", f).apply();
+        SharedConfig.bubbleRadius = r;
+        MessagesController.getGlobalMainSettings().edit().putInt("bubbleRadius", r).apply();
+        Theme.createCommonMessageResources();
+        if (parentLayout != null) parentLayout.rebuildAllFragmentViews(true, true);
+        android.widget.Toast.makeText(context,
+                "Telegram font and bubble style updated", android.widget.Toast.LENGTH_SHORT).show();
+    }
+
+    private void showLocalIdentityCover(Context context) {
+        final boolean covered = UltIdentityCover.isCovered(
+                context.getSharedPreferences(UltIdentityCover.PREFS, Context.MODE_PRIVATE)
+                        .getBoolean(UltIdentityCover.key(currentAccount), true));
+        final TLRPC.User myself = UserConfig.getInstance(currentAccount).getCurrentUser();
+        final String username = myself == null ? null : myself.username;
+        final String phone = myself == null ? null : myself.phone;
+        final String display = UltIdentityCover.summary(username, phone, covered);
+        new UltSecureDialogBuilder(context)
+                .setTitle("Local Ultgram Settings account card")
+                .setMessage(display + "\n\nThis card exists only inside Ultgram Settings. "
+                        + "It does not hide your identity from Telegram, contacts, "
+                        + "notifications, other client screens or network peers.")
+                .setNeutralButton(covered ? "Reveal in this card" : "Cover this card",
+                        (dialog, which) -> {
+                            context.getSharedPreferences(UltIdentityCover.PREFS,
+                                    Context.MODE_PRIVATE).edit()
+                                    .putBoolean(UltIdentityCover.key(currentAccount), !covered)
+                                    .apply();
+                            showLocalIdentityCover(context);
+                        })
+                .setPositiveButton("Done", null).show();
+    }
+
+    private void showNetworkEgressEvidence(Context context) {
+        final SharedPreferences prefs = context.getSharedPreferences(
+                UltNetworkEvidence.PREFS, Context.MODE_PRIVATE);
+        final boolean[] marked = new boolean[UltNetworkEvidence.PATHS.length];
+        for (int i = 0; i < marked.length; i++) {
+            marked[i] = prefs.getBoolean(UltNetworkEvidence.key(i), false);
+        }
+        new UltSecureDialogBuilder(context)
+                .setTitle("Manual network capture evidence")
+                .setMultiChoiceItems(UltNetworkEvidence.PATHS, marked,
+                        (dialog, which, enabled) -> marked[which] = enabled)
+                .setMessage("Check a path only if you personally collected a "
+                        + "relevant packet capture. This stores checkmarks, not packets. "
+                        + "No path is independently route-verified by Ultgram.")
+                .setNegativeButton("Cancel", null)
+                .setNeutralButton("Copy redacted status", (dialog, which) -> {
+                    final String report = UltNetworkEvidence.render(marked);
+                    ClipboardManager clip = (ClipboardManager)
+                            context.getSystemService(Context.CLIPBOARD_SERVICE);
+                    if (clip != null) clip.setPrimaryClip(ClipData.newPlainText(
+                            "ULT manual egress evidence", report));
+                })
+                .setPositiveButton("Save marks", (dialog, which) -> {
+                    final SharedPreferences.Editor edit = prefs.edit();
+                    for (int i = 0; i < marked.length; i++) {
+                        edit.putBoolean(UltNetworkEvidence.key(i), marked[i]);
+                    }
+                    edit.apply();
+                }).show();
     }
 
     private void showChatListDensity(Context context) {

@@ -35,10 +35,15 @@ public final class UltDownloadsActivity extends BaseFragment
         implements FilteredSearchView.UiCallback {
 
     private static final int CREATE_DOCUMENT_REQUEST = 0x13CD;
+    private static final int VERIFY_DOCUMENT_REQUEST = 0x14DE;
     private SearchDownloadsContainer downloads;
     private boolean selectingSaveAs;
     private File pendingSaveFile;
     private long pendingSaveLength;
+    private MessageObject pendingVerifyMessage;
+    private File pendingVerifySource;
+    private long pendingVerifyLength;
+    private int pendingVerifyAccount = -1;
 
     @Override
     public View createView(Context context) {
@@ -144,10 +149,11 @@ public final class UltDownloadsActivity extends BaseFragment
         }
         showSecureDialog(activity, new android.app.AlertDialog.Builder(activity)
                 .setTitle("ULT document tools")
-                .setItems(new String[]{"Inspect file and SHA-256", "Save As…"},
+                .setItems(new String[]{"Inspect file and SHA-256", "Save As…", "Verify saved copy…"},
                         (dialog, option) -> {
                             if (option == 0) inspectDocument(message);
                             else if (option == 1) showSaveAs(message);
+                            else if (option == 2) chooseFileToVerify(message);
                         })
                 .setNegativeButton("Cancel", null));
     }
@@ -214,6 +220,101 @@ public final class UltDownloadsActivity extends BaseFragment
         }, "ULT-Media-Inspect").start();
     }
 
+    /** Compare a user-selected SAF copy to the permitted local source.
+     * Never writes to, uploads or automatically selects a cloud destination. */
+    private void chooseFileToVerify(MessageObject message) {
+        final Activity activity = getParentActivity();
+        if (activity == null || !isExportAllowed(message, currentAccount)) return;
+        final File source = FileLoader.getInstance(currentAccount)
+                .getPathToMessage(message.messageOwner);
+        if (source == null || !source.isFile() || !source.canRead()
+                || source.length() > UltFileInspection.MAX_INSPECT_BYTES) {
+            Toast.makeText(activity, "Download a file under 512 MiB before verifying",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+        final Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        pendingVerifyMessage = message;
+        pendingVerifySource = source;
+        pendingVerifyLength = source.length();
+        pendingVerifyAccount = currentAccount;
+        try {
+            startActivityForResult(intent, VERIFY_DOCUMENT_REQUEST);
+        } catch (android.content.ActivityNotFoundException error) {
+            clearPendingVerify();
+            Toast.makeText(activity, "No Android file picker available", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void clearPendingVerify() {
+        pendingVerifyMessage = null;
+        pendingVerifySource = null;
+        pendingVerifyLength = 0;
+        pendingVerifyAccount = -1;
+    }
+
+    private void verifySelectedCopy(int resultCode, Intent data) {
+        final MessageObject message = pendingVerifyMessage;
+        final File source = pendingVerifySource;
+        final long expected = pendingVerifyLength;
+        final int account = pendingVerifyAccount;
+        clearPendingVerify();
+        final Activity activity = getParentActivity();
+        if (resultCode != Activity.RESULT_OK || data == null || data.getData() == null
+                || activity == null || source == null || account != currentAccount
+                || !isExportAllowed(message, account)) return;
+        final Uri selectedUri = data.getData();
+        Toast.makeText(activity, "Comparing local download with selected file…",
+                Toast.LENGTH_SHORT).show();
+        new Thread(() -> {
+            try {
+                if (!source.isFile() || !source.canRead() || source.length() != expected
+                        || expected > UltFileInspection.MAX_INSPECT_BYTES) {
+                    throw new java.io.IOException("Original file changed; retry comparison");
+                }
+                final UltFileInspection.Result original;
+                try (InputStream sourceStream = new FileInputStream(source)) {
+                    original = UltFileInspection.digest(sourceStream);
+                }
+                final UltFileInspection.Result copy;
+                try (InputStream copyStream = activity.getContentResolver()
+                        .openInputStream(selectedUri)) {
+                    if (copyStream == null) {
+                        throw new java.io.IOException("Selected file could not be opened");
+                    }
+                    copy = UltFileInspection.digest(copyStream);
+                }
+                if (source.length() != expected || original.bytesRead != expected) {
+                    throw new java.io.IOException("Original file changed during verification");
+                }
+                final boolean identical = UltFileInspection.sameContent(original, copy);
+                activity.runOnUiThread(() -> {
+                    if (getParentActivity() != activity) return;
+                    showSecureDialog(activity, new android.app.AlertDialog.Builder(activity)
+                            .setTitle(identical ? "Verified: identical" : "Verification failed: files differ")
+                            .setMessage(identical
+                                    ? "The selected file has the same size and SHA-256 as the "
+                                    + "downloaded source. This checks bytes, not the file's origin."
+                                    : "The selected copy has different bytes or size. "
+                                    + "Check the destination and retry; no files were modified.")
+                            .setPositiveButton("Done", null));
+                });
+            } catch (Exception error) {
+                final String details = error.getMessage() != null
+                        ? error.getMessage() : "Provider unavailable";
+                activity.runOnUiThread(() -> {
+                    if (getParentActivity() == activity) {
+                        Toast.makeText(activity, "Verify failed: " + details,
+                                Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
+        }, "ULT-SAF-Verify").start();
+    }
+
     private void showSaveAs(MessageObject message) {
         final Activity activity = getParentActivity();
         if (activity == null) return;
@@ -265,6 +366,10 @@ public final class UltDownloadsActivity extends BaseFragment
     @Override
     public void onActivityResultFragment(int requestCode, int resultCode, Intent data) {
         super.onActivityResultFragment(requestCode, resultCode, data);
+        if (requestCode == VERIFY_DOCUMENT_REQUEST) {
+            verifySelectedCopy(resultCode, data);
+            return;
+        }
         if (requestCode != CREATE_DOCUMENT_REQUEST) return;
         final File source = pendingSaveFile;
         final long expectedLength = pendingSaveLength;
