@@ -34,5 +34,6 @@ class ApkReleaseGateTest(TestCase):
     def test_no_false_upgrade_claim_without_previous(self):
         report = gate.render(("com.yooshastan.ult",74,"0.14d",ONE))
         self.assertIn("NOT CHECKED", report)
+        self.assertGreater(report.count("\n"), 5)
         self.assertIn("Debug-signed", report)
         self.assertNotIn("Upgrade compatibility with selected previous APK: PASS",report)

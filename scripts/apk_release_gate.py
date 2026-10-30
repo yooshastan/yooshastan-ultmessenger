@@ -14,8 +14,8 @@ import shutil
 import subprocess
 import sys
 
-PACKAGE = re.compile(r"^package:\\s+name='([^']+)'\\s+versionCode='([0-9]+)'\\s+versionName='([^']*)'", re.M)
-CERT = re.compile(r"^Signer #([0-9]+) certificate SHA-256 digest:\\s*([0-9a-fA-F:]+)\\s*$", re.M)
+PACKAGE = re.compile(r"^package:\s+name='([^']+)'\s+versionCode='([0-9]+)'\s+versionName='([^']*)'", re.M)
+CERT = re.compile(r"^Signer #([0-9]+) certificate SHA-256 digest:\s*([0-9a-fA-F:]+)\s*$", re.M)
 
 
 def parse_aapt(output):
@@ -91,7 +91,7 @@ def render(candidate, previous=None):
                   "WARNING: This does not establish what is installed on a phone."]
     lines += ["Debug-signed internal build; do not infer public-release readiness.",
               "No APK installed, modified, uploaded or uninstalled by this gate."]
-    return "\\n".join(lines) + "\\n"
+    return "\n".join(lines) + "\n"
 
 
 def main():
