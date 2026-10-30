@@ -292,7 +292,10 @@ public final class UltDownloadsActivity extends BaseFragment
                 }
                 final boolean identical = UltFileInspection.sameContent(original, copy);
                 activity.runOnUiThread(() -> {
-                    if (getParentActivity() != activity) return;
+                    // A user might switch accounts while the file is being hashed.
+                    // Never show a private file-comparison result in another account.
+                    if (getParentActivity() != activity || currentAccount != account
+                            || !isExportAllowed(message, account)) return;
                     showSecureDialog(activity, new android.app.AlertDialog.Builder(activity)
                             .setTitle(identical ? "Verified: identical" : "Verification failed: files differ")
                             .setMessage(identical
@@ -306,7 +309,8 @@ public final class UltDownloadsActivity extends BaseFragment
                 final String details = error.getMessage() != null
                         ? error.getMessage() : "Provider unavailable";
                 activity.runOnUiThread(() -> {
-                    if (getParentActivity() == activity) {
+                    if (getParentActivity() == activity && currentAccount == account
+                            && isExportAllowed(message, account)) {
                         Toast.makeText(activity, "Verify failed: " + details,
                                 Toast.LENGTH_LONG).show();
                     }

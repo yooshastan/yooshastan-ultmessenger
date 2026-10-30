@@ -19,6 +19,15 @@ public final class UltAlpha14DefTest {
         ok(UltFileInspection.sameContent(original,same), "identical copy");
         ok(!UltFileInspection.sameContent(original,changed), "different hash");
         ok(!UltFileInspection.sameContent(original,null), "missing file");
+        UltFileInspection.Result changedLength=UltFileInspection.digest(
+                new ByteArrayInputStream("abc!".getBytes(StandardCharsets.UTF_8)));
+        UltFileInspection.Result empty=UltFileInspection.digest(
+                new ByteArrayInputStream(new byte[0]));
+        ok(!UltFileInspection.sameContent(original,changedLength), "different size");
+        ok(!UltFileInspection.sameContent(original,empty), "empty file mismatch");
+        ok(UltFileInspection.sameContent(empty,UltFileInspection.digest(
+                new ByteArrayInputStream(new byte[0]))), "empty file same");
+        ok(!UltFileInspection.sameContent(null,original), "missing source");
         ok(UltChatAppearancePolicy.font(4)==12 && UltChatAppearancePolicy.font(45)==30,
                 "font bounds");
         ok(UltChatAppearancePolicy.radius(-2)==0 && UltChatAppearancePolicy.radius(99)==17,
