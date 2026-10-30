@@ -21,7 +21,7 @@ public final class UltReleaseNotes {
 
     public static String message(String androidVersion) {
         return "WHAT'S NEW\n\n"
-                + "• Stabilization: result privacy after switching accounts "
+                + "• Stabilization from 0.14d+: result privacy after switching accounts "
                 + "while verifying a saved file; same chat, media and story tools.\n"
                 + "• Signing metadata: verify APK package/version and certificate "
                 + "SHA-256. In-place upgrade compatibility is NOT checked automatically.\n"
