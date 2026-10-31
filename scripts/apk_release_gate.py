@@ -15,7 +15,15 @@ import subprocess
 import sys
 
 PACKAGE = re.compile(r"^package:\s+name='([^']+)'\s+versionCode='([0-9]+)'\s+versionName='([^']*)'", re.M)
-CERT = re.compile(r"^Signer #([0-9]+) certificate SHA-256 digest:\s*([0-9a-fA-F:]+)\s*$", re.M)
+# Newer Android SDK apksigner (e.g. Build Tools 37) prints
+# "V3.0 Signer: certificate SHA-256 digest:" instead of the older
+# "Signer #1 certificate SHA-256 digest:" label.
+# Neither form changes the requirement that apksigner verify must succeed.
+CERT = re.compile(
+    r"^(?:Signer #(?P<legacy>[0-9]+) certificate|V[0-9]+(?:\.[0-9]+)? Signer: certificate)"
+    r" SHA-256 digest:[ \t]*(?P<digest>[0-9a-fA-F:]+)[ \t]*$", re.M
+)
+SIGNER_COUNT = re.compile(r"^Number of signers:[ \t]*([0-9]+)[ \t]*$", re.M)
 
 
 def parse_aapt(output):
@@ -29,13 +37,23 @@ def parse_aapt(output):
 
 
 def parse_signing(output):
-    matches = CERT.findall(output)
-    if len(matches) != 1 or matches[0][0] != "1":
-        raise ValueError("Expected exactly one APK signing certificate")
-    normalized = matches[0][1].replace(":", "").lower()
-    if not re.fullmatch("[0-9a-f]{64}", normalized):
+    # apksigner verify already succeeded before this parser is invoked.
+    # Require exactly one signer if its count is reported; reject ambiguous
+    # labels or multiple distinct fingerprints rather than silently accepting
+    # a certificate that might not correspond to the installed identity.
+    signer_counts = SIGNER_COUNT.findall(output)
+    if signer_counts and (len(signer_counts) != 1 or signer_counts[0] != "1"):
+        raise ValueError("Expected one APK signer (as reported by apksigner)")
+    matches = list(CERT.finditer(output))
+    if not matches or any(m.group("legacy") not in (None, "1") for m in matches):
+        raise ValueError("Cannot identify exactly one APK signer certificate")
+    digests = {m.group("digest").replace(":", "").lower() for m in matches}
+    if len(digests) != 1:
+        raise ValueError("Conflicting APK signer certificates")
+    digest = next(iter(digests))
+    if not re.fullmatch(r"[0-9a-f]{64}", digest):
         raise ValueError("Invalid signing certificate SHA-256")
-    return normalized
+    return digest
 
 
 def find_android_tool(name):

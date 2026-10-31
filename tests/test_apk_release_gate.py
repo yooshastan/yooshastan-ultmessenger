@@ -14,6 +14,21 @@ class ApkReleaseGateTest(TestCase):
         package = gate.parse_aapt("package: name='com.yooshastan.ult' versionCode='74' versionName='0.14' platformBuildVersionCode=''\n")
         self.assertEqual(package, ("com.yooshastan.ult",74,"0.14"))
         self.assertEqual(gate.parse_signing("Signer #1 certificate SHA-256 digest: " + ONE + "\n"),ONE)
+        # Exact output shape from Android Build Tools 37 for our prior
+        # successful ARM64 APK; V3.0 signer label is not numbered.
+        v3 = ("Verified using v2 scheme (APK Signature Scheme v2): true\n"
+              "Verified using v3 scheme (APK Signature Scheme v3): true\n"
+              "Number of signers: 1\n"
+              "V3.0 Signer: certificate DN: CN=Android Developer\n"
+              "V3.0 Signer: certificate SHA-256 digest: " + ONE + "\n")
+        self.assertEqual(gate.parse_signing(v3),ONE)
+        self.assertEqual(gate.parse_signing(
+            v3 + "Signer #1 certificate SHA-256 digest: " + ONE + "\n"), ONE)
+        with self.assertRaises(ValueError):
+            gate.parse_signing(v3.replace("Number of signers: 1",
+                                          "Number of signers: 2"))
+        with self.assertRaises(ValueError):
+            gate.parse_signing(v3 + "Signer #1 certificate SHA-256 digest: " + TWO + "\n")
         with self.assertRaises(ValueError):
             gate.parse_signing("")
         with self.assertRaises(ValueError):
