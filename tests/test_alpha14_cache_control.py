@@ -26,9 +26,14 @@ class CacheControl(TestCase):
         for needle in ('getInt("cache_limit", Integer.MAX_VALUE)',
                        "selectedCustomLimit >= 2", "selectedCustomLimit <= 32",
                        "!options.contains(selectedCustomLimit)",
-                       "options.add(index, selectedCustomLimit)"):
+                       "options.add(ultCacheInsertPosition, selectedCustomLimit)"):
             self.assertIn(needle,out)
-        self.assertLess(out.index("options.add(index, selectedCustomLimit)"),
+        # Pinned upstream onCreateViewHolder() already declares "index" in
+        # an enclosing switch scope. Shadowing it caused the native Java
+        # compilation failure in Actions run #41231831464.
+        self.assertIn("int ultCacheInsertPosition = 0;", out)
+        self.assertNotIn("int index =", out)
+        self.assertLess(out.index("options.add(ultCacheInsertPosition, selectedCustomLimit)"),
                         out.index("options.add(Integer.MAX_VALUE)"))
         with self.assertRaises(ValueError):mod.patch(out)
         with self.assertRaises(ValueError):mod.patch("no pinned anchor")

@@ -1,5 +1,8 @@
 # Yooshastan ULT Messenger
 
+> **Alpha 0.14 custom cache RC1:** New 2–32 GB, 1 GB-step maximum Telegram cache slider with No Limit, exact custom value in Storage Usage and no automatic manual deletion. Full Android debug build and device QA required. [Cache QA](docs/ALPHA14_CACHE_RC1_QA.md).
+
+
 > **Custom cache limit feature (development):** Ultgram Settings → Storage and Cache → Custom maximum cache size. Choose 2–32 GB in 1 GB steps (including 8/10/12 GB) or No Limit. Shares Telegram's native `cache_limit` preference and shows the selected custom value in Storage Usage. Does not immediately delete data. [Scope and QA](docs/ALPHA14_CACHE_CONTROL.md).
 
 

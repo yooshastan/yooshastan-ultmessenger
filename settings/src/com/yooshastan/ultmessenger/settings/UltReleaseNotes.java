@@ -3,7 +3,7 @@ package com.yooshastan.ultmessenger.settings;
 /** Source-owned, truthful release notes for the 0.13c+d candidate. */
 public final class UltReleaseNotes {
     public static final String PREFERENCES = "ult_release_notes";
-    public static final String DISPLAY_VERSION = "Ultgram Alpha 0.14 stability RC1";
+    public static final String DISPLAY_VERSION = "Ultgram Alpha 0.14 cache RC1";
 
     private UltReleaseNotes() {}
 
@@ -21,6 +21,10 @@ public final class UltReleaseNotes {
 
     public static String message(String androidVersion) {
         return "WHAT'S NEW\n\n"
+                + "• NEW: Ultgram Settings → Storage and Cache → Custom maximum cache "
+                + "size. Choose 2–32 GB in 1 GB steps (8/10/12 GB included) or "
+                + "No Limit. Uses Telegram's existing cache maintenance; does not "
+                + "delete anything immediately.\n"
                 + "• Stabilization from 0.14d+: result privacy after switching accounts "
                 + "while verifying a saved file; same chat, media and story tools.\n"
                 + "• Signing metadata: verify APK package/version and certificate "
