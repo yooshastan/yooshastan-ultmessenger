@@ -1,5 +1,8 @@
 # Yooshastan ULT Messenger
 
+> **Custom cache limit feature (development):** Ultgram Settings → Storage and Cache → Custom maximum cache size. Choose 2–32 GB in 1 GB steps (including 8/10/12 GB) or No Limit. Shares Telegram's native `cache_limit` preference and shows the selected custom value in Storage Usage. Does not immediately delete data. [Scope and QA](docs/ALPHA14_CACHE_CONTROL.md).
+
+
 > **Alpha 0.14 stability RC1:** Signed APK identity recorded with `SIGNING_INFO.txt` and account-safe media comparison; original 0.14d+ remains untouched. This does **not** establish upgrade compatibility or leak-proof routing. [QA checklist](docs/ALPHA14ST_RC1_QA.md).
 
 
