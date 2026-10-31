@@ -17,11 +17,12 @@ PATCH="""                    // ULT: keep a precise custom limit visible when th
                             .getInt("cache_limit", Integer.MAX_VALUE);
                     if (selectedCustomLimit >= 2 && selectedCustomLimit <= 32
                             && !options.contains(selectedCustomLimit)) {
-                        int index = 0;
-                        while (index < options.size() && options.get(index) < selectedCustomLimit) {
-                            index++;
+                        int ultCacheInsertPosition = 0;
+                        while (ultCacheInsertPosition < options.size()
+                                && options.get(ultCacheInsertPosition) < selectedCustomLimit) {
+                            ultCacheInsertPosition++;
                         }
-                        options.add(index, selectedCustomLimit);
+                        options.add(ultCacheInsertPosition, selectedCustomLimit);
                     }
 """
 def patch(text):
