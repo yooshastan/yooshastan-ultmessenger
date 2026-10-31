@@ -90,6 +90,14 @@ public final class UltSettingsActivity extends BaseFragment {
                 "Inspect, Save As and verify a user-selected downloaded copy",
                 () -> presentFragment(new UltDownloadsActivity()));
 
+        addSection(context, content, "STORAGE AND CACHE");
+        addLink(context, content, "Custom maximum cache size",
+                "Choose an exact 2–32 GB limit in 1 GB steps, or No Limit",
+                () -> showUltCacheLimit(context));
+        addLink(context, content, "Telegram storage usage and cleanup",
+                "Check cached files and manage storage without clearing automatically",
+                () -> presentFragment(new org.telegram.ui.CacheControlActivity()));
+
         addSection(context, content, "APPEARANCE");
         addLink(context, content, "Message font and bubble corners",
                 "Change Telegram's actual chat text size and bubble radius; includes Reset",
@@ -446,6 +454,72 @@ public final class UltSettingsActivity extends BaseFragment {
                             .show();
                 })
                 .setNegativeButton("Cancel", null).show();
+    }
+
+    /**
+     * Uses native Telegram cache_limit preference; cleanup remains upstream.
+     * Never clears files immediately and never changes storage permissions.
+     * 1 is an old 300MB sentinel in upstream, so offer 2..32GB instead.
+     */
+    private void showUltCacheLimit(Context context) {
+        final int saved = SharedConfig.getPreferences()
+                .getInt("cache_limit", Integer.MAX_VALUE);
+        final LinearLayout content = new LinearLayout(context);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(AndroidUtilities.dp(20), AndroidUtilities.dp(12),
+                AndroidUtilities.dp(20), AndroidUtilities.dp(8));
+
+        final TextView current = new TextView(context);
+        current.setText("Current maximum: " + UltCacheLimitPolicy.label(saved));
+        current.setTextSize(15);
+        content.addView(current);
+        final TextView proposed = new TextView(context);
+        final int initial = UltCacheLimitPolicy.initialGb(saved);
+        proposed.setText("Selected: " + initial + " GB");
+        proposed.setTextSize(17);
+        proposed.setPadding(0, AndroidUtilities.dp(12), 0, AndroidUtilities.dp(4));
+        content.addView(proposed);
+        final android.widget.SeekBar slider = new android.widget.SeekBar(context);
+        slider.setMax(UltCacheLimitPolicy.MAX_GB - UltCacheLimitPolicy.MIN_GB);
+        slider.setProgress(initial - UltCacheLimitPolicy.MIN_GB);
+        slider.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(android.widget.SeekBar bar,
+                                                       int progress, boolean fromUser) {
+                proposed.setText("Selected: "
+                        + (progress + UltCacheLimitPolicy.MIN_GB) + " GB");
+            }
+            @Override public void onStartTrackingTouch(android.widget.SeekBar bar) {}
+            @Override public void onStopTrackingTouch(android.widget.SeekBar bar) {}
+        });
+        content.addView(slider);
+        final TextView hint = new TextView(context);
+        hint.setText("1 GB increments. Changing this affects future automatic "
+                + "cache cleanup; it does not immediately delete existing files.");
+        hint.setTextSize(13);
+        content.addView(hint);
+        new UltSecureDialogBuilder(context)
+                .setTitle("Maximum Telegram cache size")
+                .setView(content)
+                .setNeutralButton("No Limit", (dialog, selected) ->
+                        applyUltCacheLimit(context, UltCacheLimitPolicy.NO_LIMIT))
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Apply", (dialog, selected) ->
+                        applyUltCacheLimit(context,
+                                slider.getProgress() + UltCacheLimitPolicy.MIN_GB))
+                .show();
+    }
+
+    private void applyUltCacheLimit(Context context, int value) {
+        if (!UltCacheLimitPolicy.isAllowed(value)) {
+            android.widget.Toast.makeText(context, "Invalid cache limit",
+                    android.widget.Toast.LENGTH_LONG).show();
+            return;
+        }
+        SharedConfig.getPreferences().edit().putInt("cache_limit", value).apply();
+        android.widget.Toast.makeText(context,
+                "Maximum cache size: " + UltCacheLimitPolicy.label(value)
+                + ". Telegram will enforce it during scheduled cleanup.",
+                android.widget.Toast.LENGTH_LONG).show();
     }
 
     private void showMessageAppearance(Context context) {
