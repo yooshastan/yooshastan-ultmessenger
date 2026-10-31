@@ -1,10 +1,10 @@
-name: Ultgram Alpha 0.14 stabilization FOSS ARM64 test candidate
+name: Ultgram Alpha 0.14 custom cache limit FOSS ARM64 test candidate
 
 # Compile the pinned native Android source only for the combined RC branch or
 # an explicit manual dispatch. Feature commits receive fast scaffold + JVM tests.
 on:
   push:
-    branches: [release/alpha14st-combined-rc1]
+    branches: [release/alpha14cache-combined-rc1]
     paths:
       - '.github/workflows/android-alpha.yml'
       - 'scripts/**'
@@ -104,6 +104,9 @@ jobs:
           python3 -m unittest discover -s tests -p 'test_alpha14def_contract.py'
           python3 -m unittest discover -s tests -p 'test_apk_release_gate.py'
           python3 -m unittest discover -s tests -p 'test_alpha14_stabilization_contract.py'
+          python3 -m unittest discover -s tests -p 'test_alpha14_cache_control.py'
+          javac -d /tmp/ult-appearance-classes settings/src/com/yooshastan/ultmessenger/settings/UltCacheLimitPolicy.java settings/tests/UltCacheLimitPolicyTest.java
+          java -cp /tmp/ult-appearance-classes UltCacheLimitPolicyTest
           mkdir -p /tmp/ult-alpha14def-classes
           javac -d /tmp/ult-alpha14def-classes settings/src/com/yooshastan/ultmessenger/settings/UltFileInspection.java settings/src/com/yooshastan/ultmessenger/settings/UltChatAppearancePolicy.java settings/src/com/yooshastan/ultmessenger/settings/UltIdentityCover.java settings/src/com/yooshastan/ultmessenger/settings/UltNetworkEvidence.java settings/tests/UltAlpha14DefTest.java
           java -cp /tmp/ult-alpha14def-classes UltAlpha14DefTest
@@ -215,7 +218,7 @@ jobs:
           set -euo pipefail
           if [[ "${{ matrix.variant }}" == 'foss' ]]; then
             cd .work/mercurygram-upstream
-            ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug -PMG_BUILD_TAG=14.0.4.0.1 --no-daemon --console=plain
+            ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug -PMG_BUILD_TAG=14.0.5.0.1 --no-daemon --console=plain
           else
             cd .work/telegram-upstream
             ./gradlew :TMessagesProj_App:assembleAfatDebug --no-daemon --console=plain
@@ -231,13 +234,13 @@ jobs:
             echo "::error::Expected one compiled APK, found ${#apks[@]}"
             exit 1
           fi
-          cp -- "${apks[0]}" "artifacts/ult-alpha14st-combined-foss-arm64-debug.apk"
+          cp -- "${apks[0]}" "artifacts/ult-alpha14cache-combined-foss-arm64-debug.apk"
           (
             cd artifacts
-            sha256sum ult-alpha14st-combined-foss-arm64-debug.apk > SHA256SUMS
+            sha256sum ult-alpha14cache-combined-foss-arm64-debug.apk > SHA256SUMS
           )
           {
-            printf '%s\n' "Candidate: Ultgram Alpha 0.14 stabilization signed identity and account-safe media (internal test APK)"
+            printf '%s\n' "Candidate: Ultgram Alpha 0.14 precise cache size 2-32GB plus stabilization (internal test APK)"
             printf 'Repo: yooshastan/yooshastan-ultmessenger\n'
             printf 'Repo commit: %s\n' "$GITHUB_SHA"
             printf 'Pinned Mercurygram source: %s\n' "$(tr -d '\r\n ' < upstream/mercurygram.sha)"
@@ -251,7 +254,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 scripts/apk_release_gate.py --apk artifacts/ult-alpha14st-combined-foss-arm64-debug.apk --report artifacts/SIGNING_INFO.txt
+          python3 scripts/apk_release_gate.py --apk artifacts/ult-alpha14cache-combined-foss-arm64-debug.apk --report artifacts/SIGNING_INFO.txt
           test -s artifacts/SIGNING_INFO.txt
           grep -q 'Upgrade compatibility: NOT CHECKED' artifacts/SIGNING_INFO.txt
 
@@ -259,7 +262,7 @@ jobs:
         if: steps.prerequisites.outputs.ready == 'true' && success()
         uses: actions/upload-artifact@v4
         with:
-          name: ult-alpha14st-combined-foss-android
+          name: ult-alpha14cache-combined-foss-android
           path: artifacts/*
           if-no-files-found: error
           retention-days: 30
