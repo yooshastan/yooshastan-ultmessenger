@@ -37,9 +37,9 @@ class Alpha13CD(TestCase):
         # The 0.13c+d Gradle build previously succeeded but artifact staging
         # failed because the apostrophe in What's New broke a single-quoted printf.
         ci = source(".github/workflows/android-alpha.yml")
-        self.assertIn('printf \'%s\\n\' "Candidate: Ultgram Alpha 0.14d+ unified media', ci)
+        self.assertIn('printf \'%s\\n\' "Candidate: Ultgram Alpha 0.14 stabilization signed identity', ci)
         self.assertNotIn("printf 'Candidate: Ultgram Alpha 0.13c+d What's New", ci)
-        self.assertIn("ult-alpha14def-combined-foss-arm64-debug.apk", ci)
+        self.assertIn("ult-alpha14st-combined-foss-arm64-debug.apk", ci)
         self.assertIn("SHA256SUMS", ci)
         self.assertIn("BUILD_INFO.txt", ci)
 

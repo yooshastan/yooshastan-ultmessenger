@@ -3,7 +3,7 @@ package com.yooshastan.ultmessenger.settings;
 /** Source-owned, truthful release notes for the 0.13c+d candidate. */
 public final class UltReleaseNotes {
     public static final String PREFERENCES = "ult_release_notes";
-    public static final String DISPLAY_VERSION = "Ultgram Alpha 0.14d+ RC1";
+    public static final String DISPLAY_VERSION = "Ultgram Alpha 0.14 stability RC1";
 
     private UltReleaseNotes() {}
 
@@ -21,6 +21,10 @@ public final class UltReleaseNotes {
 
     public static String message(String androidVersion) {
         return "WHAT'S NEW\n\n"
+                + "• Stabilization from 0.14d+: result privacy after switching accounts "
+                + "while verifying a saved file; same chat, media and story tools.\n"
+                + "• Signing metadata: verify APK package/version and certificate "
+                + "SHA-256. In-place upgrade compatibility is NOT checked automatically.\n"
                 + "• NEW: ULT Downloads → long-press permitted file → Verify saved copy. "
                 + "Choose a file in Android picker; compare size and local SHA-256 "
                 + "without uploading or overwriting either file (max 512 MiB).\n"

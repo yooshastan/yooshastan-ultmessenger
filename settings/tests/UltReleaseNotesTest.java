@@ -12,7 +12,7 @@ public final class UltReleaseNotesTest {
                 "upgrade reopens changelog");
         String message = UltReleaseNotes.message(a);
         for (String fragment : new String[] {"Save As", "Downloads", "4.0.0",
-                "Debug-signed", "protected media", "0.13c+d", "0.14a+b", "0.14c", "0.14d+", "Gallery", "SHA-256", "Preview colors", "Verify saved copy", "bubble corners"}) {
+                "Debug-signed", "protected media", "0.13c+d", "0.14a+b", "0.14c", "0.14d+", "Stabilization", "Gallery", "SHA-256", "Preview colors", "Verify saved copy", "bubble corners"}) {
             ok(message.contains(fragment), "missing changelog detail: " + fragment);
         }
         System.out.println("Ultgram release notes policy passed");

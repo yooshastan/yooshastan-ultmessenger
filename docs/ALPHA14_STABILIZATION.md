@@ -1,6 +1,6 @@
 # Ultgram Alpha 0.14 stabilization and upgrade-safety gates
 
-Baseline: `release/alpha14def-combined-rc1` @ `6ad6e61f9125134b61d007c8b7c797371e2abd68`; user has tested it successfully. **Do not replace or rewrite this branch.** Stabilization changes will be a separate candidate.
+Baseline: `release/alpha14def-combined-rc1` @ `6ad6e61f9125134b61d007c8b7c797371e2abd68`; user has tested it successfully. **Do not replace or rewrite this branch.** Stabilization changes use `release/alpha14st-combined-rc1`; full Android CI must upload APK, SHA256SUMS, BUILD_INFO.txt and SIGNING_INFO.txt. Upgrade compatibility with the installed APK is **not** verified automatically.
 
 ## Signing and in-place upgrades
 

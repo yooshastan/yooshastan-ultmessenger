@@ -1,5 +1,8 @@
 # Yooshastan ULT Messenger
 
+> **Alpha 0.14 stability RC1:** Signed APK identity recorded with `SIGNING_INFO.txt` and account-safe media comparison; original 0.14d+ remains untouched. This does **not** establish upgrade compatibility or leak-proof routing. [QA checklist](docs/ALPHA14ST_RC1_QA.md).
+
+
 > **Alpha 0.14 stability gate:** Adds verified APK signing/manifest identity output, a safe old-vs-new APK comparison tool, and account-switch guards for saved-copy verification. The accepted Alpha 0.14d+ test APK remains unchanged. **No claim of public release signing or network leak-proofing.** [Stabilization scope](docs/ALPHA14_STABILIZATION.md).
 
 
