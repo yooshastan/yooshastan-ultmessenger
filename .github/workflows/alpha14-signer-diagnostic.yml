@@ -1,0 +1,43 @@
+name: Debug APK signing parser using accepted Alpha 0.14d+ artifact
+
+on:
+  push:
+    branches: [feature/alpha14st-signer-gate-diagnostic]
+    paths:
+      - 'scripts/apk_release_gate.py'
+      - 'tests/test_apk_release_gate.py'
+      - '.github/workflows/alpha14-signer-diagnostic.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  signer-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: android-actions/setup-android@v4
+      - name: Download previous successful internal FOSS Android artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh run download 40810645429 --repo "$GITHUB_REPOSITORY" --name ult-alpha14def-combined-foss-android --dir ./baseline
+          test -s baseline/ult-alpha14def-combined-foss-arm64-debug.apk
+      - name: Inspect actual SDK certificate field format
+        run: |
+          set -euo pipefail
+          apk=baseline/ult-alpha14def-combined-foss-arm64-debug.apk
+          build_tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          "$build_tools/apksigner" verify --verbose --print-certs "$apk" > /tmp/ult-apk-signers.out
+          echo 'Public APK signer lines (safe fingerprint only):'
+          grep -Ei 'signer|verified' /tmp/ult-apk-signers.out | tail -n 30 || true
+          echo 'Raw bytes of first certificate label for parser debugging:'
+          grep -i 'certificate SHA-256' /tmp/ult-apk-signers.out | head -1 | od -An -tx1 | head -c 300 || true
+          echo
+          python3 scripts/apk_release_gate.py --apk "$apk" --report /tmp/ult-signing-info.txt
+      - name: Run signing parser contract tests
+        run: python3 -m unittest discover -s tests -p 'test_apk_release_gate.py'
