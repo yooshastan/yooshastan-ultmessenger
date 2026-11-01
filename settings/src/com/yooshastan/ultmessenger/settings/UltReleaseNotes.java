@@ -3,7 +3,7 @@ package com.yooshastan.ultmessenger.settings;
 /** Source-owned, truthful release notes for the 0.13c+d candidate. */
 public final class UltReleaseNotes {
     public static final String PREFERENCES = "ult_release_notes";
-    public static final String DISPLAY_VERSION = "Ultgram Alpha 0.14 cache RC1";
+    public static final String DISPLAY_VERSION = "Ultgram Alpha 0.14 cache and stories RC2";
 
     private UltReleaseNotes() {}
 
@@ -45,7 +45,7 @@ public final class UltReleaseNotes {
                 + "(user-marked checklist, NOT route verified).\n"
                 + "• From 0.14c: Open an eligible photo/video story and tap "
                 + "the Gallery icon beside ⋮ to Save Story to Gallery. "
-                + "Your own or Premium-eligible public stories only; no protected "
+                + "Your own or public share-eligible stories only; no protected "
                 + "or live stories. Already cached media is required.\n"
                 + "• From 0.14a+b: ULT Downloads → long-press a permitted downloaded document "
                 + "→ Inspect file and SHA-256 or Save As. A local checksum is only "
