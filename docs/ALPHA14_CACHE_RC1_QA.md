@@ -1,4 +1,4 @@
-# Ultgram Alpha 0.14 precise cache size — combined internal RC1
+# Ultgram Alpha 0.14 precise cache size — original internal RC1 (superseded by RC2)
 
 Branch `release/alpha14cache-combined-rc1`; builds on successfully compiled Alpha 0.14 stabilization and the user-tested Alpha 0.14d+. Preserve installed app and existing working APK.
 

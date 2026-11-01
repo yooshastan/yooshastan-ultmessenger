@@ -1,5 +1,8 @@
 # Yooshastan ULT Messenger
 
+> **Alpha 0.14 cache + story fix RC2 (development):** Confirmed **Run cache maintenance now** action with Telegram's existing retention rules, plus **Download and save** for locally accessible own or public/shareable, unprotected stories even when media is not cached. No bulk harvesting or protected-story bypass. [Combined QA](docs/ALPHA14_CACHE_STORYFIX_RC2_QA.md).
+
+
 > **Alpha 0.14 custom cache RC1:** New 2–32 GB, 1 GB-step maximum Telegram cache slider with No Limit, exact custom value in Storage Usage and no automatic manual deletion. Full Android debug build and device QA required. [Cache QA](docs/ALPHA14_CACHE_RC1_QA.md).
 
 
