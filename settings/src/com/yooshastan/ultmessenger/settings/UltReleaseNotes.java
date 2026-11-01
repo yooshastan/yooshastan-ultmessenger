@@ -21,6 +21,12 @@ public final class UltReleaseNotes {
 
     public static String message(String androidVersion) {
         return "WHAT'S NEW\n\n"
+                + "• FIX: Maximum cache size now offers a confirmed Run cache "
+                + "maintenance now action to apply existing Telegram cleanup "
+                + "without waiting for its normal 24-hour check.\n"
+                + "• FIX: Story Gallery button downloads missing permitted media "
+                + "using Telegram FileLoader, then saves it. Own or public "
+                + "share-eligible, unprotected stories can be saved locally.\n"
                 + "• NEW: Ultgram Settings → Storage and Cache → Custom maximum cache "
                 + "size. Choose 2–32 GB in 1 GB steps (8/10/12 GB included) or "
                 + "No Limit. Uses Telegram's existing cache maintenance; does not "

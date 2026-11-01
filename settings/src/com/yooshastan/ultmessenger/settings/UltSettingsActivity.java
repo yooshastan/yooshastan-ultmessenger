@@ -497,9 +497,9 @@ public final class UltSettingsActivity extends BaseFragment {
         });
         content.addView(slider);
         final TextView hint = new TextView(context);
-        hint.setText("1 GB increments. Automatic cleanup normally runs once per "
-                + "24 hours. Use Run cache maintenance now after applying if "
-                + "you want Telegram to check the limit sooner.");
+        hint.setText("Applying a new maximum does not immediately delete existing files. "
+                + "Automatic cleanup normally runs once per 24 hours. "
+                + "Use Run cache maintenance now to check the limit sooner.");
         hint.setTextSize(13);
         content.addView(hint);
         new UltSecureDialogBuilder(context)
