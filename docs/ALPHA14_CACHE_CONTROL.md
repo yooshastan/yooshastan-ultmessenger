@@ -7,7 +7,7 @@ The pinned Mercurygram Storage Usage screen offers coarse limits (2, 5, 16, 32 G
 
 The reserved upstream preference `cache_limit=1` means **300 MB** in the original UI, not 1 GB, so the safe custom range begins at 2 GB.
 
-The implementation writes only the existing Telegram `SharedConfig.getPreferences().putInt("cache_limit", GB)` value. It does not request storage permissions, scan new paths, immediately erase cached files or install another cleanup engine. **Automatic cleanup runs when Telegram's own background cache maintenance executes; it is not instantaneous or a hard real-time storage quota.**
+The implementation writes only the existing Telegram `SharedConfig.getPreferences().putInt("cache_limit", GB)` value. It does not request storage permissions, scan new paths, immediately erase cached files or install another cleanup engine. **Automatic cleanup normally runs only once per 24 hours; a new user-confirmed `Run cache maintenance now` action triggers the original Telegram cleanup early. This may also clear age-expired cached media under Telegram's Keep Media rules. It is not a hard real-time quota.**
 
 The stock Telegram Storage Usage slider still shows coarse choices but, when a custom integer preference is selected, it also displays that precise value instead of incorrectly presenting No Limit. Legacy 300 MB selection remains an upstream option.
 
