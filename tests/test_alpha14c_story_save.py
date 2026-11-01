@@ -11,8 +11,14 @@ class StorySaveContract(TestCase):
         script=get("scripts/integrate-story-save.py")
         self.assertIn("PeerStoriesView.java", script)
         self.assertIn("UltStorySavePolicy", script)
-        self.assertIn("Save eligible story to gallery", script)
+        self.assertIn("Download and save eligible story", script)
         self.assertIn("saveToGallery();", script)
+        self.assertIn("ultDownloadAndSaveStory();", script)
+        self.assertIn("NotificationCenter.fileLoaded", script)
+        self.assertIn("NotificationCenter.fileLoadFailed", script)
+        self.assertIn("ultStopStoryDownloadObserver()", script)
+        self.assertIn("FileLoader.getInstance(selectedAccount).loadFile", script)
+        self.assertIn("currentStory.storyItem != selected", script)
         self.assertIn("canUltSaveStory()", script)
         self.assertIn("ultStorySaveButton.setVisibility", script)
         self.assertIn("item instanceof TL_stories.TL_storyItemSkipped", script)
@@ -21,8 +27,8 @@ class StorySaveContract(TestCase):
         self.assertIn("currentStory.allowScreenshots()", script)
         self.assertIn("UserConfig.getInstance(currentAccount).isPremium()", script)
         self.assertIn("allowShare, protectedPeer", script)
-        self.assertNotIn("loadFile(", script)
-        self.assertNotIn("MediaController.saveFile(", script)
+        self.assertIn("loadFile(", script)
+        self.assertIn("MediaController.saveFile(", script)
         self.assertNotIn("new java.net.", script)
 
     def test_patch_fail_closed_and_rejects_duplicate(self):
@@ -33,7 +39,8 @@ class StorySaveContract(TestCase):
         # A toy fixture built from the *exact* anchors; upstream still needs
         # native CI to catch source drift/compile errors.
         source="".join([module.IMPORT_ANCHOR,module.FIELD_ANCHOR,
-                        module.VIEW_ANCHOR,module.VISIBILITY_ANCHOR,module.METHOD_ANCHOR])
+                        module.VIEW_ANCHOR,module.VISIBILITY_ANCHOR,
+                        module.METHOD_ANCHOR,module.DETACH_ANCHOR])
         patched=module.patch_story_source(source)
         self.assertIn("ultStorySaveButton",patched)
         self.assertIn("saveToGallery()",patched)
@@ -49,5 +56,5 @@ class StorySaveContract(TestCase):
         self.assertIn("feature/alpha14c-story-save-quick-action",scaffold)
         self.assertNotIn("feature/alpha14c-story-save-quick-action",android)
         policy=get("stories/src/com/yooshastan/ultmessenger/stories/UltStorySavePolicy.java")
-        self.assertIn("premium && publicShareAllowed",policy)
+        self.assertIn("(owner || publicShareAllowed)",policy)
         self.assertIn("!peerProtected",policy)

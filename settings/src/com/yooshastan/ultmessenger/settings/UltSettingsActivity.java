@@ -124,8 +124,8 @@ public final class UltSettingsActivity extends BaseFragment {
         addSection(context, content, "CHATS AND TOOLS");
         addNote(context, content, "Save eligible photo/video stories",
                 "While viewing a story, tap the new download icon beside the ⋮ menu. "
-                + "Uses Telegram Save to Gallery for your own or Premium-eligible, "
-                + "unprotected stories; the original file must be available.");
+                + "Downloads and saves your own or public/shareable, unprotected stories "
+                + "using Telegram FileLoader. No automatic bulk downloads.");
         addLink(context, content, "ULT chat layout presets",
                 "In Chat Settings, open the ⋮ menu → ULT Chat Layout",
                 () -> presentFragment(new ThemeActivity(ThemeActivity.THEME_TYPE_BASIC)));

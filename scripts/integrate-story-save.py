@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Inject a visible, policy-gated story Gallery save shortcut into pinned Mercurygram.
 
-This reuses PeerStoriesView.saveToGallery(), which delegates to the upstream
-MediaController for already-downloaded media. It does not unlock Premium,
-override noforwards, download missing story data or change network behavior.
+Uses native FileLoader for media already accessible to the current account,
+then Telegram's MediaController to save. It does not impersonate Premium,
+remove noforwards restrictions, access private stories or add new endpoints.
 """
 import argparse
 from pathlib import Path
@@ -25,26 +25,130 @@ VISIBILITY_ANCHOR = (
     "        }\n"
 )
 METHOD_ANCHOR = "    private void saveToGallery() {\n"
+DETACH_ANCHOR = (
+    "    @Override\n"
+    "    protected void onDetachedFromWindow() {\n"
+    "        super.onDetachedFromWindow();\n"
+    "        attachedToWindow = false;\n"
+)
 
-SAVE_VIEW = """        // Visible Ultgram save shortcut. Upstream SaveToGallery remains the
-        // sole media copy path; do not bypass screenshots/Premium restrictions.
+SAVE_VIEW = """        // Visible Ultgram save shortcut for locally accessible, unprotected
+        // own or public/shareable stories. Protected media stays unavailable.
         ultStorySaveButton = new ImageView(context);
         ultStorySaveButton.setImageResource(R.drawable.msg_gallery);
         ultStorySaveButton.setColorFilter(Color.WHITE);
         ultStorySaveButton.setPadding(dp(8), dp(8), dp(8), dp(8));
         ultStorySaveButton.setBackground(Theme.createSelectorDrawable(Color.WHITE));
-        ultStorySaveButton.setContentDescription("Save eligible story to gallery");
+        ultStorySaveButton.setContentDescription("Download and save eligible story");
         ultStorySaveButton.setVisibility(View.GONE);
         ultStorySaveButton.setOnClickListener(v -> {
             if (canUltSaveStory()) {
-                saveToGallery();
+                ultDownloadAndSaveStory();
             }
         });
         storyContainer.addView(ultStorySaveButton,
                 LayoutHelper.createFrame(40, 40, Gravity.RIGHT | Gravity.TOP, 2, 15, 42, 0));
 """
 
-SAVE_METHOD = """    private boolean canUltSaveStory() {
+SAVE_METHOD = """    private NotificationCenter.NotificationCenterDelegate ultStoryFileObserver;
+    private int ultStoryFileAccount = -1;
+
+    private void ultStopStoryDownloadObserver() {
+        if (ultStoryFileObserver != null && ultStoryFileAccount >= 0) {
+            NotificationCenter.getInstance(ultStoryFileAccount)
+                    .removeObserver(ultStoryFileObserver, NotificationCenter.fileLoaded);
+            NotificationCenter.getInstance(ultStoryFileAccount)
+                    .removeObserver(ultStoryFileObserver, NotificationCenter.fileLoadFailed);
+        }
+        ultStoryFileObserver = null;
+        ultStoryFileAccount = -1;
+    }
+
+    /**
+     * Reuses the current account's native FileLoader, never a new network
+     * endpoint. The user selects the story; no background story harvesting.
+     */
+    private void ultDownloadAndSaveStory() {
+        if (!canUltSaveStory()) return;
+        final File cached = currentStory.getPath();
+        if (cached != null && cached.isFile() && cached.length() > 0) {
+            saveToGallery();
+            return;
+        }
+        final TL_stories.StoryItem selected = currentStory.storyItem;
+        if (selected == null || selected.media == null) return;
+        final TLRPC.Document document = selected.media.getDocument();
+        final TLRPC.PhotoSize photoSize = document == null && selected.media.photo != null
+                ? FileLoader.getClosestPhotoSizeWithSize(selected.media.photo.sizes,
+                        Integer.MAX_VALUE) : null;
+        final String filename = document != null
+                ? FileLoader.getAttachFileName(document)
+                : photoSize != null ? FileLoader.getAttachFileName(photoSize) : null;
+        if (filename == null || filename.length() == 0) {
+            showDownloadAlert();
+            return;
+        }
+        ultStopStoryDownloadObserver();
+        final int selectedAccount = currentAccount;
+        final long selectedDialog = dialogId;
+        final boolean selectedVideo = currentStory.isVideo();
+        ultStoryFileAccount = selectedAccount;
+        ultStoryFileObserver = new NotificationCenter.NotificationCenterDelegate() {
+            @Override
+            public void didReceivedNotification(int id, int account, Object... args) {
+                if (account != selectedAccount || args.length < 1
+                        || !filename.equals(args[0])) return;
+                final File received = id == NotificationCenter.fileLoaded
+                        && args.length > 1 && args[1] instanceof File
+                        ? (File) args[1] : null;
+                ultStopStoryDownloadObserver();
+                // Never save a different story after fast account/story switching.
+                if (!attachedToWindow || currentAccount != selectedAccount
+                        || dialogId != selectedDialog || currentStory.storyItem != selected
+                        || !canUltSaveStory()) return;
+                if (id == NotificationCenter.fileLoaded) {
+                    final File output = received != null ? received : currentStory.getPath();
+                    if (output != null && output.isFile() && output.length() > 0) {
+                        MediaController.saveFile(output.toString(), getContext(),
+                                selectedVideo ? 1 : 0, null, null, uri -> {
+                                    if (attachedToWindow && currentAccount == selectedAccount
+                                            && currentStory.storyItem == selected) {
+                                        BulletinFactory.createSaveToGalleryBulletin(
+                                                storyContainer, selectedVideo, resourcesProvider)
+                                                .show();
+                                    }
+                                });
+                    } else {
+                        showDownloadAlert();
+                    }
+                } else if (id == NotificationCenter.fileLoadFailed) {
+                    android.widget.Toast.makeText(getContext(),
+                            "Story download failed. Check connection and retry.",
+                            android.widget.Toast.LENGTH_LONG).show();
+                }
+            }
+        };
+        final NotificationCenter center = NotificationCenter.getInstance(selectedAccount);
+        center.addObserver(ultStoryFileObserver, NotificationCenter.fileLoaded);
+        center.addObserver(ultStoryFileObserver, NotificationCenter.fileLoadFailed);
+        try {
+            if (document != null) {
+                FileLoader.getInstance(selectedAccount).loadFile(document, selected,
+                        FileLoader.PRIORITY_HIGH, 0);
+            } else {
+                FileLoader.getInstance(selectedAccount).loadFile(
+                        ImageLocation.getForPhoto(photoSize, selected.media.photo),
+                        selected, "jpg", FileLoader.PRIORITY_HIGH, 0);
+            }
+            android.widget.Toast.makeText(getContext(),
+                    "Downloading story for Gallery…", android.widget.Toast.LENGTH_SHORT).show();
+        } catch (RuntimeException error) {
+            ultStopStoryDownloadObserver();
+            showDownloadAlert();
+        }
+    }
+
+    private boolean canUltSaveStory() {
         if (currentStory == null) return false;
         final TL_stories.StoryItem item = currentStory.storyItem;
         final boolean available = item != null && item.media != null;
@@ -84,6 +188,8 @@ def patch_story_source(source: str) -> str:
     source = once(source, VISIBILITY_ANCHOR, VISIBILITY_ANCHOR +
                   "        ultStorySaveButton.setVisibility(canUltSaveStory() ? View.VISIBLE : View.GONE);\n")
     source = once(source, METHOD_ANCHOR, SAVE_METHOD + METHOD_ANCHOR)
+    source = once(source, DETACH_ANCHOR,
+                  DETACH_ANCHOR + "        ultStopStoryDownloadObserver();\n")
     return source
 
 
