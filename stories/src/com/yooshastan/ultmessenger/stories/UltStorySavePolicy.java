@@ -2,7 +2,8 @@ package com.yooshastan.ultmessenger.stories;
 
 /**
  * UI-only eligibility for the visible Ultgram story Gallery save shortcut.
- * Server Premium/account rules and content restrictions remain authoritative.
+ * Only user-visible own or public/shareable, unprotected media is locally saved.
+ * This changes no Telegram account entitlement or server authorization.
  */
 public final class UltStorySavePolicy {
     private UltStorySavePolicy() {}
@@ -13,6 +14,6 @@ public final class UltStorySavePolicy {
             boolean peerProtected) {
         return hasMedia && !skippedOrDeleted && !unsupported && !live
                 && screenshotsAllowed && !peerProtected
-                && (owner || (premium && publicShareAllowed));
+                && (owner || publicShareAllowed);
     }
 }

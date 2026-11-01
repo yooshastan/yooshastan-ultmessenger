@@ -28,6 +28,7 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
+import org.telegram.messenger.AutoDeleteMediaTask;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.ApplicationLoader;
@@ -94,6 +95,9 @@ public final class UltSettingsActivity extends BaseFragment {
         addLink(context, content, "Custom maximum cache size",
                 "Choose an exact 2–32 GB limit in 1 GB steps, or No Limit",
                 () -> showUltCacheLimit(context));
+        addLink(context, content, "Run cache maintenance now",
+                "Confirm one-time cleanup using your saved Telegram cache preferences",
+                () -> showUltCacheMaintenance(context));
         addLink(context, content, "Telegram storage usage and cleanup",
                 "Check cached files and manage storage without clearing automatically",
                 () -> presentFragment(new org.telegram.ui.CacheControlActivity()));
@@ -120,8 +124,8 @@ public final class UltSettingsActivity extends BaseFragment {
         addSection(context, content, "CHATS AND TOOLS");
         addNote(context, content, "Save eligible photo/video stories",
                 "While viewing a story, tap the new download icon beside the ⋮ menu. "
-                + "Uses Telegram Save to Gallery for your own or Premium-eligible, "
-                + "unprotected stories; the original file must be available.");
+                + "Downloads and saves your own or public/shareable, unprotected stories "
+                + "using Telegram FileLoader. No automatic bulk downloads.");
         addLink(context, content, "ULT chat layout presets",
                 "In Chat Settings, open the ⋮ menu → ULT Chat Layout",
                 () -> presentFragment(new ThemeActivity(ThemeActivity.THEME_TYPE_BASIC)));
@@ -493,8 +497,9 @@ public final class UltSettingsActivity extends BaseFragment {
         });
         content.addView(slider);
         final TextView hint = new TextView(context);
-        hint.setText("1 GB increments. Changing this affects future automatic "
-                + "cache cleanup; it does not immediately delete existing files.");
+        hint.setText("Applying a new maximum does not immediately delete existing files. "
+                + "Automatic cleanup normally runs once per 24 hours. "
+                + "Use Run cache maintenance now to check the limit sooner.");
         hint.setTextSize(13);
         content.addView(hint);
         new UltSecureDialogBuilder(context)
@@ -507,6 +512,30 @@ public final class UltSettingsActivity extends BaseFragment {
                         applyUltCacheLimit(context,
                                 slider.getProgress() + UltCacheLimitPolicy.MIN_GB))
                 .show();
+    }
+
+    /**
+     * Manual cleanup is explicit because Telegram normally throttles its own
+     * cache maintenance for 24 hours. This uses all existing retention rules.
+     */
+    private void showUltCacheMaintenance(Context context) {
+        final int limit = SharedConfig.getPreferences()
+                .getInt("cache_limit", Integer.MAX_VALUE);
+        new UltSecureDialogBuilder(context)
+                .setTitle("Run Telegram cache maintenance?")
+                .setMessage("Current limit: " + UltCacheLimitPolicy.label(limit)
+                        + ". Telegram will check its cache now and may delete "
+                        + "eligible media, including older cached files under "
+                        + "your Keep Media settings. This cannot be undone. "
+                        + "Excluded, in-use or Keep Forever media may remain. "
+                        + "The limit is not a hard real-time quota.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Run maintenance", (dialog, which) -> {
+                    AutoDeleteMediaTask.run(true);
+                    android.widget.Toast.makeText(context,
+                            "Cache maintenance scheduled. Check Storage Usage after cleanup.",
+                            android.widget.Toast.LENGTH_LONG).show();
+                }).show();
     }
 
     private void applyUltCacheLimit(Context context, int value) {

@@ -11,7 +11,7 @@ public final class UltStorySavePolicyTest {
     public static void main(String[] args) {
         check(allowed(true,false,false), "owner can save eligible own story");
         check(allowed(false,true,true), "premium can save eligible public story");
-        check(!allowed(false,false,true), "cannot bypass native Premium save restriction");
+        check(allowed(false,false,true), "non-Premium can locally save public shareable story");
         check(!allowed(false,true,false), "private/expired story must not be saved");
         check(!UltStorySavePolicy.eligible(true,false,false,false,false,true,true,true,false),
                 "noforwards story");

@@ -15,6 +15,10 @@ class CacheControl(TestCase):
             self.assertIn(item,s)
         self.assertIn("does not immediately delete existing files",s)
         self.assertNotIn('deleteRecursively(',s)
+        self.assertIn("Run cache maintenance now",s)
+        self.assertIn("AutoDeleteMediaTask.run(true);",s)
+        self.assertIn("Run maintenance",s)
+        self.assertIn("cannot be undone",s)
     def test_pinned_source_patch_inserts_only_current_selected_value(self):
         script=source("scripts/integrate-cache-limit.py")
         path=ROOT/"scripts/integrate-cache-limit.py"
@@ -38,6 +42,19 @@ class CacheControl(TestCase):
         with self.assertRaises(ValueError):mod.patch(out)
         with self.assertRaises(ValueError):mod.patch("no pinned anchor")
         self.assertNotIn("removeCache", script)
+        pinned_maintenance = (
+            "    public static void run() {\n"
+            "        int time = (int) (System.currentTimeMillis() / 1000);\n"
+            "        if (Math.abs(time - SharedConfig.lastKeepMediaCheckTime) < 24 * 60 * 60) {\n"
+            "            return;\n"
+            "        }\n"
+        )
+        after=mod.patch_maintenance(pinned_maintenance)
+        self.assertIn("public static void run(boolean force)",after)
+        self.assertIn("if (!force && Math.abs(time",after)
+        self.assertIn("run(false);",after)
+        with self.assertRaises(ValueError):mod.patch_maintenance(after)
+        with self.assertRaises(ValueError):mod.patch_maintenance("changed source")
     def test_integration_only_during_android_build(self):
         script=source("scripts/integrate-ult-settings.py")
         workflow=source(".github/workflows/android-alpha.yml")
