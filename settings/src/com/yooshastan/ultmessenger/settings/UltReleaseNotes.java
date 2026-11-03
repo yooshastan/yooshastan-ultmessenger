@@ -3,7 +3,7 @@ package com.yooshastan.ultmessenger.settings;
 /** Source-owned, truthful release notes for the 0.13c+d candidate. */
 public final class UltReleaseNotes {
     public static final String PREFERENCES = "ult_release_notes";
-    public static final String DISPLAY_VERSION = "Ultgram Alpha 0.14 cache and stories RC2";
+    public static final String DISPLAY_VERSION = "Ultgram Alpha 0.14 download controls RC1";
 
     private UltReleaseNotes() {}
 
@@ -21,6 +21,13 @@ public final class UltReleaseNotes {
 
     public static String message(String androidVersion) {
         return "WHAT'S NEW\n\n"
+                + "• NEW: Ultgram Settings → Downloads has Pause all, Resume all, "
+                + "mobile/Wi-Fi/roaming network rules, and confirmed Clear "
+                + "history without deleting files. Long-press a queued file "
+                + "to pause/resume or move it to the top.\n"
+                + "• Story menu: ⋮ → ULT: Download story is separate from "
+                + "Telegram's Premium-locked Save to Gallery. Restricted "
+                + "stories show an explanation instead of silently failing.\n"
                 + "• FIX: Maximum cache size now offers a confirmed Run cache "
                 + "maintenance now action to apply existing Telegram cleanup "
                 + "without waiting for its normal 24-hour check.\n"
