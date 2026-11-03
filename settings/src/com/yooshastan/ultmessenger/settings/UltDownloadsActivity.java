@@ -77,17 +77,13 @@ public final class UltDownloadsActivity extends BaseFragment
         final LinearLayout toolbar = new LinearLayout(context);
         toolbar.setOrientation(LinearLayout.HORIZONTAL);
         toolbar.setPadding(AndroidUtilities.dp(8), 0, AndroidUtilities.dp(8), 0);
+        // One native download screen; keep everyday actions visible and
+        // move one-off maintenance into a single More dialog.
         addToolbarButton(context, toolbar, "Pause all", () -> {
             final int changed = UltDownloadActions.pauseAll(currentAccount);
             downloads.update(true);
             showDownloadToast(changed == 0 ? "No active downloads to pause"
                     : "Paused " + changed + " downloads");
-        });
-        addToolbarButton(context, toolbar, "Resume all", () -> {
-            final int changed = UltDownloadActions.resumeAll(currentAccount);
-            downloads.update(true);
-            showDownloadToast(changed == 0 ? "No queued downloads to resume"
-                    : "Resumed " + changed + " downloads");
         });
         addToolbarButton(context, toolbar, "Resume next", () -> {
             final boolean started = UltDownloadActions.resumeNext(currentAccount);
@@ -95,41 +91,10 @@ public final class UltDownloadsActivity extends BaseFragment
             showDownloadToast(started ? "Resumed the next queued download"
                     : "No paused document downloads in queue");
         });
-        addToolbarButton(context, toolbar, "Queue status", () -> {
-            final int[] counts = UltDownloadActions.queueCounts(currentAccount);
-            final Activity activity = getParentActivity();
-            if (activity == null) return;
-            showSecureDialog(activity, new android.app.AlertDialog.Builder(activity)
-                    .setTitle("Download queue status")
-                    .setMessage("Active: " + counts[0] + "\\nPaused: " + counts[1]
-                            + "\\nRecent history: " + counts[2]
-                            + "\\n\\nCounts are for this Telegram account. "
-                            + "The native download queue manages transfer scheduling.")
-                    .setNeutralButton("Copy counts", (dialog, ignored) -> {
-                        final android.content.ClipboardManager clipboard =
-                                (android.content.ClipboardManager) activity.getSystemService(
-                                        Context.CLIPBOARD_SERVICE);
-                        if (clipboard != null) {
-                            clipboard.setPrimaryClip(android.content.ClipData.newPlainText(
-                                    "Ultgram queue counts",
-                                    "Active: " + counts[0] + ", paused: " + counts[1]
-                                            + ", recent: " + counts[2]));
-                            showDownloadToast("Queue counts copied");
-                        }
-                    })
-                    .setPositiveButton("OK", null));
-        });
-        addToolbarButton(context, toolbar, "Media Studio", () -> presentFragment(new UltMediaStudioActivity()));
-        addToolbarButton(context, toolbar, "Storage usage", () -> presentFragment(new org.telegram.ui.CacheControlActivity()));
         addToolbarButton(context, toolbar, "Network rules", this::showAutoDownloadRules);
-        addToolbarButton(context, toolbar, "Clear history", this::confirmClearHistory);
-        addToolbarButton(context, toolbar, "Forget save location", () -> {
-            final Activity activity = getParentActivity();
-            if (activity == null) return;
-            activity.getSharedPreferences(SAVE_PREFS, Context.MODE_PRIVATE).edit()
-                    .remove(lastSaveKey(currentAccount)).apply();
-            showDownloadToast("Last Save As location forgotten for this account");
-        });
+        addToolbarButton(context, toolbar, "Storage", () ->
+                presentFragment(new org.telegram.ui.CacheControlActivity()));
+        addToolbarButton(context, toolbar, "More", this::showMoreDownloadsActions);
         scroll.addView(toolbar);
         column.addView(scroll, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -157,14 +122,65 @@ public final class UltDownloadsActivity extends BaseFragment
         if (activity != null) Toast.makeText(activity, message, Toast.LENGTH_SHORT).show();
     }
 
+    private void showMoreDownloadsActions() {
+        final Activity activity = getParentActivity();
+        if (activity == null) return;
+        showSecureDialog(activity, new android.app.AlertDialog.Builder(activity)
+                .setTitle("More download actions")
+                .setItems(new String[]{"Resume all", "Queue status",
+                        "Clear recent history", "Forget Save As location"},
+                        (dialog, choice) -> {
+                            switch (choice) {
+                                case 0:
+                                    final int changed = UltDownloadActions.resumeAll(currentAccount);
+                                    if (downloads != null) downloads.update(true);
+                                    showDownloadToast(changed == 0
+                                            ? "No queued downloads to resume"
+                                            : "Resumed " + changed + " downloads");
+                                    break;
+                                case 1: showQueueStatus(); break;
+                                case 2: confirmClearHistory(); break;
+                                case 3:
+                                    activity.getSharedPreferences(SAVE_PREFS, Context.MODE_PRIVATE)
+                                            .edit().remove(lastSaveKey(currentAccount)).apply();
+                                    showDownloadToast("Last Save As location forgotten for this account");
+                                    break;
+                                default: break;
+                            }
+                        })
+                .setNegativeButton("Cancel", null));
+    }
+
+    private void showQueueStatus() {
+        final Activity activity = getParentActivity();
+        if (activity == null) return;
+        final int[] counts = UltDownloadActions.queueCounts(currentAccount);
+        showSecureDialog(activity, new android.app.AlertDialog.Builder(activity)
+                .setTitle("Download queue status")
+                .setMessage("Active: " + counts[0] + "\\nPaused: " + counts[1]
+                        + "\\nRecent history: " + counts[2]
+                        + "\\n\\nCounts are for this Telegram account. "
+                        + "Telegram's download queue controls scheduling.")
+                .setNeutralButton("Copy counts", (dialog, which) -> {
+                    android.content.ClipboardManager clipboard =
+                            (android.content.ClipboardManager) activity.getSystemService(
+                                    Context.CLIPBOARD_SERVICE);
+                    if (clipboard != null) {
+                        clipboard.setPrimaryClip(android.content.ClipData.newPlainText(
+                                "Ultgram queue counts",
+                                "Active: " + counts[0] + ", paused: " + counts[1]
+                                        + ", recent: " + counts[2]));
+                        showDownloadToast("Queue counts copied");
+                    }
+                })
+                .setPositiveButton("OK", null));
+    }
+
     private void showAutoDownloadRules() {
         final Activity activity = getParentActivity();
         if (activity == null) return;
         showSecureDialog(activity, new android.app.AlertDialog.Builder(activity)
                 .setTitle("Automatic media downloads")
-                .setMessage("Control photos, videos, stories and documents separately "
-                        + "on mobile data, Wi-Fi or roaming. Telegram's existing "
-                        + "per-network rules determine automatic transfers.")
                 .setItems(new String[]{"Mobile data", "Wi-Fi", "Roaming"},
                         (dialog, choice) -> presentFragment(
                                 new org.telegram.ui.DataAutoDownloadActivity(choice)))
