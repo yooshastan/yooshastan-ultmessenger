@@ -7,7 +7,7 @@ def source(path):return (ROOT/path).read_text(encoding="utf-8")
 class CacheControl(TestCase):
     def test_real_telegram_preference_and_explicit_save_only(self):
         s=source("settings/src/com/yooshastan/ultmessenger/settings/UltSettingsActivity.java")
-        for item in ("Custom maximum cache size", "STORAGE AND CACHE",
+        for item in ("Maximum cache size", "DOWNLOADS AND STORAGE",
                      "showUltCacheLimit(context)", "new android.widget.SeekBar(context)",
                      'getInt("cache_limit", Integer.MAX_VALUE)',
                      'putInt("cache_limit", value).apply()', "No Limit",
