@@ -21,6 +21,7 @@ CONSTANTS = """    public final static int OPTION_ULT_COPY_MESSAGE_ID = 0x554c56
     public final static int OPTION_ULT_COPY_MESSAGE_REFERENCE = 0x554c5d;
     public final static int OPTION_ULT_COPY_FILENAME = 0x554c5e;
     public final static int OPTION_ULT_COPY_MEDIA_CITATION = 0x554c5f;
+    public final static int OPTION_ULT_COPY_PUBLIC_MESSAGE_MARKDOWN = 0x554c60;
 """
 MENU = """        // ULT: local read-only metadata; never copy private message content.
         if (selectedObject != null && selectedObject.messageOwner != null
@@ -52,6 +53,9 @@ MENU = """        // ULT: local read-only metadata; never copy private message c
                         ChatObject.getPublicUsername(currentChat), selectedObject.getId()) != null) {
                 items.add("ULT: Copy public message link");
                 options.add(OPTION_ULT_COPY_PUBLIC_MESSAGE_LINK);
+                icons.add(R.drawable.msg_copy);
+                items.add("ULT: Copy public message link (Markdown)");
+                options.add(OPTION_ULT_COPY_PUBLIC_MESSAGE_MARKDOWN);
                 icons.add(R.drawable.msg_copy);
             }
             if (selectedObject.getDocument() != null) {
@@ -152,6 +156,21 @@ HANDLERS = """            case OPTION_ULT_COPY_FILENAME: {
                     AndroidUtilities.addToClipboard(isoUtc);
                     android.widget.Toast.makeText(getParentActivity(), "UTC timestamp copied",
                             android.widget.Toast.LENGTH_SHORT).show();
+                }
+                break;
+            }
+            case OPTION_ULT_COPY_PUBLIC_MESSAGE_MARKDOWN: {
+                // Public channel/supergroup only; recheck protection at tap time.
+                if (selectedObject != null && !selectedObject.isSponsored()
+                        && currentEncryptedChat == null && currentChat != null
+                        && ChatObject.isChannel(currentChat) && selectedObject.getId() > 0) {
+                    final String markdown = UltChatTools.publicMessageMarkdown(
+                            ChatObject.getPublicUsername(currentChat), selectedObject.getId());
+                    if (markdown != null) {
+                        AndroidUtilities.addToClipboard(markdown);
+                        android.widget.Toast.makeText(getParentActivity(),
+                                "Public Markdown link copied", android.widget.Toast.LENGTH_SHORT).show();
+                    }
                 }
                 break;
             }
