@@ -128,7 +128,7 @@ public final class UltDownloadsActivity extends BaseFragment
         showSecureDialog(activity, new android.app.AlertDialog.Builder(activity)
                 .setTitle("More download actions")
                 .setItems(new String[]{"Resume all", "Queue status",
-                        "Clear recent history", "Forget Save As location"},
+                        "Clear recent history", "Forget save location"},
                         (dialog, choice) -> {
                             switch (choice) {
                                 case 0:
@@ -157,9 +157,9 @@ public final class UltDownloadsActivity extends BaseFragment
         final int[] counts = UltDownloadActions.queueCounts(currentAccount);
         showSecureDialog(activity, new android.app.AlertDialog.Builder(activity)
                 .setTitle("Download queue status")
-                .setMessage("Active: " + counts[0] + "\\nPaused: " + counts[1]
-                        + "\\nRecent history: " + counts[2]
-                        + "\\n\\nCounts are for this Telegram account. "
+                .setMessage("Active: " + counts[0] + "\nPaused: " + counts[1]
+                        + "\nRecent history: " + counts[2]
+                        + "\n\nCounts are for this Telegram account. "
                         + "Telegram's download queue controls scheduling.")
                 .setNeutralButton("Copy counts", (dialog, which) -> {
                     android.content.ClipboardManager clipboard =
