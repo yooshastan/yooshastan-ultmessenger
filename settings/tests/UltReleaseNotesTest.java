@@ -11,10 +11,14 @@ public final class UltReleaseNotesTest {
         ok(!UltReleaseNotes.seenKey(a).equals(UltReleaseNotes.seenKey("4.0.1 (code 49)")),
                 "upgrade reopens changelog");
         String message = UltReleaseNotes.message(a);
-        for (String fragment : new String[] {"Save As", "Downloads", "4.0.0",
-                "Debug-signed", "protected media", "0.13c+d", "0.14a+b", "0.14c", "0.14d+", "Stabilization", "cache", "Gallery", "ULT: Download story", "Pause all", "SHA-256", "Preview colors", "Verify saved copy", "bubble corners"}) {
-            ok(message.contains(fragment), "missing changelog detail: " + fragment);
+        for (String fragment : new String[] {
+                "Downloads", "More", "strict", "translation", "Network diagnostics",
+                "DoQ", "tracker", "debug-signed", "protected media", "4.0.0"
+        }) {
+            ok(message.contains(fragment), "missing concise release note: " + fragment);
         }
+        ok(!message.contains("Media Studio:"), "retired duplicate screen is not advertised");
+        ok(!message.contains("0.13c+d"), "legacy changelog details are not repeated");
         System.out.println("Ultgram release notes policy passed");
     }
 }
