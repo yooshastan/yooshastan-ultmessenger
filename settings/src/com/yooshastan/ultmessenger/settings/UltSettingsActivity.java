@@ -624,9 +624,15 @@ public final class UltSettingsActivity extends BaseFragment {
     }
 
     private void showLocalIdentityCover(Context context) {
-        final boolean covered = UltIdentityCover.isCovered(
-                context.getSharedPreferences(UltIdentityCover.PREFS, Context.MODE_PRIVATE)
-                        .getBoolean(UltIdentityCover.key(currentAccount), true));
+        showLocalIdentityCover(context, false);
+    }
+
+    /** A temporary reveal never persists an uncovered identity across sessions. */
+    private void showLocalIdentityCover(Context context, boolean revealOnce) {
+        final boolean savedCovered = context.getSharedPreferences(
+                UltIdentityCover.PREFS, Context.MODE_PRIVATE)
+                .getBoolean(UltIdentityCover.key(currentAccount), true);
+        final boolean covered = savedCovered && !revealOnce;
         final TLRPC.User myself = UserConfig.getInstance(currentAccount).getCurrentUser();
         final String username = myself == null ? null : myself.username;
         final String phone = myself == null ? null : myself.phone;
@@ -634,16 +640,21 @@ public final class UltSettingsActivity extends BaseFragment {
         new UltSecureDialogBuilder(context)
                 .setTitle("Local Ultgram Settings account card")
                 .setMessage(display + "\n\nThis card exists only inside Ultgram Settings. "
+                        + "A one-time reveal closes when this dialog closes. "
                         + "It does not hide your identity from Telegram, contacts, "
                         + "notifications, other client screens or network peers.")
-                .setNeutralButton(covered ? "Reveal in this card" : "Cover this card",
-                        (dialog, which) -> {
-                            context.getSharedPreferences(UltIdentityCover.PREFS,
-                                    Context.MODE_PRIVATE).edit()
-                                    .putBoolean(UltIdentityCover.key(currentAccount), !covered)
-                                    .apply();
-                            showLocalIdentityCover(context);
-                        })
+                .setNeutralButton(savedCovered
+                        ? (revealOnce ? "Cover now" : "Reveal once")
+                        : "Enable persistent cover", (dialog, which) -> {
+                    if (savedCovered) {
+                        showLocalIdentityCover(context, !revealOnce);
+                    } else {
+                        context.getSharedPreferences(UltIdentityCover.PREFS,
+                                Context.MODE_PRIVATE).edit()
+                                .putBoolean(UltIdentityCover.key(currentAccount), true).apply();
+                        showLocalIdentityCover(context);
+                    }
+                })
                 .setPositiveButton("Done", null).show();
     }
 
