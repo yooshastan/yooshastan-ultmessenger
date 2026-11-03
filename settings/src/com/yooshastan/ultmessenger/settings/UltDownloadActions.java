@@ -64,6 +64,34 @@ public final class UltDownloadActions {
         return resumed;
     }
 
+    /** Resume only the first paused queued document, leaving the rest paused. */
+    public static boolean resumeNext(int account) {
+        final FileLoader loader = FileLoader.getInstance(account);
+        for (MessageObject message : queue(account)) {
+            final TLRPC.Document document = message.getDocument();
+            if (document != null && !loader.isLoadingFile(message.getFileName())) {
+                message.putInDownloadsStore = true;
+                loader.loadFile(document, message, FileLoader.PRIORITY_LOW, 0);
+                DownloadController.getInstance(account).updateFilesLoadingPriority();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Snapshot of the native queue; no media content or file names exposed. */
+    public static int[] queueCounts(int account) {
+        final FileLoader loader = FileLoader.getInstance(account);
+        int running = 0;
+        int paused = 0;
+        for (MessageObject message : queue(account)) {
+            if (message.getDocument() == null) continue;
+            if (loader.isLoadingFile(message.getFileName())) running++;
+            else paused++;
+        }
+        return new int[]{running, paused, recentCount(account)};
+    }
+
     public static boolean pauseOne(int account, MessageObject message) {
         if (!isRunning(account, message)) return false;
         FileLoader.getInstance(account).cancelLoadFile(message.getDocument());
