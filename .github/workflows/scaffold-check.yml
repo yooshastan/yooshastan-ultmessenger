@@ -150,3 +150,18 @@ jobs:
           java -cp "$classes" UltChatViewTest
           javac -d "$classes" chat/src/com/yooshastan/ultmessenger/chat/UltChatTools.java chat/tests/UltChatToolsTest.java
           java -cp "$classes" UltChatToolsTest
+
+      - name: Beta quality pass — all owned settings contracts
+        if: github.ref == 'refs/heads/feature/beta01-quality-trim' || github.head_ref == 'feature/beta01-quality-trim'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests -v
+          python3 -m unittest discover -s settings/tests -p 'test_*.py' -v
+          python3 -m unittest discover -s proxy/tests -p 'test_*.py' -v
+          classes="$(mktemp -d)"
+          trap 'rm -rf "$classes"' EXIT
+          javac -d "$classes" settings/src/com/yooshastan/ultmessenger/settings/UltReleaseNotes.java settings/tests/UltReleaseNotesTest.java
+          java -cp "$classes" UltReleaseNotesTest
+          javac -d "$classes" settings/src/com/yooshastan/ultmessenger/settings/UltPrivacySession.java settings/tests/UltPrivacySessionTest.java
+          java -cp "$classes" UltPrivacySessionTest
