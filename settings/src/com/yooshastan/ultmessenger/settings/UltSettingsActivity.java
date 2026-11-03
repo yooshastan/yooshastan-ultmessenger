@@ -87,6 +87,12 @@ public final class UltSettingsActivity extends BaseFragment {
         addLink(context, content, "What's New / build information",
                 "Alpha 0.16 chat, message, privacy and download changes",
                 () -> showUltWhatsNew(context));
+        addLink(context, content, "Privacy Lab",
+                "Live transport and native proxy-state timeline, redacted report; no packet capture",
+                () -> presentFragment(new UltPrivacyLabActivity()));
+        addLink(context, content, "Media Studio",
+                "Search and sort locally cached eligible recent downloads by media type",
+                () -> presentFragment(new UltMediaStudioActivity()));
         addLink(context, content, "Downloads",
                 "Pause/resume, prioritize, network rules, history and file tools",
                 () -> presentFragment(new UltDownloadsActivity()));
