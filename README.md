@@ -1,5 +1,8 @@
 # Yooshastan ULT Messenger
 
+> **Alpha 0.14 Downloads Control + Story Menu RC1:** User-facing Pause all / Resume all, per-network auto-download rules, confirmable history clearing that does not delete files, per-file queue priority, and a visible **⋮ → ULT: Download story** action distinct from Telegram's original Premium lock. Source tests, full Android build, signing verification and device QA are separate gates. [Combined QA](docs/ALPHA14_DOWNLOAD_STORY_RC1_QA.md).
+
+
 > **Downloads control center (feature branch):** Top-row Pause all, Resume all, network-specific automatic download settings and **Clear history** (history only, no file deletion). Long-press a queued document to pause/resume or move it to the top; existing protected-media checks and file tools remain intact. Reuses native Telegram FileLoader/DownloadController, not another downloader. [QA and safety](docs/ALPHA14_DOWNLOAD_CONTROL.md).
 
 

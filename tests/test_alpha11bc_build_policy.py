@@ -12,11 +12,11 @@ class BatchBuildPolicy(TestCase):
     def test_android_only_on_combined_candidate_or_dispatch(self):
         wf = ANDROID.read_text()
         triggers = wf.split("\nconcurrency:", 1)[0]
-        self.assertRegex(triggers, r"branches: \[release/(?:alpha(?:11bc|12ab|12cd|13ab|13cd|14ab|14c|14def|14st|14cache)-combined-rc1|alpha14cache-storyfix-rc2)\]")
+        self.assertRegex(triggers, r"branches: \[release/(?:alpha(?:11bc|12ab|12cd|13ab|13cd|14ab|14c|14def|14st|14cache)-combined-rc1|alpha14cache-storyfix-rc2|alpha14download-story-rc1)\]")
         self.assertNotIn("feature/alpha11bc-batched", triggers)
         self.assertIn("workflow_dispatch:", triggers)
-        self.assertRegex(wf, r"ult-(?:alpha(?:11bc|12ab|12cd|13ab|13cd|14ab|14c|14def|14st|14cache)-combined|alpha14cache-storyfix)-foss-arm64-debug\.apk")
-        self.assertRegex(wf, r"ult-(?:alpha(?:11bc|12ab|12cd|13ab|13cd|14ab|14c|14def|14st|14cache)-combined|alpha14cache-storyfix)-foss-android")
+        self.assertRegex(wf, r"ult-(?:alpha(?:11bc|12ab|12cd|13ab|13cd|14ab|14c|14def|14st|14cache)-combined|alpha14cache-storyfix|alpha14download-story)-foss-arm64-debug\.apk")
+        self.assertRegex(wf, r"ult-(?:alpha(?:11bc|12ab|12cd|13ab|13cd|14ab|14c|14def|14st|14cache)-combined|alpha14cache-storyfix|alpha14download-story)-foss-android")
         self.assertIn("SHA256SUMS", wf)
         self.assertIn("BUILD_INFO.txt", wf)
         self.assertIn("python3 scripts/integrate-native-strict.py", wf)
