@@ -3,7 +3,7 @@ package com.yooshastan.ultmessenger.settings;
 /** Source-owned, truthful release notes for the 0.13c+d candidate. */
 public final class UltReleaseNotes {
     public static final String PREFERENCES = "ult_release_notes";
-    public static final String DISPLAY_VERSION = "Ultgram Alpha 0.16 combined RC1";
+    public static final String DISPLAY_VERSION = "Ultgram Beta 0.1 Privacy + Media RC1";
 
     private UltReleaseNotes() {}
 
@@ -21,6 +21,17 @@ public final class UltReleaseNotes {
 
     public static String message(String androidVersion) {
         return "WHAT'S NEW\n\n"
+                + "BETA 0.1 PRIVACY + MEDIA (INTERNAL TEST)\n"
+                + "• Privacy Lab: live, screen-scoped Android transport, native "
+                + "strict proxy and Telegram connection-state observations, "
+                + "with a bounded in-memory timeline and redacted copy report. "
+                + "No packets are captured or routes verified.\n"
+                + "• Media Studio: eligible cached Recent Downloads with filename "
+                + "search, media type filters and date/size/name sorting. "
+                + "Original queue, per-network rules and SAF Save As remain. "
+                + "Photo-only messages and older cache files are not indexed.\n"
+                + "• Strict proxy and translation remain unchanged. "
+                + "Debug-signed internal beta candidate.\n\n"
                 + "ALPHA 0.16 COMBINED\n"
                 + "• Chats: category labels now have six per-account font sizes "
                 + "(11–18 sp), and Mentions First is a local sorting preset "
