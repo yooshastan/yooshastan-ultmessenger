@@ -39,7 +39,7 @@ class Alpha13CD(TestCase):
         ci = source(".github/workflows/android-alpha.yml")
         self.assertIn('printf \'%s\\n\' "Candidate: Ultgram Alpha ', ci)
         self.assertNotIn("printf 'Candidate: Ultgram Alpha 0.13c+d What's New", ci)
-        self.assertRegex(ci, r"ult-alpha(?:14download-story|15-download-queue)-foss-arm64-debug\\.apk")
+        self.assertRegex(ci, r"ult-alpha(?:14download-story|15-download-queue)-foss-arm64-debug\.apk")
         self.assertIn("SHA256SUMS", ci)
         self.assertIn("BUILD_INFO.txt", ci)
 
