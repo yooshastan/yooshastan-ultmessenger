@@ -3,7 +3,7 @@ package com.yooshastan.ultmessenger.settings;
 /** Source-owned, truthful release notes for the 0.13c+d candidate. */
 public final class UltReleaseNotes {
     public static final String PREFERENCES = "ult_release_notes";
-    public static final String DISPLAY_VERSION = "Ultgram Alpha 0.14 download controls RC1";
+    public static final String DISPLAY_VERSION = "Ultgram Alpha 0.16 combined RC1";
 
     private UltReleaseNotes() {}
 
@@ -21,6 +21,21 @@ public final class UltReleaseNotes {
 
     public static String message(String androidVersion) {
         return "WHAT'S NEW\n\n"
+                + "ALPHA 0.16 COMBINED\n"
+                + "• Chats: category labels now have six per-account font sizes "
+                + "(11–18 sp), and Mentions First is a local sorting preset "
+                + "that keeps pinned dialogs above mentions. Existing preview "
+                + "density and dedicated category swipe controls remain.\n"
+                + "• Messages: long-press → ULT: Copy metadata (JSON) copies "
+                + "only IDs, UTC time and an eligible public link; never text "
+                + "or private chat permalinks. Telegram's native search remains.\n"
+                + "• Privacy: Local account card Reveal Once does not persist "
+                + "unmasked information. Existing link confirmation and proxy "
+                + "controls remain unchanged; this is not network anonymity.\n"
+                + "• Downloads: Save As can suggest the last system-picker location "
+                + "for this account, with Forget save location in Downloads. "
+                + "Every save still requires the Android picker and confirmation.\n\n"
+                + "PREVIOUS ALPHA FEATURES\n"
                 + "• NEW: Ultgram Settings → Downloads has Pause all, Resume all, "
                 + "mobile/Wi-Fi/roaming network rules, and confirmed Clear "
                 + "history without deleting files. Long-press a queued file "
