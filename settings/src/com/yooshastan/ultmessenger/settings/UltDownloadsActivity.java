@@ -6,6 +6,10 @@ import android.content.Intent;
 import android.net.Uri;
 import android.view.View;
 import android.widget.Toast;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.HorizontalScrollView;
+import java.util.ArrayList;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -58,8 +62,92 @@ public final class UltDownloadsActivity extends BaseFragment
         downloads = new SearchDownloadsContainer(this, currentAccount);
         downloads.setUiCallback(this);
         downloads.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
-        fragmentView = downloads;
+
+        // Native SearchDownloadsContainer continues to own progress, history,
+        // drag-to-reorder and message taps. These visible shortcuts call only
+        // Telegram's own FileLoader/DownloadController for this account.
+        final LinearLayout column = new LinearLayout(context);
+        column.setOrientation(LinearLayout.VERTICAL);
+        column.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+        final HorizontalScrollView scroll = new HorizontalScrollView(context);
+        scroll.setHorizontalScrollBarEnabled(false);
+        final LinearLayout toolbar = new LinearLayout(context);
+        toolbar.setOrientation(LinearLayout.HORIZONTAL);
+        toolbar.setPadding(AndroidUtilities.dp(8), 0, AndroidUtilities.dp(8), 0);
+        addToolbarButton(context, toolbar, "Pause all", () -> {
+            final int changed = UltDownloadActions.pauseAll(currentAccount);
+            downloads.update(true);
+            showDownloadToast(changed == 0 ? "No active downloads to pause"
+                    : "Paused " + changed + " downloads");
+        });
+        addToolbarButton(context, toolbar, "Resume all", () -> {
+            final int changed = UltDownloadActions.resumeAll(currentAccount);
+            downloads.update(true);
+            showDownloadToast(changed == 0 ? "No queued downloads to resume"
+                    : "Resumed " + changed + " downloads");
+        });
+        addToolbarButton(context, toolbar, "Network rules", this::showAutoDownloadRules);
+        addToolbarButton(context, toolbar, "Clear history", this::confirmClearHistory);
+        scroll.addView(toolbar);
+        column.addView(scroll, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT));
+        column.addView(downloads, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
+        fragmentView = column;
         return fragmentView;
+    }
+
+    private void addToolbarButton(Context context, LinearLayout bar,
+                                  String text, Runnable action) {
+        final Button button = new Button(context);
+        button.setText(text);
+        button.setAllCaps(false);
+        button.setTextSize(12f);
+        button.setMinHeight(AndroidUtilities.dp(44));
+        button.setOnClickListener(view -> action.run());
+        bar.addView(button, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, AndroidUtilities.dp(48)));
+    }
+
+    private void showDownloadToast(String message) {
+        final Activity activity = getParentActivity();
+        if (activity != null) Toast.makeText(activity, message, Toast.LENGTH_SHORT).show();
+    }
+
+    private void showAutoDownloadRules() {
+        final Activity activity = getParentActivity();
+        if (activity == null) return;
+        showSecureDialog(activity, new android.app.AlertDialog.Builder(activity)
+                .setTitle("Automatic media downloads")
+                .setMessage("Control photos, videos, stories and documents separately "
+                        + "on mobile data, Wi-Fi or roaming. Telegram's existing "
+                        + "per-network rules determine automatic transfers.")
+                .setItems(new String[]{"Mobile data", "Wi-Fi", "Roaming"},
+                        (dialog, choice) -> presentFragment(
+                                new org.telegram.ui.DataAutoDownloadActivity(choice)))
+                .setNegativeButton("Cancel", null));
+    }
+
+    private void confirmClearHistory() {
+        final Activity activity = getParentActivity();
+        if (activity == null) return;
+        final int count = UltDownloadActions.recentCount(currentAccount);
+        if (count == 0) {
+            showDownloadToast("Recent download history is already empty");
+            return;
+        }
+        showSecureDialog(activity, new android.app.AlertDialog.Builder(activity)
+                .setTitle("Clear recent download history?")
+                .setMessage("Remove " + count + " entries from Recent Downloads? "
+                        + "This only removes history entries. It does NOT delete "
+                        + "downloaded files or cancel active transfers.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Clear history", (dialog, ignored) -> {
+                    UltDownloadActions.clearHistory(currentAccount);
+                    if (downloads != null) downloads.update(true);
+                    showDownloadToast("Recent download history cleared");
+                }));
     }
 
     @Override
@@ -138,23 +226,51 @@ public final class UltDownloadsActivity extends BaseFragment
         dialog.show();
     }
 
-    /** Explicit choices for a downloaded, permitted document, no automatic export. */
+    /** One file at a time. Pause/priority controls do not export its content. */
     private void showDocumentActions(MessageObject message) {
         final Activity activity = getParentActivity();
-        if (activity == null) return;
-        if (!isExportAllowed(message, currentAccount)) {
-            Toast.makeText(activity, "This document is protected or unavailable",
-                    Toast.LENGTH_LONG).show();
+        if (activity == null || message == null || message.getDocument() == null) return;
+        final boolean queued = UltDownloadActions.isQueued(currentAccount, message);
+        final boolean export = isExportAllowed(message, currentAccount);
+        if (!queued && !export) {
+            showDownloadToast("This document is protected or unavailable");
             return;
         }
+        final ArrayList<String> labels = new ArrayList<>();
+        final ArrayList<Runnable> actions = new ArrayList<>();
+        if (queued) {
+            final boolean running = UltDownloadActions.isRunning(currentAccount, message);
+            labels.add(running ? "Pause this download" : "Resume this download");
+            actions.add(() -> {
+                final boolean succeeded = running
+                        ? UltDownloadActions.pauseOne(currentAccount, message)
+                        : UltDownloadActions.resumeOne(currentAccount, message);
+                if (downloads != null) downloads.update(true);
+                showDownloadToast(succeeded
+                        ? (running ? "Download paused" : "Download resumed")
+                        : "This download is no longer queued");
+            });
+            labels.add("Move to top of queue");
+            actions.add(() -> {
+                final boolean succeeded = UltDownloadActions.moveToTop(currentAccount, message);
+                if (downloads != null) downloads.update(true);
+                showDownloadToast(succeeded
+                        ? "Moved to top of download queue" : "Already first or no longer queued");
+            });
+        }
+        if (export) {
+            labels.add("Inspect file and SHA-256");
+            actions.add(() -> inspectDocument(message));
+            labels.add("Save As…");
+            actions.add(() -> showSaveAs(message));
+            labels.add("Verify saved copy…");
+            actions.add(() -> chooseFileToVerify(message));
+        }
         showSecureDialog(activity, new android.app.AlertDialog.Builder(activity)
-                .setTitle("ULT document tools")
-                .setItems(new String[]{"Inspect file and SHA-256", "Save As…", "Verify saved copy…"},
-                        (dialog, option) -> {
-                            if (option == 0) inspectDocument(message);
-                            else if (option == 1) showSaveAs(message);
-                            else if (option == 2) chooseFileToVerify(message);
-                        })
+                .setTitle("ULT download controls")
+                .setItems(labels.toArray(new String[0]), (dialog, option) -> {
+                    if (option >= 0 && option < actions.size()) actions.get(option).run();
+                })
                 .setNegativeButton("Cancel", null));
     }
 

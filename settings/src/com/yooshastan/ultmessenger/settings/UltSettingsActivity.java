@@ -88,7 +88,7 @@ public final class UltSettingsActivity extends BaseFragment {
                 "See Alpha 0.14d+ verification, appearance and privacy changes",
                 () -> showUltWhatsNew(context));
         addLink(context, content, "Downloads",
-                "Inspect, Save As and verify a user-selected downloaded copy",
+                "Pause/resume, prioritize, network rules, history and file tools",
                 () -> presentFragment(new UltDownloadsActivity()));
 
         addSection(context, content, "STORAGE AND CACHE");
@@ -123,8 +123,9 @@ public final class UltSettingsActivity extends BaseFragment {
 
         addSection(context, content, "CHATS AND TOOLS");
         addNote(context, content, "Save eligible photo/video stories",
-                "While viewing a story, tap the new download icon beside the ⋮ menu. "
-                + "Downloads and saves your own or public/shareable, unprotected stories "
+                "Open the story ⋮ menu → ULT: Download story. Telegram's original "
+                + "Premium-locked Save to Gallery is separate. Downloads your own "
+                + "or public/shareable, unprotected stories "
                 + "using Telegram FileLoader. No automatic bulk downloads.");
         addLink(context, content, "ULT chat layout presets",
                 "In Chat Settings, open the ⋮ menu → ULT Chat Layout",
@@ -157,7 +158,7 @@ public final class UltSettingsActivity extends BaseFragment {
         addNote(context, content, "Message and chat tools",
                 "Long-press a document for an optional readable file summary; nothing downloads automatically.");
         addLink(context, content, "Download queue and recent files",
-                "Open Telegram's native downloads view for this account; tap to open/download/cancel",
+                "Queue controls, Wi-Fi/mobile/roaming rules, history and file tools",
                 () -> presentFragment(new UltDownloadsActivity()));
         addLink(context, content, "Media storage and cache",
                 "Open Telegram's native storage manager; deleting anything requires a separate tap",

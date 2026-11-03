@@ -1,5 +1,8 @@
 # Yooshastan ULT Messenger
 
+> **Downloads control center (feature branch):** Top-row Pause all, Resume all, network-specific automatic download settings and **Clear history** (history only, no file deletion). Long-press a queued document to pause/resume or move it to the top; existing protected-media checks and file tools remain intact. Reuses native Telegram FileLoader/DownloadController, not another downloader. [QA and safety](docs/ALPHA14_DOWNLOAD_CONTROL.md).
+
+
 > **Alpha 0.14 cache + story fix RC2 (development):** Confirmed **Run cache maintenance now** action with Telegram's existing retention rules, plus **Download and save** for locally accessible own or public/shareable, unprotected stories even when media is not cached. No bulk harvesting or protected-story bypass. [Combined QA](docs/ALPHA14_CACHE_STORYFIX_RC2_QA.md).
 
 

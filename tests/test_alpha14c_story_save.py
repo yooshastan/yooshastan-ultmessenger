@@ -14,6 +14,12 @@ class StorySaveContract(TestCase):
         self.assertIn("Download and save eligible story", script)
         self.assertIn("saveToGallery();", script)
         self.assertIn("ultDownloadAndSaveStory();", script)
+        self.assertIn('ULT: Download story', script)
+        self.assertIn('ULT: Download unavailable', script)
+        self.assertIn('ultStoryUnavailableReason()', script)
+        self.assertIn('if (popupMenu != null) popupMenu.dismiss();', script)
+        self.assertIn("MENU_ANCHOR", script)
+        self.assertIn("MENU_VIEW + MENU_ANCHOR", script)
         self.assertIn("NotificationCenter.fileLoaded", script)
         self.assertIn("NotificationCenter.fileLoadFailed", script)
         self.assertIn("ultStopStoryDownloadObserver()", script)
@@ -40,7 +46,8 @@ class StorySaveContract(TestCase):
         # native CI to catch source drift/compile errors.
         source="".join([module.IMPORT_ANCHOR,module.FIELD_ANCHOR,
                         module.VIEW_ANCHOR,module.VISIBILITY_ANCHOR,
-                        module.METHOD_ANCHOR,module.DETACH_ANCHOR])
+                        module.METHOD_ANCHOR,module.DETACH_ANCHOR,
+                        module.MENU_ANCHOR])
         patched=module.patch_story_source(source)
         self.assertIn("ultStorySaveButton",patched)
         self.assertIn("saveToGallery()",patched)
