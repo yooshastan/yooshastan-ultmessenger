@@ -209,9 +209,7 @@ public final class UltSettingsActivity extends BaseFragment {
                 "Privacy limitations explained"
         };
         new UltSecureDialogBuilder(context)
-                .setTitle("Network diagnostics — read only")
-                .setMessage("These tools report settings or manually entered observations. "
-                        + "They do not prove DNS, calls, media or WebView traffic is proxied.")
+                .setTitle("Network diagnostics — not route proof")
                 .setItems(choices, (dialog, which) -> {
                     switch (which) {
                         case 0: presentFragment(new UltPrivacyLabActivity()); break;
