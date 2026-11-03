@@ -48,6 +48,9 @@ FIELDS = """
             if (publicLink != null) {
                 labels.add("Copy public t.me link");
                 values.add(publicLink);
+                // Null/Neko-inspired export formatting; only public usernames.
+                labels.add("Copy public chat link (Markdown)");
+                values.add(UltChatTools.publicChatMarkdown(publicName));
             }
         }
         new android.app.AlertDialog.Builder(activity)
