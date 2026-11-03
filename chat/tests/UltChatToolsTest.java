@@ -23,6 +23,19 @@ public final class UltChatToolsTest {
                 || UltChatTools.publicMessageLink("@ValidName", -1) != null) {
             throw new AssertionError("Private, invalid, or missing message links are forbidden");
         }
+        if (!"[Open public chat](https://t.me/stage_fan)".equals(
+                UltChatTools.publicChatMarkdown("@Stage_Fan"))
+                || UltChatTools.publicChatMarkdown("bad/name") != null
+                || UltChatTools.publicChatMarkdown(null) != null) {
+            throw new AssertionError("Public-only chat Markdown copy failed");
+        }
+        if (!"[Open public message](https://t.me/stage_fan/42)".equals(
+                UltChatTools.publicMessageMarkdown("@Stage_Fan", 42))
+                || UltChatTools.publicMessageMarkdown(null, 42) != null
+                || UltChatTools.publicMessageMarkdown("Private/Link", 42) != null
+                || UltChatTools.publicMessageMarkdown("public", 0) != null) {
+            throw new AssertionError("Public-only message Markdown copy failed");
+        }
         if (!"1970-01-01T00:00:01Z".equals(UltChatTools.utcTimestamp(1))
                 || UltChatTools.utcTimestamp(0) != null
                 || UltChatTools.utcTimestamp(-1) != null) {
