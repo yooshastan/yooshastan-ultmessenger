@@ -119,6 +119,7 @@ public final class UltDownloadsActivity extends BaseFragment
                     })
                     .setPositiveButton("OK", null));
         });
+        addToolbarButton(context, toolbar, "Media Studio", () -> presentFragment(new UltMediaStudioActivity()));
         addToolbarButton(context, toolbar, "Storage usage", () -> presentFragment(new org.telegram.ui.CacheControlActivity()));
         addToolbarButton(context, toolbar, "Network rules", this::showAutoDownloadRules);
         addToolbarButton(context, toolbar, "Clear history", this::confirmClearHistory);
