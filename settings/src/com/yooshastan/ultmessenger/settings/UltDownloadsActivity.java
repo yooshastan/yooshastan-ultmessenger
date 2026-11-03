@@ -86,6 +86,24 @@ public final class UltDownloadsActivity extends BaseFragment
             showDownloadToast(changed == 0 ? "No queued downloads to resume"
                     : "Resumed " + changed + " downloads");
         });
+        addToolbarButton(context, toolbar, "Resume next", () -> {
+            final boolean started = UltDownloadActions.resumeNext(currentAccount);
+            downloads.update(true);
+            showDownloadToast(started ? "Resumed the next queued download"
+                    : "No paused document downloads in queue");
+        });
+        addToolbarButton(context, toolbar, "Queue status", () -> {
+            final int[] counts = UltDownloadActions.queueCounts(currentAccount);
+            final Activity activity = getParentActivity();
+            if (activity == null) return;
+            showSecureDialog(activity, new android.app.AlertDialog.Builder(activity)
+                    .setTitle("Download queue status")
+                    .setMessage("Active: " + counts[0] + "\\nPaused: " + counts[1]
+                            + "\\nRecent history: " + counts[2]
+                            + "\\n\\nCounts are for this Telegram account. "
+                            + "The native download queue manages transfer scheduling.")
+                    .setPositiveButton("OK", null));
+        });
         addToolbarButton(context, toolbar, "Network rules", this::showAutoDownloadRules);
         addToolbarButton(context, toolbar, "Clear history", this::confirmClearHistory);
         scroll.addView(toolbar);
