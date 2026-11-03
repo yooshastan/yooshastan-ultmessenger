@@ -39,10 +39,13 @@ public final class UltDownloadsActivity extends BaseFragment
         implements FilteredSearchView.UiCallback {
 
     private static final int CREATE_DOCUMENT_REQUEST = 0x13CD;
+    private static final String SAVE_PREFS = "ult_download_export_locations";
+    private static String lastSaveKey(int account) { return "last_export_uri_" + account; }
     private static final int VERIFY_DOCUMENT_REQUEST = 0x14DE;
     private SearchDownloadsContainer downloads;
     private boolean selectingSaveAs;
     private File pendingSaveFile;
+    private int pendingSaveAccount = -1;
     private long pendingSaveLength;
     private MessageObject pendingVerifyMessage;
     private File pendingVerifySource;
@@ -119,6 +122,13 @@ public final class UltDownloadsActivity extends BaseFragment
         addToolbarButton(context, toolbar, "Storage usage", () -> presentFragment(new org.telegram.ui.CacheControlActivity()));
         addToolbarButton(context, toolbar, "Network rules", this::showAutoDownloadRules);
         addToolbarButton(context, toolbar, "Clear history", this::confirmClearHistory);
+        addToolbarButton(context, toolbar, "Forget save location", () -> {
+            final Activity activity = getParentActivity();
+            if (activity == null) return;
+            activity.getSharedPreferences(SAVE_PREFS, Context.MODE_PRIVATE).edit()
+                    .remove(lastSaveKey(currentAccount)).apply();
+            showDownloadToast("Last Save As location forgotten for this account");
+        });
         scroll.addView(toolbar);
         column.addView(scroll, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -495,12 +505,27 @@ public final class UltDownloadsActivity extends BaseFragment
                     intent.addCategory(Intent.CATEGORY_OPENABLE);
                     intent.setType(type);
                     intent.putExtra(Intent.EXTRA_TITLE, name);
+                    // Android's picker may suggest the last user-chosen document
+                    // location; each export still requires explicit confirmation.
+                    final String previous = activity.getSharedPreferences(
+                            SAVE_PREFS, Context.MODE_PRIVATE).getString(
+                                    lastSaveKey(currentAccount), null);
+                    if (previous != null) {
+                        try {
+                            intent.putExtra(android.provider.DocumentsContract.EXTRA_INITIAL_URI,
+                                    Uri.parse(previous));
+                        } catch (IllegalArgumentException ignored) {
+                            // A stale suggestion must never block the system picker.
+                        }
+                    }
+                    pendingSaveAccount = currentAccount;
                     pendingSaveFile = source;
                     pendingSaveLength = source.length();
                     try {
                         startActivityForResult(intent, CREATE_DOCUMENT_REQUEST);
                     } catch (android.content.ActivityNotFoundException e) {
                         pendingSaveFile = null;
+                        pendingSaveAccount = -1;
                         Toast.makeText(activity, "No system document picker available",
                                 Toast.LENGTH_LONG).show();
                     }
@@ -523,7 +548,9 @@ public final class UltDownloadsActivity extends BaseFragment
         }
         if (requestCode != CREATE_DOCUMENT_REQUEST) return;
         final File source = pendingSaveFile;
+        final int saveAccount = pendingSaveAccount;
         final long expectedLength = pendingSaveLength;
+        pendingSaveAccount = -1;
         pendingSaveFile = null;
         pendingSaveLength = 0L;
         if (resultCode != Activity.RESULT_OK || data == null || data.getData() == null
@@ -551,6 +578,10 @@ public final class UltDownloadsActivity extends BaseFragment
                     }
                 }
                 success = true;
+                if (saveAccount >= 0) {
+                    activity.getSharedPreferences(SAVE_PREFS, Context.MODE_PRIVATE).edit()
+                            .putString(lastSaveKey(saveAccount), destination.toString()).apply();
+                }
             } catch (Exception e) {
                 error = e.getMessage() != null ? e.getMessage() : error;
             }
