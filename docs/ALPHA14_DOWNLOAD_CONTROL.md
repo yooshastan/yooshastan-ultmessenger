@@ -1,6 +1,6 @@
 # Ultgram Alpha 0.14 — Downloads Control Center (feature)
 
-Built on successfully compiled Alpha 0.14 cache + story-download RC2, preserving story protections, native strict-proxy code and cache settings.
+Built on successfully compiled Alpha 0.14 cache + story-download RC2, preserving story protections, native strict-proxy code and cache settings. Includes a clearly labeled **ULT: Download story** action in the ⋮ menu; the original Telegram Save to Gallery Premium lock is not altered. If a story is protected, private, expired, or unavailable, the menu explains why it cannot save.
 
 ## New user-facing controls
 

@@ -25,6 +25,7 @@ VISIBILITY_ANCHOR = (
     "        }\n"
 )
 METHOD_ANCHOR = "    private void saveToGallery() {\n"
+MENU_ANCHOR = "                        if (!unsupported && allowShare && !currentStory.isLive) {\n"
 DETACH_ANCHOR = (
     "    @Override\n"
     "    protected void onDetachedFromWindow() {\n"
@@ -48,6 +49,27 @@ SAVE_VIEW = """        // Visible Ultgram save shortcut for locally accessible, 
         });
         storyContainer.addView(ultStorySaveButton,
                 LayoutHelper.createFrame(40, 40, Gravity.RIGHT | Gravity.TOP, 2, 15, 42, 0));
+"""
+
+MENU_VIEW = """                        // ULT download is distinct from Telegram's Premium-only
+                        // SaveToGallery menu. Keep the original locked menu and
+                        // every native restriction intact; explain ineligible cases.
+                        if (!currentStory.isLive && currentStory.storyItem != null) {
+                            ActionBarMenuItem.addItem(popupLayout, R.drawable.msg_gallery,
+                                    canUltSaveStory()
+                                            ? "ULT: Download story"
+                                            : "ULT: Download unavailable",
+                                    false, resourcesProvider).setOnClickListener(v -> {
+                                if (popupMenu != null) popupMenu.dismiss();
+                                if (canUltSaveStory()) {
+                                    ultDownloadAndSaveStory();
+                                } else {
+                                    android.widget.Toast.makeText(getContext(),
+                                            ultStoryUnavailableReason(),
+                                            android.widget.Toast.LENGTH_LONG).show();
+                                }
+                            });
+                        }
 """
 
 SAVE_METHOD = """    private NotificationCenter.NotificationCenterDelegate ultStoryFileObserver;
@@ -148,6 +170,32 @@ SAVE_METHOD = """    private NotificationCenter.NotificationCenterDelegate ultSt
         }
     }
 
+    private String ultStoryUnavailableReason() {
+        if (currentStory == null || currentStory.storyItem == null
+                || currentStory.storyItem.media == null) {
+            return "The story is unavailable or its media has not loaded";
+        }
+        if (unsupported || currentStory.isLive
+                || currentStory.storyItem instanceof TL_stories.TL_storyItemSkipped
+                || currentStory.storyItem instanceof TL_stories.TL_storyItemDeleted) {
+            return "Live, expired or unsupported stories cannot be saved";
+        }
+        if (!currentStory.allowScreenshots()) {
+            return "This story restricts saving or forwarding";
+        }
+        if (dialogId < 0) {
+            final TLRPC.Chat chat = MessagesController.getInstance(currentAccount)
+                    .getChat(-dialogId);
+            if (chat == null || chat.noforwards) {
+                return "This channel restricts saving or its protections are unknown";
+            }
+        }
+        if (!isSelf && !allowShare) {
+            return "Only your own or public/shareable stories can be downloaded";
+        }
+        return "This story is not eligible for download";
+    }
+
     private boolean canUltSaveStory() {
         if (currentStory == null) return false;
         final TL_stories.StoryItem item = currentStory.storyItem;
@@ -188,6 +236,7 @@ def patch_story_source(source: str) -> str:
     source = once(source, VISIBILITY_ANCHOR, VISIBILITY_ANCHOR +
                   "        ultStorySaveButton.setVisibility(canUltSaveStory() ? View.VISIBLE : View.GONE);\n")
     source = once(source, METHOD_ANCHOR, SAVE_METHOD + METHOD_ANCHOR)
+    source = once(source, MENU_ANCHOR, MENU_VIEW + MENU_ANCHOR)
     source = once(source, DETACH_ANCHOR,
                   DETACH_ANCHOR + "        ultStopStoryDownloadObserver();\n")
     return source
