@@ -128,6 +128,18 @@ public final class UltChatTools {
         return text.toString();
     }
 
+    /** Original local metadata export: IDs and UTC only, never message text. */
+    public static String messageMetadataJson(long messageId, long senderPeerId,
+                                             long unixUtc, String publicUsername) {
+        if (messageId <= 0) return null;
+        StringBuilder out = new StringBuilder("{\"messageId\":").append(messageId);
+        if (senderPeerId != 0) out.append(",\"senderPeerId\":").append(senderPeerId);
+        if (unixUtc > 0) out.append(",\"unixUtc\":").append(unixUtc);
+        final String link = publicMessageLink(publicUsername, messageId);
+        if (link != null) out.append(",\"publicLink\":\"").append(link).append("\"");
+        return out.append("}").toString();
+    }
+
     public static boolean hasTopic(long topicId) {
         return topicId > 0;
     }
