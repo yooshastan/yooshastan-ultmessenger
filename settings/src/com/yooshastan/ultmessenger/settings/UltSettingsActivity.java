@@ -85,7 +85,7 @@ public final class UltSettingsActivity extends BaseFragment {
 
         addSection(context, content, "NEW IN THIS BUILD");
         addLink(context, content, "What's New / build information",
-                "See Alpha 0.14d+ verification, appearance and privacy changes",
+                "Alpha 0.16 chat, message, privacy and download changes",
                 () -> showUltWhatsNew(context));
         addLink(context, content, "Downloads",
                 "Pause/resume, prioritize, network rules, history and file tools",
@@ -140,7 +140,7 @@ public final class UltSettingsActivity extends BaseFragment {
                 "Compact, comfortable or spacious chips for this account",
                 () -> showCategoryBarAppearance(context));
         addLink(context, content, "Category typography",
-                "Small, normal or large category labels; follows Android font scaling",
+                "Six per-account sizes from 11–18 sp; follows Android font scaling",
                 () -> showCategoryTypography(context));
         addLink(context, content, "Swipe category navigator",
                 "Optional dedicated gesture surface; never intercepts chat-row swipes",
@@ -149,7 +149,7 @@ public final class UltSettingsActivity extends BaseFragment {
                 "Read-only active translation engine and local provider readiness",
                 () -> showOfflineTranslationStatus(context));
         addLink(context, content, "Chat views and sorting",
-                "All, Unread, Groups, Channels, Bots, People and Unread First",
+                "All, Unread, categories, Unread First and Mentions First",
                 () -> showChatViewPicker(context));
         addNote(context, content, "Archive row visibility",
                 "Chats → ⋮ → ULT: Hide Archive row (account-specific display only).");
@@ -158,7 +158,7 @@ public final class UltSettingsActivity extends BaseFragment {
         addNote(context, content, "Message and chat tools",
                 "Long-press a document for an optional readable file summary; nothing downloads automatically.");
         addLink(context, content, "Download queue and recent files",
-                "Queue controls, Wi-Fi/mobile/roaming rules, history and file tools",
+                "Queue controls, network rules, saved picker hint, history and files",
                 () -> presentFragment(new UltDownloadsActivity()));
         addLink(context, content, "Media storage and cache",
                 "Open Telegram's native storage manager; deleting anything requires a separate tap",
@@ -169,7 +169,7 @@ public final class UltSettingsActivity extends BaseFragment {
 
         addSection(context, content, "PRIVACY AND NETWORK");
         addLink(context, content, "Local account identity cover",
-                "Show a local masked account card or reveal once; does not hide identity in chats",
+                "Local card masking with temporary reveal; does not mask other screens",
                 () -> showLocalIdentityCover(context));
         addLink(context, content, "Manual network egress evidence",
                 "Mark packet-capture observations for six paths and copy a redacted report",
