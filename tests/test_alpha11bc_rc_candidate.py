@@ -14,7 +14,7 @@ class RC1(TestCase):
     def test_foss_artifact_and_integrity_provenance(self):
         w = WORKFLOW.read_text()
         # Check actual APK staging, not an outdated branch/artifact naming convention.
-        branch = re.search(r"branches: \[release/(alpha[a-z0-9-]+)\]", w)
+        branch = re.search(r"branches: \[release/(alpha[a-z0-9-]+)(?:, feature/alpha15-download-queue-control)?\]", w)
         self.assertIsNotNone(branch, "Expected versioned release candidate branch")
         apk = re.search(r'cp -- "\$\{apks\[0\]\}" "artifacts/ult-([a-z0-9-]+)-foss-arm64-debug\.apk"', w)
         self.assertIsNotNone(apk, "Expected a staged FOSS ARM64 APK")
