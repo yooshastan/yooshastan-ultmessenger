@@ -1,56 +1,64 @@
-# Ultgram Beta 0.1 Privacy + Media — internal RC1
+# Ultgram Beta 0.1 — Quality-first internal candidate
 
-This combines two new screens, not a public-ready release. Branch:
-feature/beta01-privacy-media, based on Alpha 0.16 source branch, which
-itself began from tested Alpha 0.15 FOSS ARM64 baseline
-acb59a5059808a9ed289b53ef34d7120a47fc7aa.
+Development branch: `feature/beta01-quality-trim`. Based on the Beta 0.1
+privacy/media experiment, without changing the tested native strict proxy
+or translation implementations.
 
-## Privacy Lab
+## Product decision
 
-- Four-second screen-scoped live sampling: Android active transport
-  category, saved native strict request, observed native strict guard,
-  Telegram connection state code.
-- Bounded 40-event, in-memory change timeline. Clear without disk writes.
-- Copy a redacted report with no IP, proxy host, account ID, usernames,
-  file names, messages, credentials or packet payloads.
-- Read-only: previously tested strict-proxy implementation untouched.
-- VPN hint and native guard switch are NOT route proof. Outside captures
-  may be required for DNS, CDN/media, WebViews and calls. No kill-switch claim.
+Quality over quantity. The former Privacy Lab was a read-only observer,
+not a firewall or packet capture tool, and the standalone Media Studio
+duplicated Telegram's existing Recent Downloads. Neither is advertised
+as a new flagship feature in this candidate.
 
-## Media Studio
+## Simplified navigation
 
-- Per-account search and Photo/Video/Audio/Document filters in up to 200
-  eligible, already cached, document-backed Telegram Recent Downloads.
-- Newest / largest / name sorting plus size/date summaries.
-- Native ULT Downloads, queue, per-network rules and cache manager reachable.
-- Save As still requires a user-selected Android document destination.
-- No broad file scan, automatic export, downloader or protected-media bypass.
-- Photo-only messages and older files outside native Recent Downloads are not
-  indexed. Telegram normal media screens remain available.
-- Account switch: reopen Media Studio under new account; no cross-account index.
+Main Ultgram Settings contains **11 action rows**:
 
-## Internal APK gates
+- What's New / build information
+- Chats and categories (grouped controls)
+- Themes and display (grouped controls)
+- Downloads (single native download queue/history)
+- Storage and cache (cache-size and cleanup controls)
+- Proxy manager
+- Strict proxy (native Telegram sockets only)
+- Screenshot protection
+- External link confirmation
+- Local identity cover (local settings cards only)
+- Network diagnostics (advanced, read-only)
 
-- Python contracts and Java model tests green.
-- Full pinned FOSS ARM64 build green.
-- Unique version 16.0.0-beta01.1 / 7183011, debug-signed. Debug signing
-  does not qualify for public beta.
-- Artifact contains APK, SHA256SUMS, BUILD_INFO, SIGNING_INFO.
-- Verify signer/package ID against currently installed Alpha 0.15 before
-  attempting in-place upgrade. Do not blindly uninstall the working build.
-- Regression on Pixel 8a GrapheneOS and Samsung A36 Android 16:
-  chats/calls/notifications, translation, story save, queue priority, cache,
-  proxy startup, invalid proxy blocking native Telegram chat, valid proxy
-  restored, Wi-Fi/mobile recovery; no routing claims beyond that.
-- Privacy Lab: Wi-Fi, cellular, VPN and strict guard timeline; redacted
-  Copy Report and Clear; account switch, background, session close.
-- Media Studio: local FLAC, MP4, JPEG document and PDF; search, filter,
-  sort, queue and rules, protected media absent, empty history, 200-item cap.
-- Check crashes/ANRs and confirm no protected exports or privacy leaks.
+Media Studio is removed from navigation and generated APK sources.
+Its unused source prototypes remain in the repository for reference only.
+DoQ preview, tracker rules preview, duplicate privacy dashboards, and
+manual checklists are no longer promoted as normal user features.
 
-## Public beta gates remain
+In Downloads, expose Pause all, Resume next, Network rules, Storage and
+More. More contains Resume all, Queue status, Clear recent history and
+Forget save location. Native Telegram owns transfers, history and ordering.
 
-Permanent release key and upgrade policy; third-party code/license/source
-audit; privacy policy; F-Droid/other-store compliance; diagnostics design;
-real device QA and independent network-route claim review. Publish a GitHub
-prerelease only after those gates have been checked.
+## Non-regression checks
+
+- All existing chat, translation, story, download, and native strict-proxy
+  integrations remain in the build scripts.
+- Test valid proxy and invalid-proxy blocking, force-stop/reopen, and
+  Wi-Fi/cellular recovery on Pixel 8a and Samsung A36.
+- Verify file Save As uses the system document picker, honors protected
+  media restrictions, does not delete files, and remains per-account.
+- Verify network-rule dialog shows Mobile/Wi-Fi/Roaming choices.
+- Verify all grouped menu choices open a functioning native screen or
+  the existing Ultgram preference action.
+- Verify no duplicate Media Studio destination, and only one Downloads
+  entry in the main settings page.
+- Verify release notes explicitly distinguish working safeguards
+  from diagnostic hints and inactive transports.
+- Switch account during diagnostics, confirm reports stay scoped
+  and no host/identity/payload data appears.
+- Confirm old Alpha 0.15 data remains intact; never uninstall the
+  working app to force a debug-signed candidate to install.
+
+## Still required before public Beta 0.1
+
+Fresh full ARM64 compile, signed artifact inspection, device smoke tests,
+release key and upgrade policy, source/license audit, privacy statement,
+and independent verification of any whole-path networking claims.
+No new privacy guarantees are asserted by this UI cleanup.
