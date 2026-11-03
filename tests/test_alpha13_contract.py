@@ -25,7 +25,7 @@ class Alpha13Contract(TestCase):
         for token in ('"Custom theme colors"', 'showUltCustomThemeEditor(',
                       'UltAppearanceThemeAdapter.applyCustom(', 'UltSecureDialogBuilder',
                       'DataAutoDownloadActivity(which)', 'CacheControlActivity',
-                      '"Identity and privacy limitations"'):
+                      '"Privacy limitations explained"'):
             self.assertIn(token, settings)
         self.assertNotIn('new android.app.AlertDialog.Builder(context)', settings[
             settings.index('private void showUltCustomThemeEditor'):settings.index('private void showUltThemePreview')])
