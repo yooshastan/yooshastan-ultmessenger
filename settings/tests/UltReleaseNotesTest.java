@@ -13,7 +13,7 @@ public final class UltReleaseNotesTest {
         String message = UltReleaseNotes.message(a);
         for (String fragment : new String[] {
                 "Downloads", "More", "strict", "translation", "Network diagnostics",
-                "DoQ", "tracker", "debug-signed", "protected media", "4.0.0"
+                "DoQ", "tracker", "debug-signed", "Protected media", "4.0.0"
         }) {
             ok(message.contains(fragment), "missing concise release note: " + fragment);
         }
