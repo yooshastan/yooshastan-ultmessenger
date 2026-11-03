@@ -13,12 +13,14 @@ public final class UltChatView {
     public static final String BOTS = "bots";
     public static final String PEOPLE = "people";
     public static final String UNREAD_FIRST = "unread_first";
-    public static final String[] MODES = {ALL, UNREAD, GROUPS, CHANNELS, BOTS, PEOPLE, UNREAD_FIRST};
+    public static final String MENTIONS_FIRST = "mentions_first";
+    public static final String[] MODES = {ALL, UNREAD, GROUPS, CHANNELS, BOTS, PEOPLE, UNREAD_FIRST, MENTIONS_FIRST};
     public static final String[] QUICK_TAB_MODES = {ALL, UNREAD, GROUPS, CHANNELS, BOTS, PEOPLE};
     public static final String[] QUICK_TAB_LABELS = {"All", "Unread", "Groups", "Channels", "Bots", "People"};
     public static final String[] LABELS = {
         "All chats (Telegram order)", "Unread only", "Groups only", "Channels only",
-        "Bots only", "People / private chats", "Unread first (pinned stay on top)"
+        "Bots only", "People / private chats", "Unread first (pinned stay on top)",
+        "Mentions first (pinned stay on top)"
     };
 
     // Alpha 0.12a: appearance only; independent per-account local UI preference.
@@ -257,6 +259,17 @@ public final class UltChatView {
             case PEOPLE: return !group && !channel && !bot;
             default: return true; // All and Unread First include all normal dialogs.
         }
+    }
+
+    /** Stable presentation-only sort. The pinned and archive positions stay intact. */
+    public static int compareMentionsFirst(boolean aArchive, boolean bArchive,
+                                           boolean aPinned, boolean bPinned,
+                                           boolean aMention, boolean bMention) {
+        if (aArchive != bArchive) return aArchive ? -1 : 1;
+        if (aPinned != bPinned) return aPinned ? -1 : 1;
+        if (aPinned && bPinned) return 0;
+        if (aMention != bMention) return aMention ? -1 : 1;
+        return 0;
     }
 
     /** Stable sort: archive row and existing pinned order stay above unread grouping. */
