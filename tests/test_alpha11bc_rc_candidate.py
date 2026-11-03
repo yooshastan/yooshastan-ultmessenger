@@ -13,10 +13,12 @@ UI = ROOT / "settings/src/com/yooshastan/ultmessenger/settings/UltSettingsActivi
 class RC1(TestCase):
     def test_foss_artifact_and_integrity_provenance(self):
         w = WORKFLOW.read_text()
-        # Check the active combined release, not a frozen old Alpha 0.11 name.
-        branch = re.search(r"branches: \[release/(alpha[0-9]+[a-z]+-combined-rc[0-9]+)\]", w)
-        self.assertIsNotNone(branch, "Expected versioned combined candidate branch")
-        artifact_prefix = branch.group(1).rsplit("-rc", 1)[0]
+        # Check actual APK staging, not an outdated branch/artifact naming convention.
+        branch = re.search(r"branches: \[release/(alpha[a-z0-9-]+)\]", w)
+        self.assertIsNotNone(branch, "Expected versioned release candidate branch")
+        apk = re.search(r'cp -- "\$\{apks\[0\]\}" "artifacts/ult-([a-z0-9-]+)-foss-arm64-debug\.apk"', w)
+        self.assertIsNotNone(apk, "Expected a staged FOSS ARM64 APK")
+        artifact_prefix = apk.group(1)
         for required in ("matrix:", "variant: [foss]", "SHA256SUMS",
                          "BUILD_INFO.txt", "scripts/integrate-native-strict.py",
                          "scripts/integrate-screen-privacy.py",
