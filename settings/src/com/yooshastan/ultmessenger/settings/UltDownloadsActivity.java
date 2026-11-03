@@ -102,8 +102,21 @@ public final class UltDownloadsActivity extends BaseFragment
                             + "\\nRecent history: " + counts[2]
                             + "\\n\\nCounts are for this Telegram account. "
                             + "The native download queue manages transfer scheduling.")
+                    .setNeutralButton("Copy counts", (dialog, ignored) -> {
+                        final android.content.ClipboardManager clipboard =
+                                (android.content.ClipboardManager) activity.getSystemService(
+                                        Context.CLIPBOARD_SERVICE);
+                        if (clipboard != null) {
+                            clipboard.setPrimaryClip(android.content.ClipData.newPlainText(
+                                    "Ultgram queue counts",
+                                    "Active: " + counts[0] + ", paused: " + counts[1]
+                                            + ", recent: " + counts[2]));
+                            showDownloadToast("Queue counts copied");
+                        }
+                    })
                     .setPositiveButton("OK", null));
         });
+        addToolbarButton(context, toolbar, "Storage usage", () -> presentFragment(new org.telegram.ui.CacheControlActivity()));
         addToolbarButton(context, toolbar, "Network rules", this::showAutoDownloadRules);
         addToolbarButton(context, toolbar, "Clear history", this::confirmClearHistory);
         scroll.addView(toolbar);
