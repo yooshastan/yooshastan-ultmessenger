@@ -165,3 +165,19 @@ jobs:
           java -cp "$classes" UltReleaseNotesTest
           javac -d "$classes" settings/src/com/yooshastan/ultmessenger/settings/UltPrivacySession.java settings/tests/UltPrivacySessionTest.java
           java -cp "$classes" UltPrivacySessionTest
+
+      - name: Texts SMS/MMS companion foundation (no permissions)
+        if: github.ref == 'refs/heads/feature/texts-sms-companion-foundation' || github.head_ref == 'feature/texts-sms-companion-foundation'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests -p 'test_texts_sms_foundation.py' -v
+          dir="$(mktemp -d)"
+          trap 'rm -rf "$dir"' EXIT
+          javac -d "$dir" \
+            texts/src/com/yooshastan/ultmessenger/texts/UltTextsAccessPolicy.java \
+            texts/src/com/yooshastan/ultmessenger/texts/UltSmsThreadIndex.java \
+            texts/tests/UltTextsAccessPolicyTest.java \
+            texts/tests/UltSmsThreadIndexTest.java
+          java -cp "$dir" UltTextsAccessPolicyTest
+          java -cp "$dir" UltSmsThreadIndexTest
