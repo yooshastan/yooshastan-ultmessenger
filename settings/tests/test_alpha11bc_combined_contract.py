@@ -17,7 +17,7 @@ class Alpha11BC(TestCase):
         model = MODEL.read_text()
         for feature in ("showTabCustomization(context)", "showTabOrder(context",
                         "showOfflineTranslationStatus(context)",
-                        "showNetworkSourceMatrix(context)"):
+                        "showNetworkPathCoverage(context)"):
             self.assertIn(feature, ui)
         self.assertIn("UltChatView.visibleTabs(", chat)
         self.assertIn("ultCategoryRow.removeAllViews()", chat)
