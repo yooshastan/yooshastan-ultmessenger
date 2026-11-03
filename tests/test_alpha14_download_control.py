@@ -35,4 +35,4 @@ class DownloadCenter(TestCase):
         full=src(".github/workflows/android-alpha.yml")
         self.assertNotIn("feature/alpha14-download-control-center",full)
         settings=src("settings/src/com/yooshastan/ultmessenger/settings/UltSettingsActivity.java")
-        self.assertIn("Pause/resume, prioritize, network rules",settings)
+        self.assertIn("One queue, history and file tools",settings)
