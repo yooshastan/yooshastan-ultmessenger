@@ -50,7 +50,7 @@ class Beta01Contract(unittest.TestCase):
         self.assertNotIn("loadFile(", media)
 
     def test_existing_strict_translation_unmodified(self):
-        workflow = read(".github/workflows/android-alpha.yml")
+        workflow = read(".github/workflows/android-beta.yml")
         self.assertIn("scripts/integrate-native-strict.py", workflow)
         self.assertIn("scripts/integrate-translation.py", workflow)
         self.assertIn("feature/beta01-privacy-media", workflow)
