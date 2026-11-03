@@ -20,20 +20,20 @@ public final class UltReleaseNotes {
     }
 
     public static String message(String androidVersion) {
-        return "BETA 0.1 — INTERNAL QUALITY PASS\\n\\n"
-                + "• Ultgram Settings now has a shorter, clearer menu.\\n"
+        return "BETA 0.1 — INTERNAL QUALITY PASS\n\n"
+                + "• Ultgram Settings now has a shorter, clearer menu.\n"
                 + "• Downloads is the single place for queue, recent files, Save As, "
-                + "network rules and storage links. Rare actions are under More.\\n"
+                + "network rules and storage links. Rare actions are under More.\n"
                 + "• Privacy keeps real controls visible: proxy selection, native strict "
-                + "guard, screenshot protection, external links and local identity cover.\\n"
+                + "guard, screenshot protection, external links and local identity cover.\n"
                 + "• Network diagnostics are in Advanced and remain read-only. "
-                + "They do not verify all network traffic routes.\\n"
+                + "They do not verify all network traffic routes.\n"
                 + "• Inactive DoQ and tracker-rule previews are no longer promoted "
-                + "as usable privacy protections.\\n\\n"
+                + "as usable privacy protections.\n\n"
                 + "UNCHANGED: Messaging, translation, eligible story saving, "
-                + "native proxy behavior and existing cache preferences.\\n\\n"
+                + "native proxy behavior and existing cache preferences.\n\n"
                 + "This is a debug-signed internal candidate, not a public beta. "
-                + "Protected media cannot be exported through Ultgram tools.\\n\\n"
+                + "Protected media cannot be exported through Ultgram tools.\n\n"
                 + "Android package: " + androidVersion;
 
     }
