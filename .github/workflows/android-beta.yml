@@ -1,6 +1,7 @@
 name: Ultgram Beta 0.1 Quality Pass FOSS ARM64
 
-# One batched native APK for the beta candidate. Ordinary source commits run fast checks only.
+# One batched native APK for the quality-first beta candidate.
+# Preflight: broad owned-settings and native proxy source contracts passed. Ordinary source commits run fast checks only.
 on:
   push:
     branches: [feature/beta01-privacy-media, feature/beta01-quality-trim]
