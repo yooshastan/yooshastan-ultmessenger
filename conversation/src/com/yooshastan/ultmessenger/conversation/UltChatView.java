@@ -85,25 +85,36 @@ public final class UltChatView {
         return "chat_bar_font_account_" + account;
     }
 
+    // Alpha 0.16: more granular, per-account category label typography.
+    // Keep old saved values (small/normal/large) valid.
+    public static final String FONT_TINY = "tiny";
     public static final String FONT_SMALL = "small";
     public static final String FONT_NORMAL = "normal";
+    public static final String FONT_MEDIUM = "medium";
     public static final String FONT_LARGE = "large";
-    public static final String[] FONT_STYLES = {FONT_SMALL, FONT_NORMAL, FONT_LARGE};
+    public static final String FONT_XL = "extra_large";
+    public static final String[] FONT_STYLES = {
+        FONT_TINY, FONT_SMALL, FONT_NORMAL, FONT_MEDIUM, FONT_LARGE, FONT_XL
+    };
     public static final String[] FONT_STYLE_LABELS = {
-        "Small (12 sp)", "Normal (13 sp)", "Large (16 sp)"
+        "Tiny (11 sp)", "Small (12 sp)", "Normal (13 sp)",
+        "Medium (14 sp)", "Large (16 sp)", "Extra large (18 sp)"
     };
 
     public static int barFontIndex(String saved) {
         for (int i = 0; i < FONT_STYLES.length; i++) {
             if (FONT_STYLES[i].equals(saved)) return i;
         }
-        return 1;
+        return 2;
     }
 
     public static int barFontSp(String saved) {
         switch (barFontIndex(saved)) {
-            case 0: return 12;
-            case 2: return 16;
+            case 0: return 11;
+            case 1: return 12;
+            case 3: return 14;
+            case 4: return 16;
+            case 5: return 18;
             default: return 13;
         }
     }
