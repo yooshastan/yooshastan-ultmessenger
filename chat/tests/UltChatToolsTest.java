@@ -89,6 +89,16 @@ public final class UltChatToolsTest {
                 || UltChatTools.mediaCitation("x", "audio/flac", 1, 0, 0, null) != null) {
             throw new AssertionError("Private media citation must not create links");
         }
+        if (!"{\"messageId\":42,\"senderPeerId\":-1003,\"unixUtc\":1,\"publicLink\":\"https://t.me/stage_fan/42\"}"
+                .equals(UltChatTools.messageMetadataJson(42, -1003, 1, "Stage_Fan"))) {
+            throw new AssertionError("Public message metadata JSON must be deterministic");
+        }
+        if (!"{\"messageId\":42}".equals(
+                UltChatTools.messageMetadataJson(42, 0, 0, null))
+                || UltChatTools.messageMetadataJson(0, 1, 1, "public") != null
+                || UltChatTools.messageMetadataJson(42, 0, 0, "bad/path").contains("publicLink")) {
+            throw new AssertionError("Private metadata must exclude public links");
+        }
         System.out.println("ULT chat tools model passed");
     }
 }
