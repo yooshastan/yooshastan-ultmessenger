@@ -22,6 +22,18 @@ public final class UltChatViewTest {
         ok(badDirection, "swipe direction constrained");
         ok(UltChatView.barFontSp("small") == 12 && UltChatView.barFontSp("large") == 16,
                 "category text sizes");
+        ok(UltChatView.barFontSp("tiny") == 11
+                && UltChatView.barFontSp("medium") == 14
+                && UltChatView.barFontSp("extra_large") == 18,
+                "expanded category font scale");
+        ok(UltChatView.MODES.length == UltChatView.LABELS.length,
+                "all chat sort modes have labels");
+        ok(UltChatView.compareMentionsFirst(false, false, false, false, true, false) < 0,
+                "mentions sort ahead of ordinary chats");
+        ok(UltChatView.compareMentionsFirst(false, false, true, false, false, true) < 0,
+                "pinned order remains highest priority");
+        ok(UltChatView.compareMentionsFirst(false, false, false, false, false, false) == 0,
+                "stable unmentioned order preserved");
         ok(UltChatView.barFontSp("bogus") == 13, "unknown font fallback");
         ok(!UltChatView.swipePadKey(0).equals(UltChatView.swipePadKey(1)),
                 "gesture prefs account isolated");
