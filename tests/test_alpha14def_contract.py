@@ -22,7 +22,7 @@ class UnifiedFeatureBatch(TestCase):
             self.assertIn(x,s)
     def test_local_privacy_and_manual_evidence_are_honest(self):
         s=read("settings/src/com/yooshastan/ultmessenger/settings/UltSettingsActivity.java")
-        for x in ("Local account identity cover", "UltIdentityCover.summary(",
+        for x in ("Local identity cover", "UltIdentityCover.summary(",
                   "Manual network egress evidence", "UltNetworkEvidence.render(",
                   "does not hide your identity from Telegram",
                   "No path is independently route-verified"):

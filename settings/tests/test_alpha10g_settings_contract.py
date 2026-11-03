@@ -10,18 +10,23 @@ NATIVE_PATCH = ROOT / "scripts/integrate-native-strict.py"
 
 
 class Alpha10gSettingsContract(TestCase):
-    def test_existing_hub_and_preview_caveats_stay_visible(self):
+    def test_existing_hub_and_inactive_preview_caveats_remain_honest(self):
         src = SETTINGS.read_text(encoding="utf-8")
         for marker in (
                 "Ultgram Settings", "ULT theme presets", "Chat views and sorting",
-                "ULT Proxy Manager", "Confirm external links",
-                "Experimental native proxy-only mode", "Android Private DNS (DoT) status",
-                "DNS-over-QUIC configuration (preview)", "Tracker domain rules (preview)",
+                "Proxy manager", "External link confirmation",
+                "Strict proxy (native sockets)", "Android Private DNS status",
+                "Network diagnostics", "Privacy limitations explained",
                 "DoQ QUIC backend: NOT INSTALLED", "DNS tracker rules: SAVED DRAFT — NOT ACTIVE",
                 "UltAndroidDnsInspector.inspectVpn(context)",
                 "UltAndroidDnsInspector.inspect(context)"):
             with self.subTest(marker=marker):
                 self.assertIn(marker, src)
+        main = src.split("fragmentView = scroll;", 1)[0]
+        self.assertNotIn('"DNS-over-QUIC configuration (preview)"', main)
+        self.assertNotIn('"Tracker domain rules (preview)"', main)
+        self.assertIn("showNativeStrictProxy(context)", main)
+        self.assertIn("showExternalLinkGuard(context)", main)
 
     def test_vpn_indicator_is_read_only_and_denies_route_claims(self):
         src = INSPECTOR.read_text(encoding="utf-8")

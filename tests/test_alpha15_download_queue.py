@@ -38,7 +38,7 @@ class DownloadQueueContract(unittest.TestCase):
         self.assertIn('"Queue status"', SCREEN)
         self.assertIn("UltDownloadActions.queueCounts(currentAccount)", SCREEN)
         self.assertIn("showSecureDialog(activity,", SCREEN)
-        self.assertIn('"Storage usage"', SCREEN)
+        self.assertIn('"Storage"', SCREEN)
         self.assertIn("new org.telegram.ui.CacheControlActivity()", SCREEN)
         self.assertIn('"Copy counts"', SCREEN)
         self.assertIn("Context.CLIPBOARD_SERVICE", SCREEN)

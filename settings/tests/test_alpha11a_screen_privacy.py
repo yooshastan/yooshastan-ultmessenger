@@ -62,7 +62,7 @@ class ScreenPrivacyTest(TestCase):
         ui = (ROOT / "settings/src/com/yooshastan/ultmessenger/settings/UltSettingsActivity.java").read_text()
         self.assertIn("getBoolean(KEY_ENABLED, false)", model)
         self.assertIn("putBoolean(KEY_ENABLED, enabled)", model)
-        self.assertIn("Protect Ultgram screenshots", ui)
+        self.assertIn("Screenshot protection", ui)
         self.assertIn("refreshUltScreenPrivacy()", ui)
         self.assertIn("Other Telegram dialogs and windows", ui)
         self.assertNotIn("getWindow().clearFlags(", ui)

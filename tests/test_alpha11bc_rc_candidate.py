@@ -31,7 +31,7 @@ class RC1(TestCase):
         self.assertIn("visibleTabs(String saved)", CHAT.read_text())
         self.assertIn("moveTab(String saved", CHAT.read_text())
         ui = UI.read_text()
-        self.assertIn("showNetworkSourceMatrix(context)", ui)
+        self.assertIn("showNetworkPathCoverage(context)", ui)
         self.assertIn("showTabCustomization(context)", ui)
         self.assertIn("showOfflineTranslationStatus(context)", ui)
         audit = AUDIT.read_text()

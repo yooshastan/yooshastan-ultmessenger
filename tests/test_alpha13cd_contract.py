@@ -14,12 +14,12 @@ class Alpha13CD(TestCase):
         installer = source("scripts/integrate-ult-settings.py")
         for needle in ("UltReleaseNotes.seenKey", "getPackageInfo(",
                        "getLongVersionCode()", "showUltWhatsNew(",
-                       "What's New / build information", "new UltDownloadsActivity()"):
+                       "What's New and build information", "new UltDownloadsActivity()"):
             self.assertIn(needle, settings)
         self.assertIn("ULT: Downloads", chats)
         self.assertIn("UltDownloadsActivity()", chats)
         self.assertIn("UltReleaseNotes.java", installer)
-        self.assertIn("0.13c+d", notes)
+        self.assertIn("Quality Pass", notes)
     def test_save_as_is_explicit_saf_and_fail_closed(self):
         downloads = source("settings/src/com/yooshastan/ultmessenger/settings/UltDownloadsActivity.java")
         for needle in ("Intent.ACTION_CREATE_DOCUMENT", "Intent.CATEGORY_OPENABLE",
