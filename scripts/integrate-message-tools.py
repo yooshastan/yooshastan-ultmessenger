@@ -22,6 +22,7 @@ CONSTANTS = """    public final static int OPTION_ULT_COPY_MESSAGE_ID = 0x554c56
     public final static int OPTION_ULT_COPY_FILENAME = 0x554c5e;
     public final static int OPTION_ULT_COPY_MEDIA_CITATION = 0x554c5f;
     public final static int OPTION_ULT_COPY_PUBLIC_MESSAGE_MARKDOWN = 0x554c60;
+    public final static int OPTION_ULT_COPY_METADATA_JSON = 0x554c61;
 """
 MENU = """        // ULT: local read-only metadata; never copy private message content.
         if (selectedObject != null && selectedObject.messageOwner != null
@@ -31,6 +32,9 @@ MENU = """        // ULT: local read-only metadata; never copy private message c
             icons.add(R.drawable.msg_copy);
             items.add("ULT: Copy message reference");
             options.add(OPTION_ULT_COPY_MESSAGE_REFERENCE);
+            icons.add(R.drawable.msg_copy);
+            items.add("ULT: Copy metadata (JSON)");
+            options.add(OPTION_ULT_COPY_METADATA_JSON);
             icons.add(R.drawable.msg_copy);
             if (selectedObject.getFromChatId() != 0) {
                 items.add("ULT: Copy sender peer ID");
@@ -102,6 +106,23 @@ HANDLERS = """            case OPTION_ULT_COPY_FILENAME: {
                         AndroidUtilities.addToClipboard(citation);
                         android.widget.Toast.makeText(getParentActivity(),
                                 "Media citation copied", android.widget.Toast.LENGTH_SHORT).show();
+                    }
+                }
+                break;
+            }
+            case OPTION_ULT_COPY_METADATA_JSON: {
+                if (selectedObject != null && selectedObject.messageOwner != null
+                        && !selectedObject.isSponsored()) {
+                    final String publicName = currentEncryptedChat == null && currentChat != null
+                            && ChatObject.isChannel(currentChat)
+                            ? ChatObject.getPublicUsername(currentChat) : null;
+                    final String metadata = UltChatTools.messageMetadataJson(
+                            selectedObject.getId(), selectedObject.getFromChatId(),
+                            selectedObject.messageOwner.date, publicName);
+                    if (metadata != null) {
+                        AndroidUtilities.addToClipboard(metadata);
+                        android.widget.Toast.makeText(getParentActivity(),
+                                "Local metadata copied", android.widget.Toast.LENGTH_SHORT).show();
                     }
                 }
                 break;
