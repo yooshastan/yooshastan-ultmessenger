@@ -305,7 +305,8 @@ ADAPTER_METHODS = """
         final long archiveId = DialogObject.makeFolderDialogId(1);
         for (TLRPC.Dialog dialog : dialogs) {
             if (dialog.id == archiveId) {
-                if (UltChatView.UNREAD_FIRST.equals(mode)) {
+                if (UltChatView.UNREAD_FIRST.equals(mode)
+                        || UltChatView.MENTIONS_FIRST.equals(mode)) {
                     displayed.add(dialog);
                 }
                 continue;
@@ -331,6 +332,13 @@ ADAPTER_METHODS = """
                     a.id == archiveId, b.id == archiveId,
                     a.pinned, b.pinned,
                     isUltDialogUnread(a), isUltDialogUnread(b)));
+        }
+        if (UltChatView.MENTIONS_FIRST.equals(mode)) {
+            // Presentation-only stable sort, never changes Telegram dialog order.
+            displayed.sort((a, b) -> UltChatView.compareMentionsFirst(
+                    a.id == archiveId, b.id == archiveId,
+                    a.pinned, b.pinned,
+                    a.unread_mentions_count > 0, b.unread_mentions_count > 0));
         }
         return displayed;
     }
