@@ -1,9 +1,9 @@
-name: Ultgram Beta 0.1 Privacy + Media FOSS ARM64
+name: Ultgram Beta 0.1 Quality Pass FOSS ARM64
 
 # One batched native APK for the beta candidate. Ordinary source commits run fast checks only.
 on:
   push:
-    branches: [feature/beta01-privacy-media]
+    branches: [feature/beta01-privacy-media, feature/beta01-quality-trim]
     paths:
       - '.github/workflows/android-beta.yml'
   workflow_dispatch:
@@ -216,7 +216,7 @@ jobs:
           set -euo pipefail
           if [[ "${{ matrix.variant }}" == 'foss' ]]; then
             cd .work/mercurygram-upstream
-            ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug -PMG_BUILD_TAG=16.0.0.0.1 -PMG_BETA_VERSION_CODE=7183011 -PMG_BETA_VERSION_NAME=16.0.0-beta01.1 --no-daemon --console=plain
+            ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug -PMG_BUILD_TAG=16.0.0.0.2 -PMG_BETA_VERSION_CODE=7183012 -PMG_BETA_VERSION_NAME=16.0.0-beta01.2 --no-daemon --console=plain
           else
             cd .work/telegram-upstream
             ./gradlew :TMessagesProj_App:assembleAfatDebug --no-daemon --console=plain
@@ -232,13 +232,13 @@ jobs:
             echo "::error::Expected one compiled APK, found ${#apks[@]}"
             exit 1
           fi
-          cp -- "${apks[0]}" "artifacts/ult-beta01-privacy-media-foss-arm64-debug.apk"
+          cp -- "${apks[0]}" "artifacts/ult-beta01-quality-foss-arm64-debug.apk"
           (
             cd artifacts
-            sha256sum ult-beta01-privacy-media-foss-arm64-debug.apk > SHA256SUMS
+            sha256sum ult-beta01-quality-foss-arm64-debug.apk > SHA256SUMS
           )
           {
-            printf '%s\n' "Candidate: Ultgram Beta 0.1 Privacy Lab + Media Studio (INTERNAL debug test APK; NOT public beta)"
+            printf '%s\n' "Candidate: Ultgram Beta 0.1 quality-first UI cleanup (INTERNAL debug test APK; NOT public beta)"
             printf 'Repo: yooshastan/yooshastan-ultmessenger\n'
             printf 'Repo commit: %s\n' "$GITHUB_SHA"
             printf 'Pinned Mercurygram source: %s\n' "$(tr -d '\r\n ' < upstream/mercurygram.sha)"
@@ -252,7 +252,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 scripts/apk_release_gate.py --apk artifacts/ult-beta01-privacy-media-foss-arm64-debug.apk --report artifacts/SIGNING_INFO.txt
+          python3 scripts/apk_release_gate.py --apk artifacts/ult-beta01-quality-foss-arm64-debug.apk --report artifacts/SIGNING_INFO.txt
           test -s artifacts/SIGNING_INFO.txt
           grep -q 'Upgrade compatibility: NOT CHECKED' artifacts/SIGNING_INFO.txt
 
@@ -260,7 +260,7 @@ jobs:
         if: steps.prerequisites.outputs.ready == 'true' && success()
         uses: actions/upload-artifact@v4
         with:
-          name: ult-beta01-privacy-media-foss-android
+          name: ult-beta01-quality-foss-android
           path: artifacts/*
           if-no-files-found: error
           retention-days: 30
