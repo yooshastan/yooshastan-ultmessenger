@@ -22,7 +22,7 @@ class Alpha13Contract(TestCase):
         self.assertIn('"UltCustomTheme.java"', script)
     def test_theme_editor_and_native_media_controls(self):
         settings = source("settings/src/com/yooshastan/ultmessenger/settings/UltSettingsActivity.java")
-        for token in ('"Custom ULT theme colors"', 'showUltCustomThemeEditor(',
+        for token in ('"Custom theme colors"', 'showUltCustomThemeEditor(',
                       'UltAppearanceThemeAdapter.applyCustom(', 'UltSecureDialogBuilder',
                       'DataAutoDownloadActivity(which)', 'CacheControlActivity',
                       '"Identity and privacy limitations"'):
@@ -38,7 +38,7 @@ class Alpha13Contract(TestCase):
                          "downloads.setUiCallback(this)",
                          "actionModeShowing()", "getFolderId()"):
             self.assertIn(expected, activity)
-        self.assertIn("Download queue and recent files", settings)
+        self.assertIn("One queue, history and file tools", settings)
         self.assertIn("new UltDownloadsActivity()", settings)
         self.assertIn("UltDownloadsActivity.java", script)
         self.assertNotIn("new java.net.", activity)
