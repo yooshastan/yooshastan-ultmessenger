@@ -83,150 +83,146 @@ public final class UltSettingsActivity extends BaseFragment {
         scroll.addView(content, new ScrollView.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        addSection(context, content, "NEW IN THIS BUILD");
-        addLink(context, content, "What's New / build information",
-                "Alpha 0.16 chat, message, privacy and download changes",
-                () -> showUltWhatsNew(context));
-        addLink(context, content, "Privacy Lab",
-                "Live transport and native proxy-state timeline, redacted report; no packet capture",
-                () -> presentFragment(new UltPrivacyLabActivity()));
-        addLink(context, content, "Media Studio",
-                "Search and sort locally cached eligible recent downloads by media type",
-                () -> presentFragment(new UltMediaStudioActivity()));
+
+        // Quality-first beta navigation: every core function has one home.
+        // Legacy audit helpers remain callable from developer diagnostics only.
+        addSection(context, content, "ULTGRAM");
+        addLink(context, content, "What's New and build information",
+                "Version, changes and known limitations", () -> showUltWhatsNew(context));
+
+        addSection(context, content, "CHATS AND APPEARANCE");
+        addLink(context, content, "Chats and categories",
+                "Tab layout, sorting, navigation and text density",
+                () -> showUltChatControls(context));
+        addLink(context, content, "Themes and display",
+                "Theme presets, colors and message appearance",
+                () -> showUltAppearanceControls(context));
+
+        addSection(context, content, "DOWNLOADS AND STORAGE");
         addLink(context, content, "Downloads",
-                "Pause/resume, prioritize, network rules, history and file tools",
+                "One queue, history and file tools; network rules are inside",
                 () -> presentFragment(new UltDownloadsActivity()));
+        addLink(context, content, "Storage and cache",
+                "Cache size, maintenance and Telegram's storage manager",
+                () -> showUltStorageControls(context));
 
-        addSection(context, content, "STORAGE AND CACHE");
-        addLink(context, content, "Custom maximum cache size",
-                "Choose an exact 2–32 GB limit in 1 GB steps, or No Limit",
-                () -> showUltCacheLimit(context));
-        addLink(context, content, "Run cache maintenance now",
-                "Confirm one-time cleanup using your saved Telegram cache preferences",
-                () -> showUltCacheMaintenance(context));
-        addLink(context, content, "Telegram storage usage and cleanup",
-                "Check cached files and manage storage without clearing automatically",
-                () -> presentFragment(new org.telegram.ui.CacheControlActivity()));
-
-        addSection(context, content, "APPEARANCE");
-        addLink(context, content, "Message font and bubble corners",
-                "Change Telegram's actual chat text size and bubble radius; includes Reset",
-                () -> showMessageAppearance(context));
-        addLink(context, content, "Chat list preview density",
-                "Switch Telegram's existing compact two-line / expanded three-line preview",
-                () -> showChatListDensity(context));
-        addLink(context, content, "Compact Ultgram Settings rows",
-                "Reduce spacing in this settings page only (not the chat list)",
-                () -> setCompactRows(context, !compactRows));
-        addLink(context, content, "ULT theme presets", "Six presets, fixed colors and light/dark pairing",
-                () -> presentFragment(new ThemeActivity(ThemeActivity.THEME_TYPE_BASIC)));
-        addLink(context, content, "Preview ULT theme palettes",
-                "Inspect original light and dark bubble colors without applying a theme",
-                () -> showUltThemePreview(context));
-        addLink(context, content, "Custom ULT theme colors",
-                "Create a fixed theme with your own accent and outgoing message bubble",
-                () -> showUltCustomThemeChooser(context));
-
-        addSection(context, content, "CHATS AND TOOLS");
-        addNote(context, content, "Save eligible photo/video stories",
-                "Open the story ⋮ menu → ULT: Download story. Telegram's original "
-                + "Premium-locked Save to Gallery is separate. Downloads your own "
-                + "or public/shareable, unprotected stories "
-                + "using Telegram FileLoader. No automatic bulk downloads.");
-        addLink(context, content, "ULT chat layout presets",
-                "In Chat Settings, open the ⋮ menu → ULT Chat Layout",
-                () -> presentFragment(new ThemeActivity(ThemeActivity.THEME_TYPE_BASIC)));
-        addLink(context, content, "Show chat category bar",
-                "Optional All / Unread / Groups / Channels / Bots / People strip on Chats",
-                () -> toggleChatCategoryBar(context));
-        addLink(context, content, "Customize chat category tabs",
-                "Choose visible categories; reorder them locally for this account",
-                () -> showTabCustomization(context));
-        addLink(context, content, "Category bar appearance",
-                "Compact, comfortable or spacious chips for this account",
-                () -> showCategoryBarAppearance(context));
-        addLink(context, content, "Category typography",
-                "Six per-account sizes from 11–18 sp; follows Android font scaling",
-                () -> showCategoryTypography(context));
-        addLink(context, content, "Swipe category navigator",
-                "Optional dedicated gesture surface; never intercepts chat-row swipes",
-                () -> showSwipeNavigator(context));
-        addLink(context, content, "Offline translation status",
-                "Read-only active translation engine and local provider readiness",
-                () -> showOfflineTranslationStatus(context));
-        addLink(context, content, "Chat views and sorting",
-                "All, Unread, categories, Unread First and Mentions First",
-                () -> showChatViewPicker(context));
-        addNote(context, content, "Archive row visibility",
-                "Chats → ⋮ → ULT: Hide Archive row (account-specific display only).");
-        addNote(context, content, "Chat translation",
-                "Use a chat's ⋮ menu → ULT Chat Translation. Language and consent are per chat.");
-        addNote(context, content, "Message and chat tools",
-                "Long-press a document for an optional readable file summary; nothing downloads automatically.");
-        addLink(context, content, "Download queue and recent files",
-                "Queue controls, network rules, saved picker hint, history and files",
-                () -> presentFragment(new UltDownloadsActivity()));
-        addLink(context, content, "Media storage and cache",
-                "Open Telegram's native storage manager; deleting anything requires a separate tap",
-                () -> presentFragment(new org.telegram.ui.CacheControlActivity()));
-        addLink(context, content, "Media auto-download controls",
-                "Use Telegram's existing mobile, Wi-Fi and roaming download policies",
-                () -> showNativeMediaDownloadSettings(context));
-
-        addSection(context, content, "PRIVACY AND NETWORK");
-        addLink(context, content, "Local account identity cover",
-                "Local card masking with temporary reveal; does not mask other screens",
-                () -> showLocalIdentityCover(context));
-        addLink(context, content, "Manual network egress evidence",
-                "Mark packet-capture observations for six paths and copy a redacted report",
-                () -> showNetworkEgressEvidence(context));
-        addLink(context, content, "Protect Ultgram screenshots",
-                "Opt-in Android FLAG_SECURE for main window and Ultgram Settings dialogs",
-                () -> showUltScreenPrivacy(context));
-        addLink(context, content, "Network test checklist",
-                "Mark the manual Wonhee/MTProxy tests you performed; no packet capture",
-                () -> showNetworkTestChecklist(context));
-        addLink(context, content, "Copy network test report",
-                "Read-only VPN hint, native guard and manual test states; no IPs or secrets",
-                () -> showNetworkTestReport(context));
-        addLink(context, content, "Network privacy dashboard",
-                "Current safeguards, unsupported paths and copyable diagnostic summary",
-                () -> showPrivacyDashboard(context));
-        addLink(context, content, "Identity and privacy limitations",
-                "What a proxy, local display settings, and Telegram account identity actually protect",
-                () -> showIdentityPrivacyLimits(context));
-        addLink(context, content, "Network/DNS source audit matrix",
-                "Read-only owned-code audit and missing capture evidence",
-                () -> showNetworkSourceMatrix(context));
-        addLink(context, content, "Network path audit coverage",
-                "Read-only inventory of native, DNS, HTTP, media/CDN and WebView paths",
-                () -> showNetworkPathCoverage(context));
-        addLink(context, content, "ULT Proxy Manager",
-                "Named proxies, connection diagnostics and external link confirmations",
+        addSection(context, content, "PRIVACY AND CONNECTION");
+        addLink(context, content, "Proxy manager",
+                "Select and manage Telegram proxies",
                 () -> presentFragment(new ProxyListActivity()));
-        addLink(context, content, "Confirm external links",
-                "Ask before opening HTTP(S) links outside the Telegram proxy",
-                () -> showExternalLinkGuard(context));
-        addLink(context, content, "Experimental native proxy-only mode",
-                "Opt-in guard for native Telegram sockets; not a full traffic firewall",
+        addLink(context, content, "Strict proxy (native sockets)",
+                "Native Telegram socket guard; not whole-app traffic protection",
                 () -> showNativeStrictProxy(context));
-        addLink(context, content, "Android Private DNS (DoT) status",
-                "Inspect the current system resolver and open Android DNS settings",
-                () -> showAndroidPrivateDns(context));
-        addLink(context, content, "DNS-over-QUIC configuration (preview)",
-                "Save resolver and literal bootstrap IP; native QUIC transport is NOT installed",
-                () -> showDoqConfiguration(context));
-        addLink(context, content, "Tracker domain rules (preview)",
-                "Edit local block/allow rules; filtering is NOT active in this APK",
-                () -> showTrackerRules(context));
+        addLink(context, content, "Screenshot protection",
+                "Protect Ultgram windows with Android FLAG_SECURE",
+                () -> showUltScreenPrivacy(context));
+        addLink(context, content, "External link confirmation",
+                "Ask before opening links outside the Telegram proxy",
+                () -> showExternalLinkGuard(context));
+        addLink(context, content, "Local identity cover",
+                "Mask account cards in this settings screen only",
+                () -> showLocalIdentityCover(context));
+
+        addSection(context, content, "ADVANCED");
+        addLink(context, content, "Network diagnostics",
+                "Read-only connection status and developer verification tools",
+                () -> showUltNetworkDiagnostics(context));
 
         addSection(context, content, "ABOUT");
         addNote(context, content, "Ultgram by Yooshastan Studios",
-                "Independent Telegram-compatible client. Existing Mercurygram settings remain separate.");
+                "Privacy is limited by what the implementation actually enforces.");
+
         fragmentView = scroll;
         return fragmentView;
     }
 
+
+
+    // Group related controls without adding extra settings destinations.
+    private void showUltChatControls(Context context) {
+        final String[] choices = {
+                "Show / hide category bar", "Customize category tabs",
+                "Category appearance", "Category font size", "Swipe navigation",
+                "Chat views and sorting", "Chat list preview density",
+                "Offline translation status"
+        };
+        new UltSecureDialogBuilder(context)
+                .setTitle("Chats and categories")
+                .setItems(choices, (dialog, which) -> {
+                    switch (which) {
+                        case 0: toggleChatCategoryBar(context); break;
+                        case 1: showTabCustomization(context); break;
+                        case 2: showCategoryBarAppearance(context); break;
+                        case 3: showCategoryTypography(context); break;
+                        case 4: showSwipeNavigator(context); break;
+                        case 5: showChatViewPicker(context); break;
+                        case 6: showChatListDensity(context); break;
+                        case 7: showOfflineTranslationStatus(context); break;
+                        default: break;
+                    }
+                }).setNegativeButton("Cancel", null).show();
+    }
+
+    private void showUltAppearanceControls(Context context) {
+        final String[] choices = {
+                "Message font and bubble corners", "ULT theme presets",
+                "Custom theme colors", "Preview theme palettes",
+                "Compact Ultgram Settings rows"
+        };
+        new UltSecureDialogBuilder(context)
+                .setTitle("Themes and display")
+                .setItems(choices, (dialog, which) -> {
+                    switch (which) {
+                        case 0: showMessageAppearance(context); break;
+                        case 1: presentFragment(new ThemeActivity(ThemeActivity.THEME_TYPE_BASIC)); break;
+                        case 2: showUltCustomThemeChooser(context); break;
+                        case 3: showUltThemePreview(context); break;
+                        case 4: setCompactRows(context, !compactRows); break;
+                        default: break;
+                    }
+                }).setNegativeButton("Cancel", null).show();
+    }
+
+    private void showUltStorageControls(Context context) {
+        final String[] choices = {
+                "Maximum cache size", "Run cache maintenance now",
+                "Telegram storage and cleanup"
+        };
+        new UltSecureDialogBuilder(context)
+                .setTitle("Storage and cache")
+                .setItems(choices, (dialog, which) -> {
+                    switch (which) {
+                        case 0: showUltCacheLimit(context); break;
+                        case 1: showUltCacheMaintenance(context); break;
+                        case 2: presentFragment(new org.telegram.ui.CacheControlActivity()); break;
+                        default: break;
+                    }
+                }).setNegativeButton("Cancel", null).show();
+    }
+
+    private void showUltNetworkDiagnostics(Context context) {
+        final String[] choices = {
+                "Live connection status (not route verification)",
+                "Android Private DNS status",
+                "Manual network egress evidence",
+                "Network path audit coverage",
+                "Privacy limitations explained"
+        };
+        new UltSecureDialogBuilder(context)
+                .setTitle("Network diagnostics — read only")
+                .setMessage("These tools report settings or manually entered observations. "
+                        + "They do not prove DNS, calls, media or WebView traffic is proxied.")
+                .setItems(choices, (dialog, which) -> {
+                    switch (which) {
+                        case 0: presentFragment(new UltPrivacyLabActivity()); break;
+                        case 1: showAndroidPrivateDns(context); break;
+                        case 2: showNetworkEgressEvidence(context); break;
+                        case 3: showNetworkPathCoverage(context); break;
+                        case 4: showIdentityPrivacyLimits(context); break;
+                        default: break;
+                    }
+                }).setNegativeButton("Cancel", null).show();
+    }
 
     private static TextView ultPreviewBubble(Context context, String caption,
                                               int textColor, int backgroundColor) {
