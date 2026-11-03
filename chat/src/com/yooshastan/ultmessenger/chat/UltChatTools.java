@@ -42,6 +42,18 @@ public final class UltChatTools {
         return root != null ? root + "/" + messageId : null;
     }
 
+    /** Public-chat Markdown link, using a fixed label to avoid text injection. */
+    public static String publicChatMarkdown(String username) {
+        final String link = publicLink(username);
+        return link == null ? null : "[Open public chat](" + link + ")";
+    }
+
+    /** Public-message Markdown permalink; never create private t.me/c links. */
+    public static String publicMessageMarkdown(String username, long messageId) {
+        final String link = publicMessageLink(username, messageId);
+        return link == null ? null : "[Open public message](" + link + ")";
+    }
+
     /** Local message metadata, copied only following an explicit menu tap. */
     public static String unixTimestamp(long seconds) {
         return seconds > 0 ? Long.toString(seconds) : null;
