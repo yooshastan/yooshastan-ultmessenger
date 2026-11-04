@@ -1,0 +1,184 @@
+name: Ultgram FOSS ARM64 protected release candidate
+
+# Manual only, from reviewed code on the default branch.
+# Build an unsigned APK on a separate runner BEFORE granting key access.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ultgram-foss-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-unsigned:
+    if: github.repository == 'yooshastan/yooshastan-ultmessenger' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v4
+      - name: Validate source and required credentials
+        shell: bash
+        env:
+          ULT_TELEGRAM_API_ID: ${{ secrets.ULT_TELEGRAM_API_ID || secrets.API_ID }}
+          ULT_TELEGRAM_API_HASH: ${{ secrets.ULT_TELEGRAM_API_HASH || secrets.API_HASH }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$ULT_TELEGRAM_API_ID" || -z "$ULT_TELEGRAM_API_HASH" ]]; then
+            echo '::error::Missing Telegram API credentials'
+            exit 1
+          fi
+          python3 -m unittest discover -s tests -v
+          python3 -m unittest discover -s chat/tests -p 'test_*.py' -v
+          python3 -m unittest discover -s conversation/tests -p 'test_*.py' -v
+          python3 -m unittest discover -s settings/tests -p 'test_*.py' -v
+          python3 -m unittest discover -s proxy/tests -p 'test_*.py' -v
+      - name: Install pinned Android and native build prerequisites
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y ninja-build meson nasm gperf pkg-config make cmake python3 curl
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager --install 'platforms;android-36' 'build-tools;36.0.0' 'ndk;27.2.12479018' 'cmake;3.22.1'
+      - name: Fetch pinned Mercurygram FOSS source
+        run: bash scripts/fetch-foss.sh
+      - name: Apply reviewed Ultgram integrations; prepare unsigned release
+        shell: bash
+        env:
+          ULT_TELEGRAM_API_ID: ${{ secrets.ULT_TELEGRAM_API_ID || secrets.API_ID }}
+          ULT_TELEGRAM_API_HASH: ${{ secrets.ULT_TELEGRAM_API_HASH || secrets.API_HASH }}
+        run: |
+          set -euo pipefail
+          source_dir=".work/mercurygram-upstream"
+          python3 scripts/configure-foss.py "$source_dir"
+          python3 scripts/apply-branding.py "$source_dir"
+          python3 scripts/integrate-appearance.py "$source_dir"
+          python3 scripts/patch_locale_background.py "$source_dir"
+          python3 scripts/integrate-proxy.py "$source_dir"
+          python3 scripts/integrate-external-links.py "$source_dir"
+          python3 scripts/integrate-chat-layouts.py "$source_dir"
+          python3 scripts/integrate-chat-tools.py "$source_dir"
+          python3 scripts/integrate-message-tools.py "$source_dir"
+          python3 scripts/integrate-archive-visibility.py "$source_dir"
+          python3 scripts/integrate-translation.py "$source_dir"
+          python3 scripts/integrate-chat-views.py "$source_dir"
+          python3 scripts/integrate-story-save.py "$source_dir"
+          python3 scripts/integrate-ult-settings.py "$source_dir"
+          python3 scripts/integrate-cache-limit.py "$source_dir"
+          python3 scripts/integrate-native-strict.py "$source_dir"
+          python3 scripts/integrate-screen-privacy.py "$source_dir"
+          python3 scripts/prepare-foss-unsigned-release.py "$source_dir"
+          test ! -e "$source_dir/TMessagesProj/config/release.keystore"
+      - name: Compile unsigned, non-debuggable ARM64 APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd .work/mercurygram-upstream
+          ./gradlew :TMessagesProj_App:assembleAfatFdArm64Release \
+            -PMG_BUILD_TAG=16.0.0.0.4 \
+            -PMG_BETA_VERSION_CODE=7183014 \
+            -PMG_BETA_VERSION_NAME=16.0.0-beta03.2 \
+            --no-daemon --console=plain
+      - name: Stage UNSIGNED APK and reject unexpected pre-signed output
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          mapfile -d '' apks < <(find .work -type f -name '*.apk' -path '*/TMessagesProj_App/build/outputs/apk/*' -print0)
+          if (( ${#apks[@]} != 1 )); then
+            echo "::error::Expected exactly one compiled APK, found ${#apks[@]}"
+            exit 1
+          fi
+          cp -- "${apks[0]}" artifacts/ult-beta03-foss-arm64-unsigned.apk
+          if "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify artifacts/ult-beta03-foss-arm64-unsigned.apk >/dev/null 2>&1; then
+            echo '::error::Unsigned build unexpectedly contains a valid signature'
+            exit 1
+          fi
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging artifacts/ult-beta03-foss-arm64-unsigned.apk |
+            grep -F "package: name='com.yooshastan.ultmessenger.foss' versionCode='7183014' versionName='16.0.0-beta03.2'"
+          sha256sum artifacts/ult-beta03-foss-arm64-unsigned.apk > artifacts/UNSIGNED_SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ult-beta03-foss-arm64-unsigned-internal
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 3
+
+  sign-private:
+    needs: build-unsigned
+    if: github.repository == 'yooshastan/yooshastan-ultmessenger' && github.ref == 'refs/heads/main'
+    environment: ultgram-release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: android-actions/setup-android@v4
+      - name: Install independent Android APK signing tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager --install 'build-tools;36.0.0'
+      - uses: actions/download-artifact@v4
+        with:
+          name: ult-beta03-foss-arm64-unsigned-internal
+          path: unsigned
+      - name: Sign with private publisher key (secrets exposed ONLY here)
+        shell: bash
+        env:
+          ULT_RELEASE_KEYSTORE_B64: ${{ secrets.ULT_RELEASE_KEYSTORE_B64 }}
+          ULT_RELEASE_STORE_PASSWORD: ${{ secrets.ULT_RELEASE_STORE_PASSWORD }}
+          ULT_RELEASE_KEY_PASSWORD: ${{ secrets.ULT_RELEASE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          set +x
+          umask 077
+          if [[ -z "$ULT_RELEASE_KEYSTORE_B64" || -z "$ULT_RELEASE_STORE_PASSWORD" || -z "$ULT_RELEASE_KEY_PASSWORD" ]]; then
+            echo '::error::Required release environment secrets are missing; no debug-key fallback'
+            exit 1
+          fi
+          keystore="$RUNNER_TEMP/ultgram-release.p12"
+          trap 'rm -f -- "$keystore"' EXIT
+          printf '%s' "$ULT_RELEASE_KEYSTORE_B64" | base64 --decode > "$keystore"
+          test -s "$keystore"
+          mkdir -p artifacts
+          sdk_tools="$ANDROID_HOME/build-tools/36.0.0"
+          "$sdk_tools/zipalign" -f 4 unsigned/ult-beta03-foss-arm64-unsigned.apk "$RUNNER_TEMP/ultgram-aligned.apk"
+          "$sdk_tools/zipalign" -c -v 4 "$RUNNER_TEMP/ultgram-aligned.apk"
+          "$sdk_tools/apksigner" sign \
+            --ks "$keystore" --ks-type PKCS12 --ks-key-alias ultgram-release \
+            --ks-pass env:ULT_RELEASE_STORE_PASSWORD \
+            --key-pass env:ULT_RELEASE_KEY_PASSWORD \
+            --v1-signing-enabled false --v2-signing-enabled true \
+            --v3-signing-enabled true --v4-signing-enabled false \
+            --out artifacts/ult-beta03-foss-arm64-release.apk \
+            "$RUNNER_TEMP/ultgram-aligned.apk"
+      - name: Reject wrong publisher certificate, version, package or debuggable APK
+        shell: bash
+        env:
+          ULT_RELEASE_CERT_SHA256: ${{ vars.ULT_RELEASE_CERT_SHA256 }}
+        run: |
+          set -euo pipefail
+          python3 scripts/verify-foss-release-apk.py \
+            --apk artifacts/ult-beta03-foss-arm64-release.apk \
+            --version-code 7183014 \
+            --version-name 16.0.0-beta03.2 \
+            --cert-sha256 "$ULT_RELEASE_CERT_SHA256" \
+            --report artifacts/RELEASE_INFO.txt
+          test -s artifacts/RELEASE_INFO.txt
+          (cd artifacts && sha256sum ult-beta03-foss-arm64-release.apk > SHA256SUMS)
+          printf 'Commit: %s\nPrivate release certificate verified; update compatibility NOT tested.\n' "$GITHUB_SHA" >> artifacts/RELEASE_INFO.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ult-beta03-foss-arm64-privately-signed-review
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 14
