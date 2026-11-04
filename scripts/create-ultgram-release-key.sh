@@ -26,8 +26,11 @@ if [[ -e "$target" || -L "$target" ]]; then
   exit 1
 fi
 
-mkdir -p -- "$(dirname -- "$target")"
-chmod 700 -- "$(dirname -- "$target")"
+key_dir="$(dirname -- "$target")"
+if [[ ! -d "$key_dir" ]]; then
+  mkdir -p -m 700 -- "$key_dir"
+fi
+# Never chmod a caller-supplied existing parent such as /tmp or $HOME.
 
 printf 'Ultgram permanent release key setup (interactive).\n'
 printf 'This is a new private identity; it WILL NOT update an app signed by a different key.\n'
