@@ -79,7 +79,7 @@ def integrate(root: Path) -> Path:
     source = target.read_text(encoding="utf-8")
     if "ULT_CHAT_TOOLS_MENU_ID" not in source or "UltChatTools.numericId" not in source:
         raise ValueError("Apply Alpha 0.5 chat tools before Alpha 0.6 message tools")
-    if "OPTION_ULT_COPY_MESSAGE_ID" in source:
+    if "OPTION_ULT_COPY_MESSAGE_REFERENCE" in source:
         raise ValueError("ULT Message Tools integration already applied")
     # Validate all anchors before writing anything to disk.
     for anchor in (CONSTANT_ANCHOR, MENU_ANCHOR, HANDLER_ANCHOR):
