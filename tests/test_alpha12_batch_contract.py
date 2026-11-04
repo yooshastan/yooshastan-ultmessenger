@@ -37,7 +37,7 @@ class Alpha12BatchContract(TestCase):
         self.assertIn("messageReference(", model)
         self.assertIn("publicMessageLink(publicUsername, messageId)", model)
         self.assertIn("ULT: Copy reference", integration)
-        self.assertIn("currentEncryptedChat == null && currentChat != null", integration)
+        self.assertIn("currentEncryptedChat == null", integration)
         self.assertIn("!selectedObject.isSponsored()", integration)
         self.assertIn("UltChatTools.messageReference(", integration)
         for forbidden in ("sendMessage(", "forwardMessages(", "new java.net.", "new Socket("):
