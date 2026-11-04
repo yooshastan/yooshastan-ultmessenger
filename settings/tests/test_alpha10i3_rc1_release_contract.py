@@ -34,8 +34,18 @@ class RC1Contract(TestCase):
         for required in ("debug", "not", "DoQ", "NOT ROUTE-VERIFIED",
                          "source", "signed", "Pixel 8a", "nested draft PR stack"):
             self.assertIn(required.lower(), notes.lower())
-        self.assertIn("Alpha 0.10i.3 RC1", readme)
-        self.assertIn("not leak-verified", readme)
+        # Historical alpha details moved from the front-page README into an
+        # explicit archive. Preserve the historical privacy caveat while
+        # requiring the README to describe the currently tested beta.
+        archive = (ROOT / "docs/ALPHA_DEVELOPMENT_ARCHIVE.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("Alpha 0.10i.3 RC1", archive)
+        self.assertIn("not leak-verified", archive)
+        self.assertIn("16.0.0-beta03.2", readme)
+        self.assertIn("not", readme.lower())
+        self.assertIn("not", (ROOT / "docs/SOURCE_ATTRIBUTION.md")
+                      .read_text(encoding="utf-8").lower())
         self.assertIn("SOCKET_GUARD", NATIVE.read_text(encoding="utf-8"))
 
 if __name__ == "__main__":
