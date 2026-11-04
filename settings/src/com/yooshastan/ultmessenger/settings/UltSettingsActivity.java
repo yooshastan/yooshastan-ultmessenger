@@ -91,8 +91,8 @@ public final class UltSettingsActivity extends BaseFragment {
                 "Version, changes and known limitations", () -> showUltWhatsNew(context));
 
         addSection(context, content, "CHATS AND APPEARANCE");
-        addLink(context, content, "Chats and categories",
-                "Tab layout, sorting, navigation and text density",
+        addLink(context, content, "Chats and sorting",
+                "Native Telegram folders, local sorting and preview density",
                 () -> showUltChatControls(context));
         addLink(context, content, "Themes and display",
                 "Theme presets, colors and message appearance",
@@ -140,24 +140,19 @@ public final class UltSettingsActivity extends BaseFragment {
 
     // Group related controls without adding extra settings destinations.
     private void showUltChatControls(Context context) {
+        // Native Telegram folders remain the only visible category tab strip.
+        // Keep local view/sort tools without adding another bar above navigation.
         final String[] choices = {
-                "Show / hide category bar", "Customize category tabs",
-                "Category appearance", "Category font size", "Swipe navigation",
                 "Chat views and sorting", "Chat list preview density",
                 "Offline translation status"
         };
         new UltSecureDialogBuilder(context)
-                .setTitle("Chats and categories")
+                .setTitle("Chats and sorting")
                 .setItems(choices, (dialog, which) -> {
                     switch (which) {
-                        case 0: toggleChatCategoryBar(context); break;
-                        case 1: showTabCustomization(context); break;
-                        case 2: showCategoryBarAppearance(context); break;
-                        case 3: showCategoryTypography(context); break;
-                        case 4: showSwipeNavigator(context); break;
-                        case 5: showChatViewPicker(context); break;
-                        case 6: showChatListDensity(context); break;
-                        case 7: showOfflineTranslationStatus(context); break;
+                        case 0: showChatViewPicker(context); break;
+                        case 1: showChatListDensity(context); break;
+                        case 2: showOfflineTranslationStatus(context); break;
                         default: break;
                     }
                 }).setNegativeButton("Cancel", null).show();
