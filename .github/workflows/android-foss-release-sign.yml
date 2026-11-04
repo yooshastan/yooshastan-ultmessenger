@@ -168,9 +168,17 @@ jobs:
       - name: Reject wrong publisher certificate, version, package or debuggable APK
         shell: bash
         env:
-          ULT_RELEASE_CERT_SHA256: ${{ vars.ULT_RELEASE_CERT_SHA256 }}
+          # Public certificate fingerprint can live in either GitHub Variables
+          # or Secrets (repository or the protected ultgram-release environment).
+          # The private signer is still strictly checked against this value.
+          ULT_RELEASE_CERT_SHA256: ${{ vars.ULT_RELEASE_CERT_SHA256 || secrets.ULT_RELEASE_CERT_SHA256 }}
         run: |
           set -euo pipefail
+          if [[ -z "$ULT_RELEASE_CERT_SHA256" ]]; then
+            echo "::error::ULT_RELEASE_CERT_SHA256 is missing. Add the PUBLIC fingerprint as an environment/repository Variable or Secret; do not disable verification."
+            exit 1
+          fi
+          # No echo of the configured value or private signing material.
           python3 scripts/verify-foss-release-apk.py \
             --apk artifacts/ult-beta03-foss-arm64-release.apk \
             --version-code 7183014 \
