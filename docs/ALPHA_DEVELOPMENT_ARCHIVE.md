@@ -1,0 +1,110 @@
+# Yooshastan ULT Messenger
+
+> **Alpha 0.14 Downloads Control + Story Menu RC1:** User-facing Pause all / Resume all, per-network auto-download rules, confirmable history clearing that does not delete files, per-file queue priority, and a visible **⋮ → ULT: Download story** action distinct from Telegram's original Premium lock. Source tests, full Android build, signing verification and device QA are separate gates. [Combined QA](docs/ALPHA14_DOWNLOAD_STORY_RC1_QA.md).
+
+
+> **Downloads control center (feature branch):** Top-row Pause all, Resume all, network-specific automatic download settings and **Clear history** (history only, no file deletion). Long-press a queued document to pause/resume or move it to the top; existing protected-media checks and file tools remain intact. Reuses native Telegram FileLoader/DownloadController, not another downloader. [QA and safety](docs/ALPHA14_DOWNLOAD_CONTROL.md).
+
+
+> **Alpha 0.14 cache + story fix RC2 (development):** Confirmed **Run cache maintenance now** action with Telegram's existing retention rules, plus **Download and save** for locally accessible own or public/shareable, unprotected stories even when media is not cached. No bulk harvesting or protected-story bypass. [Combined QA](docs/ALPHA14_CACHE_STORYFIX_RC2_QA.md).
+
+
+> **Alpha 0.14 custom cache RC1:** New 2–32 GB, 1 GB-step maximum Telegram cache slider with No Limit, exact custom value in Storage Usage and no automatic manual deletion. Full Android debug build and device QA required. [Cache QA](docs/ALPHA14_CACHE_RC1_QA.md).
+
+
+> **Custom cache limit feature (development):** Ultgram Settings → Storage and Cache → Custom maximum cache size. Choose 2–32 GB in 1 GB steps (including 8/10/12 GB) or No Limit. Shares Telegram's native `cache_limit` preference and shows the selected custom value in Storage Usage. Does not immediately delete data. [Scope and QA](docs/ALPHA14_CACHE_CONTROL.md).
+
+
+> **Alpha 0.14 stability RC1:** Signed APK identity recorded with `SIGNING_INFO.txt` and account-safe media comparison; original 0.14d+ remains untouched. This does **not** establish upgrade compatibility or leak-proof routing. [QA checklist](docs/ALPHA14ST_RC1_QA.md).
+
+
+> **Alpha 0.14 stability gate:** Adds verified APK signing/manifest identity output, a safe old-vs-new APK comparison tool, and account-switch guards for saved-copy verification. The accepted Alpha 0.14d+ test APK remains unchanged. **No claim of public release signing or network leak-proofing.** [Stabilization scope](docs/ALPHA14_STABILIZATION.md).
+
+
+> **Alpha 0.14d+ combined FOSS ARM64 RC1:** One candidate includes saved-copy SHA-256 verification, native Telegram font/bubble controls, a settings-only identity cover, and manual network evidence checklist. This is a debug-signed internal candidate; Android CI, device tests and separate public-release security gates apply. [QA](docs/ALPHA14DEF_RC1_QA.md).
+
+
+> **Alpha 0.14d+ unified feature batch (not yet Android-compiled):** Add user-initiated **Verify saved copy** (bounded local SHA-256 comparison via Android file picker), actual Telegram message font/bubble-radius controls, a settings-only account identity cover, and manually marked network path capture evidence. No new traffic routing or identity anonymization. [Scope and test plan](docs/ALPHA14DEF_BATCH.md).
+
+
+> **Alpha 0.14c combined ARM64 RC1:** Adds a visible, policy-gated story Gallery save icon to the previously tested media inspector/theme preview build. Native full Android test build and device verification required before treating as installable. [RC QA](docs/ALPHA14C_RC1_QA.md).
+
+
+> **Alpha 0.14c draft (source only):** Adds a visible Story Save-to-Gallery icon beside the story menu for unprotected own stories or Premium-eligible public stories, using Telegram's existing MediaController and cached media. No Premium entitlement spoofing, protected-content bypass or new download transport. [Story save plan](docs/ALPHA14C_STORY_SAVE.md).
+
+
+> **Alpha 0.14a+b combined FOSS ARM64 RC1:** Explicit local file inspector/checksum and non-destructive fixed-theme color preview. Full Android CI and Pixel 8a / Samsung A36 checks required before promoting; debug-signed internal test candidate. [Release QA](docs/ALPHA14AB_RC1_QA.md).
+
+
+> **Alpha 0.14a+b feature work (not yet an Android release):** A user-triggered downloaded-file inspector with local SHA-256 digest and explicit copy; visually preview accent and message bubbles before applying a fixed theme. Preserves Telegram FileLoader, protected-media checks, and previously tested Alpha 0.13c+d. [Staged milestone](docs/ALPHA14_BATCHED.md).
+
+
+> **Alpha 0.13c+d RC1 (debug internal candidate):** What's New and installed package version inside Ultgram Settings, Chats overflow Downloads link, and user-selected Android Save As for already-downloaded permitted documents. Prepared on `release/alpha13cd-combined-rc1`; must pass full native Android CI and on-device testing before claiming the APK is ready. [RC QA](docs/ALPHA13CD_RC1_QA.md).
+
+
+> **Alpha 0.13c+d feature branch:** A What's New / exact package version screen, one-time notes when Ultgram Settings first opens after installing this candidate, and **Chats → ⋮ → ULT: Downloads** shortcut. Downloads long-press adds an explicit user-selected Android SAF Save As action for an already downloaded, non-protected document; no new downloader or broad storage permission. Lightweight tests first; no Alpha 0.13c+d APK until full combined Android CI. [Scope and QA](docs/ALPHA13CD_DISCOVERABILITY.md).
+
+
+> **Alpha 0.13a+b RC1 FOSS ARM64 candidate:** Combined debug build on `release/alpha13ab-combined-rc1` of native fixed custom colors and the Telegram-owned download queue, plus native auto-download controls. The build must pass CI and Pixel 8a / Samsung A36 checks before acceptance; no release signing or full Save As manager yet. [RC1 QA](docs/ALPHA13AB_RC1_QA.md).
+
+> **Alpha 0.13a development:** Custom, contrast-checked fixed theme accent/outgoing-bubble colors imported using Telegram's native theme engine; original paired presets remain untouched. Adds a native Telegram download queue/recent-files screen plus mobile/Wi-Fi/roaming auto-download settings shortcuts and accurate identity/privacy scope guidance. The full download queue and file export manager are still future work. This branch has lightweight tests only; no Alpha 0.13 APK yet. [Alpha 0.13 plan](docs/ALPHA13_MILESTONE.md).
+
+
+> **Alpha 0.12c+d RC1 build candidate:** The combined FOSS ARM64 debug APK is prepared on `release/alpha12cd-combined-rc1` for CI and internal testing. Includes the optional category swipe target, per-account category typography, and additional document clipboard utilities. This is not a public release, full download manager or native chat-list swipe integration. [RC1 device QA](docs/ALPHA12CD_RC1_QA.md).
+
+> **Alpha 0.12c+d development:** Dedicated opt-in swipe navigator for visible category tabs, per-account category typography and read-only, explicitly copied media citations/file names. Built atop the Samsung/Pixel-working Alpha 0.12a+b RC1; native strict proxy, Telegram storage, screenshot protections and DNS are not altered. Full Android APK not yet compiled for this branch. [Development QA](docs/ALPHA12CD_BATCHED.md).
+
+
+> **Alpha 0.12a+b RC1 Android build:** Initial Pixel-compatible FOSS ARM64 **debug test candidate** on `release/alpha12ab-combined-rc1`. Includes category bar density, paired ULT theme previews and explicit Copy message reference; swipe navigation and file manager remain planned. The candidate requires full Android CI and on-device QA before acceptance; not production-signed. [RC1 QA](docs/ALPHA12_RC1_QA.md).
+
+> **Alpha 0.12a+b development (Nullgram/Nekogram-inspired UX):** The first local batch adds selectable per-account category-strip density, read-only ULT light/dark palette previews, and an explicit one-tap message reference copy action. Lightweight Python/Java checks run on feature commits; no Alpha 0.12 Android APK has been compiled yet. This does not modify strict proxy, DNS routing, Telegram server data or Premium entitlements. [Scope and test plan](docs/ALPHA12_BATCHED_BUILD.md).
+
+> **Alpha 0.11b+c combined development (build-efficiency setup):** Opt-in screenshot privacy (0.11a.1) is the tested baseline. DNS/HTTP/media-path auditing (0.11b) and advanced chat navigation / translation (0.11c) are being developed together for a **single later FOSS ARM64 test APK**. Intermediate commits run lightweight contract tests, not the full Gradle/native compile. This batching change itself does **not** implement DoQ, tracker filtering, or new offline language models. The working native strict proxy is unchanged. [Combined-stage plan](docs/ALPHA11_BATCHED_BUILD.md).
+
+> **Alpha 0.10i.3 RC1 — source-frozen FOSS ARM64 debug test candidate:** Pixel 8a user-reported checks passed for strict-proxy cold start (strict remained ON), basic messaging, document MIME/bytes and file summary, two-/three-line chat previews and their saved selection, and the read-only network coverage report. This is a debug-signed internal test candidate, **not** a production-signed GitHub Release or a completed privacy audit. Native tgnet socket guard coverage is limited; direct/non-native DNS, Java/HTTP, CDN/media, calls and WebViews are **not leak-verified**. Use [RC1 release notes](docs/ALPHA10I3_RC1_RELEASE_NOTES.md) and [combined device test](docs/ALPHA10I3_COMBINED_QA.md). The older alpha warnings below describe earlier prototypes and are superseded by this tested baseline where applicable.
+
+> **Alpha 0.10h.2 (draft, pending Pixel validation):** Fixes the experimental native strict-proxy toggle after an observed Ultgram outage. New enables require an active configured MTProto/SOCKS5 proxy; the proxy switch cannot be casually disabled while the guard is requested ON. Switching strict OFF requests a native reconnection, and diagnostics distinguish requested vs native-observed state without claiming whole-app leak protection. Keeps strict **OFF by default**. See [Alpha 0.10h.2 tests](docs/ALPHA10H2_STRICT_RECOVERY_TEST.md). **Do not re-enable strict until this APK passes device testing.**
+
+> **Alpha 0.10h.1 (draft, not device-tested):** Adds a quick-cycle entry for locally filtered chats (including People/private chats), opt-in message timestamp and document metadata copy actions, compact rows within **Ultgram Settings only**, and a redacted manually marked Network Test Report compatible with Wonhee Proxy remaining connected. This is **not** a native swipe-tab strip, bulk message manager, download manager or complete appearance redesign. No new VPN/DNS/proxy enforcement is activated. [Test instructions](docs/ALPHA10H1_OPT_IN_TOOLS_TEST.md). The feature work is staged on top of Alpha 0.10g's device-tested baseline.
+
+
+> **Alpha 0.10g network regression (draft, not device-verified):** Carries forward the native MTProxy strict-proxy experiment and existing Ultgram Settings, adds a read-only Android VPN transport hint, and introduces a redacted `tcpdump` text audit and 8-case WireGuard/MTProxy/DNS/media/external-link regression matrix. This is observation-only, **not a kill switch, DNS encryption implementation, or leak-proof guarantee**. Use the [0.10g test guide](docs/ALPHA10G_NETWORK_REGRESSION.md). Identity masking, tracker enforcement, and actual DoQ networking are deferred.
+
+
+**Who is your Telegram client bias?**
+
+An experimental, independent Android messaging project from Yooshastan Studios. Inspired by K-pop's *ultimate bias* and the flexibility of alternative Telegram clients.
+
+> **Alpha 0.10f.4 privacy controls preview (draft):** Adds an honest local network privacy dashboard, configurable DoQ *draft* endpoint with a literal bootstrap IP, and editable tracker block/allow rules. The policy is unit-tested but **no Android DoQ QUIC backend or real request filtering is installed**, so neither feature actively protects network traffic in this preview. The currently blocked native [DnsLibs build experiment](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/build-doq-native.yml?query=branch%3Afeature%2Falpha10f4-privacy-controls-spike) requires AdGuard-specific Conan dependencies not available from the default public remote; no AAR is available yet. Read [the f4 device test guide](docs/ALPHA10F4_PRIVACY_PREVIEW_TEST.md) and [f4 Android preview CI](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha10f4-privacy-controls-spike).
+> **Alpha 0.10f.3 DoQ protocol foundation (draft):** Adds a DNS-over-QUIC endpoint and DNS wire-query **test contract**, with no implicit plaintext fallback *within that contract*. **This is not an active DoQ resolver**: no QUIC engine is bundled or wired to native/Java resolution paths, and there is no DoQ switch in the APK. A separately built, verified Android native DoQ backend is next. Read [the staged DoQ implementation plan](docs/ALPHA10F3_DOQ_FOUNDATION.md) and [contract CI](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/doq-contract.yml?query=branch%3Afeature%2Falpha10f3-doq-foundation). A future Tailscale-like VPN for Moka and Ultgram is being considered as a **separate** app.
+> **Alpha 0.10f.2 Android Private DNS posture (draft):** Ultgram Settings can read Android's current network **Private DNS (DoT)** status and open system DNS configuration without modifying system settings or using a VPN. It distinguishes strict, opportunistic, inactive and unknown states. **DoQ and full-app encrypted-only DNS are NOT implemented**; native/Java/media DNS routing is not leak-verified. Read [the DNS test guide](docs/ALPHA10F2_DNS_POSTURE_TEST.md). FOSS ARM64 artifact will be `ult-alpha10f2-preview-foss-android` if [CI passes](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha10f2-android-private-dns-posture).
+> **Alpha 0.10f.1 experimental native guard (draft):** Ultgram Settings adds an **off-by-default native `tgnet` direct-socket guard**, with a Tor conflict warning and opt-in setting. This is **not** a whole-app firewall or a demonstrated fail-closed guarantee. Java/HTTP, DNS, media and WebViews remain outside its protection; **DoQ and tracker blocking remain unimplemented**. Read [the 0.10f.1 test procedure](docs/ALPHA10F_NATIVE_STRICT_TEST.md). FOSS CI artifact: `ult-alpha10f1-preview-foss-android` once [the branch CI](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha10f1-native-strict) passes.
+> **Alpha 0.10f.0 settings hub (draft):** Adds **Ultgram Settings** beside Mercurygram Settings, with ULT theme presets, per-account chat view selection, Proxy Manager and external-link confirmation in one navigation hub. Existing Mercurygram/Telegram settings and preferences remain intact; per-chat translation and tools are listed as in-chat actions. **Strict native proxy, encrypted DNS and tracker blocking are still under development, not switched on by this hub.** The FOSS ARM64 artifact will be `ult-alpha10f0-preview-foss-android` once [its CI](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha10f0-ult-settings-audit) passes. Read the [Alpha 0.10f network-path audit](docs/ALPHA10F_NETWORK_AUDIT.md).
+
+> **Alpha 0.10e external link confirmation preview:** Draft branch `feature/alpha10e-external-link-guard` adds an **optional, off-by-default confirmation** when opening external HTTP(S) links via Ultgram’s regular browser dispatcher, with “Open once” and Cancel. Find the switch at **ULT Proxy Manager → info → Link guard settings**. This is a **link-tap guard only**, not automatic media/CDN blocking, encrypted DNS, native proxy fail-closed, a VPN, or proof of anonymity. The FOSS ARM64 artifact is `ult-alpha10e-preview-foss-android` after [Alpha 0.10e Actions](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha10e-external-link-guard) passes. Follow the [Alpha 0.10e device guide](docs/ALPHA10E_TEST.md).
+
+> **Alpha 0.10d privacy verification preview:** The `feature/alpha10d-proxy-privacy-verification` branch adds an **explicit Copy redacted status** button to the local proxy diagnostics and a dependency-free [`alpha10d-netwatch.py`](scripts/alpha10d-netwatch.py) classifier for gateway/proxy-host **packet-count summaries**. No packet capture runs inside Ultgram and no strict routing, DNS encryption or leak protection has been implemented. The FOSS ARM64 test artifact is `ult-alpha10d-preview-foss-android` when [this branch's CI](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha10d-proxy-privacy-verification) passes. Follow the [Alpha 0.10d test guide](docs/ALPHA10D_TEST.md).
+
+> **Alpha 0.10c.2 proxy UX and DNS audit preview:** The `feature/alpha10c-proxy-diagnostics` branch adds an opt-in **read-only** connection diagnostics dialog to named proxy profiles. Its FOSS ARM64 APK will be available in [GitHub Actions](https://github.com/yooshastan/yooshastan-ultmessenger/actions/workflows/android-alpha.yml?query=branch%3Afeature%2Falpha10c-proxy-diagnostics) after CI passes as `ult-alpha10c2-preview-foss-android`. See the [proxy/DNS audit](docs/PROXY_DNS_AUDIT.md) and [device checklist](docs/DEVICE_ALPHA_TEST.md).
+
+## Goals
+- Telegram Android compatibility based on the official GPL-2.0 client.
+- Nullgram-inspired appearance; selected Nekogram, Goregram, and Plus Messenger enhancements.
+- Built-in MTProxy/SOCKS5 management.
+- Free client-side enhancements without bypassing Telegram Premium entitlements.
+- No advertising or tracking added by Yooshastan. Official Telegram sponsored messages remain supported as required.
+- Optional SMS/MMS inbox and experimental Google Messages RCS companion.
+
+## Roadmap
+See the [master feature inventory — shipped vs. remaining](docs/FEATURE_MATRIX.md), [current product roadmap](docs/PRODUCT_ROADMAP.md), [Alpha 0.9 device test plan](docs/DEVICE_ALPHA_TEST.md), and [architecture](docs/ARCHITECTURE.md).
+
+The Samsung A36 fix makes ULT theme selection override automatic night switching, refreshes visible screens, and restores previous day/night/auto-night settings on **System**. The fixed-theme behavior has been device-tested on Samsung A36; Pixel 8a was also reported improved.
+
+Alpha 0.10b adds an explicit **Follow phone light/dark** or **Keep fixed colors** choice after selecting a preset. Original light/dark companion palettes are provided for Candy Pink, Aurora, Obsidian, Midnight, Neon Stage, and Minimal. **System** restores the previous Telegram appearance and auto-night setting. The initial paired build ran on a user's device, but Telegram's **in-app Night Mode** toggle reverted to standard appearance. This patch updates the native manual toggle targets; the FOSS native build passed and the user confirmed all six ULT palettes work in both day and night mode.
+
+Alpha 0.10a adds **Chats → ⋮ → ULT: Chat Views**, an account-specific local display control for All, Unread, Groups, Channels, Bots and Unread First. It filters/sorts displayed lists only; server-side archive, pins and folders remain untouched. Alpha 0.9.1 repaired the language-choice dialog and the English translation flow has been device-tested. Alpha 0.9 adds **⋮ → ULT Chat Translation** with per-chat language choices and a remote-engine consent prompt. Mercurygram's pre-existing offline AIDL translator is now **strictly local**: missing or failed providers never silently fall back to HTTP. Secret chats require the offline provider. The Alpha 0.8 hide-archive control remains included. Firebase remains optional.
+
+Alpha 0.10c begins with **Connection diagnostics** in **ULT Proxy Manager → saved profile info → Connection diagnostics**. This exposes the app's existing proxy selection, native Telegram connection state, and cached reachability check without logging secrets, resolving a new hostname or modifying routing. The 0.10c.2 update clarifies **Global Use Proxy switch** versus the selected profile and fixes dark-mode title/back/info contrast on the adaptive proxy header. **Strict DNS/DoQ and fail-closed proxy routing are not implemented**; see [transport/DNS audit](docs/PROXY_DNS_AUDIT.md).
+
+## Disclaimer
+Not affiliated with Telegram. Uses the Telegram API; a project-specific API ID is required for distribution. The application must comply with Telegram's [API terms](https://core.telegram.org/api/terms). GPL licensing and corresponding-source obligations apply to derivative code.

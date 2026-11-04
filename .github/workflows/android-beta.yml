@@ -1,0 +1,267 @@
+name: Ultgram Beta 0.3 Combined FOSS ARM64
+
+# One batched native APK for the combined beta 0.1–0.3 internal candidate.
+# Preflight: broad owned-settings and native proxy source contracts passed. Ordinary source commits run fast checks only.
+on:
+  push:
+    branches: [feature/beta01-privacy-media, feature/beta01-quality-trim, feature/beta01-navigation-message-polish]
+    paths:
+      - '.github/workflows/android-beta.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: android-beta-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.variant }} ARM64 debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [foss]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Check credentials without exposing values
+        id: prerequisites
+        env:
+          API_ID: ${{ secrets.ULT_TELEGRAM_API_ID || secrets.API_ID }}
+          API_HASH: ${{ secrets.ULT_TELEGRAM_API_HASH || secrets.API_HASH }}
+          FIREBASE_JSON_B64: ${{ secrets.ULT_FIREBASE_JSON_B64 }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$API_ID" || -z "$API_HASH" ]]; then
+            echo '::error::Missing Telegram API secrets. Provide ULT_TELEGRAM_API_ID / ULT_TELEGRAM_API_HASH (or API_ID / API_HASH) as repository Actions secrets.'
+            exit 1
+          fi
+          if [[ "${{ matrix.variant }}" == 'firebase' && -z "$FIREBASE_JSON_B64" ]]; then
+            echo '::notice::Firebase variant skipped until ULT_FIREBASE_JSON_B64 is configured.'
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
+          fi
+      - uses: android-actions/setup-android@v4
+        if: steps.prerequisites.outputs.ready == 'true'
+      - name: Verify pinned locale, theme, proxy and chat tools
+        if: steps.prerequisites.outputs.ready == 'true'
+        run: |
+          python3 -m unittest discover -s tests -p 'test_patch_locale_background.py'
+          python3 -m unittest discover -s tests -p 'test_branding.py'
+          python3 -m unittest discover -s appearance/tests -p 'test_integration.py'
+          python3 -m unittest discover -s appearance/tests -p 'test_theme_state_contract.py'
+          mkdir -p /tmp/ult-appearance-classes
+          javac -d /tmp/ult-appearance-classes appearance/src/com/yooshastan/ultmessenger/appearance/UltAppearancePreset.java appearance/tests/UltAppearancePresetTest.java
+          java -cp /tmp/ult-appearance-classes UltAppearancePresetTest
+          javac -d /tmp/ult-appearance-classes appearance/src/com/yooshastan/ultmessenger/appearance/UltAppearancePreset.java appearance/src/com/yooshastan/ultmessenger/appearance/UltCustomTheme.java appearance/tests/UltCustomThemeTest.java
+          java -cp /tmp/ult-appearance-classes UltCustomThemeTest
+          javac -d /tmp/ult-appearance-classes settings/src/com/yooshastan/ultmessenger/settings/UltReleaseNotes.java settings/tests/UltReleaseNotesTest.java
+          java -cp /tmp/ult-appearance-classes UltReleaseNotesTest
+          python3 -m unittest discover -s proxy/tests -p 'test_integration.py'
+          python3 -m unittest discover -s proxy/tests -p 'test_netwatch.py'
+          python3 -m unittest discover -s proxy/tests -p 'test_external_links.py'
+          python3 -m unittest discover -s settings/tests -p 'test_integration.py'
+          mkdir -p /tmp/ult-media-inspector-classes
+          javac -d /tmp/ult-media-inspector-classes settings/src/com/yooshastan/ultmessenger/settings/UltFileInspection.java settings/tests/UltFileInspectionTest.java
+          java -cp /tmp/ult-media-inspector-classes UltFileInspectionTest
+          python3 -m unittest discover -s settings/tests -p 'test_native_strict.py'
+          python3 -m unittest discover -s settings/tests -p 'test_alpha10h2_contract.py'
+          python3 -m unittest discover -s settings/tests -p 'test_alpha10i1a_startup_contract.py'
+          mkdir -p /tmp/ult-strict-policy
+          javac -d /tmp/ult-strict-policy proxy/src/com/yooshastan/ultmessenger/proxy/UltStrictProxyPolicy.java proxy/tests/UltStrictProxyPolicyTest.java
+          java -cp /tmp/ult-strict-policy UltStrictProxyPolicyTest
+          python3 -m unittest discover -s settings/tests -p 'test_alpha10g_settings_contract.py'
+          python3 -m unittest discover -s settings/tests -p 'test_alpha10h1_contract.py'
+          python3 -m unittest discover -s settings/tests -p 'test_alpha10i3_combined_contract.py'
+          python3 -m unittest discover -s settings/tests -p 'test_alpha10i3_rc1_release_contract.py'
+          python3 -m unittest discover -s settings/tests -p 'test_alpha11a_screen_privacy.py'
+          python3 -m unittest discover -s settings/tests -p 'test_alpha11bc_combined_contract.py'
+          python3 -m unittest discover -s tests -p 'test_alpha12cd_contract.py'
+          python3 -m unittest discover -s tests -p 'test_alpha13_contract.py'
+          python3 -m unittest discover -s tests -p 'test_alpha13cd_contract.py'
+          python3 -m unittest discover -s tests -p 'test_alpha14_contract.py'
+          python3 -m unittest discover -s tests -p 'test_alpha14c_story_save.py'
+          python3 -m unittest discover -s tests -p 'test_alpha14_story_lock_ui.py'
+          python3 -m unittest discover -s tests -p 'test_alpha14_download_control.py'
+          python3 -m unittest discover -s tests -p 'test_alpha14def_contract.py'
+          python3 -m unittest discover -s tests -p 'test_apk_release_gate.py'
+          python3 -m unittest discover -s tests -p 'test_alpha14_stabilization_contract.py'
+          python3 -m unittest discover -s tests -p 'test_alpha14_cache_control.py'
+          javac -d /tmp/ult-appearance-classes stories/src/com/yooshastan/ultmessenger/stories/UltStorySavePolicy.java stories/tests/UltStorySavePolicyTest.java
+          java -cp /tmp/ult-appearance-classes UltStorySavePolicyTest
+          javac -d /tmp/ult-appearance-classes settings/src/com/yooshastan/ultmessenger/settings/UltCacheLimitPolicy.java settings/tests/UltCacheLimitPolicyTest.java
+          java -cp /tmp/ult-appearance-classes UltCacheLimitPolicyTest
+          mkdir -p /tmp/ult-alpha14def-classes
+          javac -d /tmp/ult-alpha14def-classes settings/src/com/yooshastan/ultmessenger/settings/UltFileInspection.java settings/src/com/yooshastan/ultmessenger/settings/UltChatAppearancePolicy.java settings/src/com/yooshastan/ultmessenger/settings/UltIdentityCover.java settings/src/com/yooshastan/ultmessenger/settings/UltNetworkEvidence.java settings/tests/UltAlpha14DefTest.java
+          java -cp /tmp/ult-alpha14def-classes UltAlpha14DefTest
+          mkdir -p /tmp/ult-story-save-classes
+          javac -d /tmp/ult-story-save-classes stories/src/com/yooshastan/ultmessenger/stories/UltStorySavePolicy.java stories/tests/UltStorySavePolicyTest.java
+          java -cp /tmp/ult-story-save-classes UltStorySavePolicyTest
+          python3 -m unittest discover -s conversation/tests -p 'test_chat_views_integration.py'
+          python3 -m unittest discover -s appearance/tests -p 'test_integration.py'
+          python3 -m unittest discover -s settings/tests -p 'test_integration.py'
+          python3 -m unittest discover -s tests -p 'test_alpha12_batch_contract.py'
+          python3 -m unittest discover -s proxy/tests -p 'test_alpha10g_path_audit.py'
+          mkdir -p /tmp/ult-dns-classes
+          javac -d /tmp/ult-dns-classes settings/src/com/yooshastan/ultmessenger/settings/UltDnsPosture.java settings/tests/UltDnsPostureTest.java
+          java -cp /tmp/ult-dns-classes UltDnsPostureTest
+          mkdir -p /tmp/ult-network-report
+          javac -d /tmp/ult-network-report settings/src/com/yooshastan/ultmessenger/settings/UltNetworkTestReport.java settings/tests/UltNetworkTestReportTest.java
+          java -cp /tmp/ult-network-report UltNetworkTestReportTest
+          javac -d /tmp/ult-network-report settings/src/com/yooshastan/ultmessenger/settings/UltNetworkSourceMatrix.java settings/tests/UltNetworkSourceMatrixTest.java
+          java -cp /tmp/ult-network-report UltNetworkSourceMatrixTest
+          mkdir -p /tmp/ult-doq-contract
+          javac -d /tmp/ult-doq-contract dns/src/com/yooshastan/ultmessenger/dns/UltDoqEndpoint.java dns/src/com/yooshastan/ultmessenger/dns/UltDoqBootstrap.java dns/src/com/yooshastan/ultmessenger/dns/UltDnsTrackerPolicy.java dns/src/com/yooshastan/ultmessenger/dns/UltDoqResolver.java dns/tests/UltDoqContractTest.java dns/tests/UltDoqBootstrapTest.java dns/tests/UltDnsTrackerPolicyTest.java
+          java -cp /tmp/ult-doq-contract UltDoqContractTest
+          java -cp /tmp/ult-doq-contract UltDoqBootstrapTest
+          java -cp /tmp/ult-doq-contract UltDnsTrackerPolicyTest
+          mkdir -p /tmp/ult-proxy-classes
+          javac -d /tmp/ult-proxy-classes proxy/src/com/yooshastan/ultmessenger/proxy/UltProxyLabels.java proxy/src/com/yooshastan/ultmessenger/proxy/UltProxyDiagnostics.java proxy/tests/UltProxyLabelsTest.java proxy/tests/UltProxyDiagnosticsTest.java
+          java -cp /tmp/ult-proxy-classes UltProxyLabelsTest
+          java -cp /tmp/ult-proxy-classes UltProxyDiagnosticsTest
+          javac -d /tmp/ult-proxy-classes proxy/src/com/yooshastan/ultmessenger/proxy/UltExternalLinkRules.java proxy/tests/UltExternalLinkRulesTest.java
+          java -cp /tmp/ult-proxy-classes UltExternalLinkRulesTest
+          python3 -m unittest discover -s chat/tests -p 'test_integration.py'
+          mkdir -p /tmp/ult-chat-classes
+          javac -d /tmp/ult-chat-classes chat/src/com/yooshastan/ultmessenger/chat/UltChatLayoutPreset.java chat/tests/UltChatLayoutPresetTest.java
+          java -cp /tmp/ult-chat-classes UltChatLayoutPresetTest
+          python3 -m unittest discover -s chat/tests -p 'test_tools_integration.py'
+          python3 -m unittest discover -s chat/tests -p 'test_message_tools_integration.py'
+          javac -d /tmp/ult-chat-classes chat/src/com/yooshastan/ultmessenger/chat/UltChatTools.java chat/tests/UltChatToolsTest.java
+          java -cp /tmp/ult-chat-classes UltChatToolsTest
+          python3 -m unittest discover -s conversation/tests -p 'test_integration.py'
+          mkdir -p /tmp/ult-conversation-classes
+          javac -d /tmp/ult-conversation-classes conversation/src/com/yooshastan/ultmessenger/conversation/UltArchiveVisibility.java conversation/tests/UltArchiveVisibilityTest.java
+          java -cp /tmp/ult-conversation-classes UltArchiveVisibilityTest
+          python3 -m unittest discover -s conversation/tests -p 'test_chat_views_integration.py'
+          javac -d /tmp/ult-conversation-classes conversation/src/com/yooshastan/ultmessenger/conversation/UltChatView.java conversation/tests/UltChatViewTest.java
+          java -cp /tmp/ult-conversation-classes UltChatViewTest
+          python3 -m unittest discover -s tests -p 'test_alpha16_combined.py'
+          python3 -m unittest discover -s tests -p 'test_beta01_privacy_media.py'
+          mkdir -p /tmp/ult-beta01-model-classes
+          javac -d /tmp/ult-beta01-model-classes settings/src/com/yooshastan/ultmessenger/settings/UltPrivacySession.java settings/tests/UltPrivacySessionTest.java settings/src/com/yooshastan/ultmessenger/settings/UltMediaIndex.java settings/tests/UltMediaIndexTest.java
+          java -cp /tmp/ult-beta01-model-classes UltPrivacySessionTest
+          java -cp /tmp/ult-beta01-model-classes UltMediaIndexTest
+          python3 -m unittest discover -s translation/tests -p 'test_integration.py'
+          mkdir -p /tmp/ult-translation-classes
+          javac -d /tmp/ult-translation-classes translation/src/com/yooshastan/ultmessenger/translation/UltTranslationPolicy.java translation/tests/UltTranslationPolicyTest.java
+          java -cp /tmp/ult-translation-classes UltTranslationPolicyTest
+      - name: Install Android native build tools
+        if: steps.prerequisites.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y ninja-build meson nasm gperf pkg-config make cmake python3 curl
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager --install 'platforms;android-36' 'build-tools;36.0.0' 'ndk;27.2.12479018' 'cmake;3.22.1'
+      - name: Fetch pinned Android source
+        if: steps.prerequisites.outputs.ready == 'true'
+        shell: bash
+        run: |
+          if [[ "${{ matrix.variant }}" == 'foss' ]]; then
+            bash scripts/fetch-foss.sh
+          else
+            bash scripts/fetch-upstream.sh
+          fi
+      - name: Configure private API credentials and ULT branding
+        if: steps.prerequisites.outputs.ready == 'true'
+        shell: bash
+        env:
+          ULT_TELEGRAM_API_ID: ${{ secrets.ULT_TELEGRAM_API_ID || secrets.API_ID }}
+          ULT_TELEGRAM_API_HASH: ${{ secrets.ULT_TELEGRAM_API_HASH || secrets.API_HASH }}
+          FIREBASE_JSON_B64: ${{ secrets.ULT_FIREBASE_JSON_B64 }}
+        run: |
+          set -euo pipefail
+          set +x
+          if [[ "${{ matrix.variant }}" == 'foss' ]]; then
+            source_dir=".work/mercurygram-upstream"
+            python3 scripts/configure-foss.py "$source_dir"
+          else
+            source_dir=".work/telegram-upstream"
+            python3 scripts/configure-prototype.py "$source_dir"
+            printf '%s' "$FIREBASE_JSON_B64" | base64 -d > "$source_dir/TMessagesProj/google-services.json"
+            python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); ps={a["client_info"]["android_client_info"]["package_name"] for a in d["client"]}; needed={"com.yooshastan.ultmessenger","com.yooshastan.ultmessenger.beta"}; assert needed.issubset(ps), "Firebase app registration missing package IDs"' "$source_dir/TMessagesProj/google-services.json"
+          fi
+          python3 scripts/apply-branding.py "$source_dir"
+          if [[ "${{ matrix.variant }}" == 'foss' ]]; then
+            python3 scripts/integrate-appearance.py "$source_dir"
+            python3 scripts/patch_locale_background.py "$source_dir"
+            python3 scripts/integrate-proxy.py "$source_dir"
+            python3 scripts/integrate-external-links.py "$source_dir"
+            python3 scripts/integrate-chat-layouts.py "$source_dir"
+            python3 scripts/integrate-chat-tools.py "$source_dir"
+            python3 scripts/integrate-message-tools.py "$source_dir"
+            python3 scripts/integrate-archive-visibility.py "$source_dir"
+            python3 scripts/integrate-translation.py "$source_dir"
+            python3 scripts/integrate-chat-views.py "$source_dir"
+            python3 scripts/integrate-story-save.py "$source_dir"
+            python3 scripts/integrate-ult-settings.py "$source_dir"
+            python3 scripts/integrate-cache-limit.py "$source_dir"
+            python3 scripts/integrate-native-strict.py "$source_dir"
+            python3 scripts/integrate-screen-privacy.py "$source_dir"
+          fi
+      - name: Compile Pixel-compatible ARM64 debug APK
+        if: steps.prerequisites.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ matrix.variant }}" == 'foss' ]]; then
+            cd .work/mercurygram-upstream
+            ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug -PMG_BUILD_TAG=16.0.0.0.3 -PMG_BETA_VERSION_CODE=7183013 -PMG_BETA_VERSION_NAME=16.0.0-beta03.1 --no-daemon --console=plain
+          else
+            cd .work/telegram-upstream
+            ./gradlew :TMessagesProj_App:assembleAfatDebug --no-daemon --console=plain
+          fi
+      - name: Stage the compiled APK for download
+        if: steps.prerequisites.outputs.ready == 'true' && success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          mapfile -d '' apks < <(find .work -type f -name '*.apk' -path '*/TMessagesProj_App/build/outputs/apk/*' -print0)
+          if (( ${#apks[@]} != 1 )); then
+            echo "::error::Expected one compiled APK, found ${#apks[@]}"
+            exit 1
+          fi
+          cp -- "${apks[0]}" "artifacts/ult-beta03-combined-foss-arm64-debug.apk"
+          (
+            cd artifacts
+            sha256sum ult-beta03-combined-foss-arm64-debug.apk > SHA256SUMS
+          )
+          {
+            printf '%s\n' "Candidate: Ultgram Beta 0.3 combined UI, native search and reconnect guidance (INTERNAL debug APK; NOT public beta)"
+            printf 'Repo: yooshastan/yooshastan-ultmessenger\n'
+            printf 'Repo commit: %s\n' "$GITHUB_SHA"
+            printf 'Pinned Mercurygram source: %s\n' "$(tr -d '\r\n ' < upstream/mercurygram.sha)"
+            printf 'Build: FOSS ARM64 debug; not release signed\n'
+            printf 'Routing audit: not complete; native tgnet guard is not a whole-app kill switch\n'
+          } > artifacts/BUILD_INFO.txt
+          cat artifacts/SHA256SUMS
+          ls -lh artifacts/
+      - name: Verify APK signature and record package identity
+        if: steps.prerequisites.outputs.ready == 'true' && success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/apk_release_gate.py --apk artifacts/ult-beta03-combined-foss-arm64-debug.apk --report artifacts/SIGNING_INFO.txt
+          test -s artifacts/SIGNING_INFO.txt
+          grep -q 'Upgrade compatibility: NOT CHECKED' artifacts/SIGNING_INFO.txt
+
+      - name: Upload installable internal test APK
+        if: steps.prerequisites.outputs.ready == 'true' && success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ult-beta03-combined-foss-android
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 30
