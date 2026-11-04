@@ -194,3 +194,11 @@ jobs:
           set -euo pipefail
           bash -n scripts/create-ultgram-release-key.sh
           python3 -m unittest discover -s tests -p 'test_beta_signing_prep.py' -v
+
+      - name: FOSS unsigned build and protected signer architecture
+        if: github.ref == 'refs/heads/feature/beta03-signing-prep' || github.head_ref == 'feature/beta03-signing-prep'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/prepare-foss-unsigned-release.py scripts/verify-foss-release-apk.py
+          python3 -m unittest discover -s tests -p 'test_foss_release_pipeline.py' -v
