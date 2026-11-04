@@ -1,10 +1,10 @@
-name: Ultgram Beta 0.3 Combined FOSS ARM64
+name: Ultgram Beta 3.2 Installable FOSS ARM64
 
-# One batched native APK for the combined beta 0.1–0.3 internal candidate.
+# Installable Beta 3.2 test APK signed with same certificate/package as the proven Beta 3.1.
 # Preflight: broad owned-settings and native proxy source contracts passed. Ordinary source commits run fast checks only.
 on:
   push:
-    branches: [feature/beta01-privacy-media, feature/beta01-quality-trim, feature/beta01-navigation-message-polish]
+    branches: [feature/beta01-privacy-media, feature/beta01-quality-trim, feature/beta01-navigation-message-polish, feature/beta03-2-installable]
     paths:
       - '.github/workflows/android-beta.yml'
   workflow_dispatch:
@@ -217,7 +217,7 @@ jobs:
           set -euo pipefail
           if [[ "${{ matrix.variant }}" == 'foss' ]]; then
             cd .work/mercurygram-upstream
-            ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug -PMG_BUILD_TAG=16.0.0.0.3 -PMG_BETA_VERSION_CODE=7183013 -PMG_BETA_VERSION_NAME=16.0.0-beta03.1 --no-daemon --console=plain
+            ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug -PMG_BUILD_TAG=16.0.0.0.4 -PMG_BETA_VERSION_CODE=7183014 -PMG_BETA_VERSION_NAME=16.0.0-beta03.2 --no-daemon --console=plain
           else
             cd .work/telegram-upstream
             ./gradlew :TMessagesProj_App:assembleAfatDebug --no-daemon --console=plain
@@ -233,13 +233,13 @@ jobs:
             echo "::error::Expected one compiled APK, found ${#apks[@]}"
             exit 1
           fi
-          cp -- "${apks[0]}" "artifacts/ult-beta03-combined-foss-arm64-debug.apk"
+          cp -- "${apks[0]}" "artifacts/ult-beta03-2-foss-arm64-debug.apk"
           (
             cd artifacts
-            sha256sum ult-beta03-combined-foss-arm64-debug.apk > SHA256SUMS
+            sha256sum ult-beta03-2-foss-arm64-debug.apk > SHA256SUMS
           )
           {
-            printf '%s\n' "Candidate: Ultgram Beta 0.3 combined UI, native search and reconnect guidance (INTERNAL debug APK; NOT public beta)"
+            printf '%s\n' "Candidate: Ultgram Beta 3.2 installable internal upgrade of Beta 3.1 (INTERNAL debug APK; NOT public release signed)"
             printf 'Repo: yooshastan/yooshastan-ultmessenger\n'
             printf 'Repo commit: %s\n' "$GITHUB_SHA"
             printf 'Pinned Mercurygram source: %s\n' "$(tr -d '\r\n ' < upstream/mercurygram.sha)"
@@ -253,15 +253,21 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 scripts/apk_release_gate.py --apk artifacts/ult-beta03-combined-foss-arm64-debug.apk --report artifacts/SIGNING_INFO.txt
+          python3 scripts/apk_release_gate.py --apk artifacts/ult-beta03-2-foss-arm64-debug.apk --report artifacts/SIGNING_INFO.txt
           test -s artifacts/SIGNING_INFO.txt
           grep -q 'Upgrade compatibility: NOT CHECKED' artifacts/SIGNING_INFO.txt
+          # Match the verified 3.1 package and certificate, not merely "any signed APK".
+          # This validates identity compatibility without installing on the devices.
+          grep -Fq 'Package: com.yooshastan.ultmessenger.foss.beta' artifacts/SIGNING_INFO.txt
+          grep -Fq 'Version code: 7183014' artifacts/SIGNING_INFO.txt
+          grep -Fq 'Version name: 16.0.0-beta03.2' artifacts/SIGNING_INFO.txt
+          grep -Fq 'Signer SHA-256: a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab' artifacts/SIGNING_INFO.txt
 
       - name: Upload installable internal test APK
         if: steps.prerequisites.outputs.ready == 'true' && success()
         uses: actions/upload-artifact@v4
         with:
-          name: ult-beta03-combined-foss-android
+          name: ult-beta03-2-foss-android
           path: artifacts/*
           if-no-files-found: error
           retention-days: 30
