@@ -7,14 +7,16 @@ affiliated with, sponsored by, or endorsed by Telegram or Mercurygram.
 
 ## Development status
 
-**Beta 0.3 internal candidate:** `16.0.0-beta03.1`, code `7183013`.
-The FOSS ARM64 build passed GitHub Actions and has been reported working
-on Pixel 8a and Samsung A36. It is **not a public release**.
+**Beta 3.2 internal candidate:** `16.0.0-beta03.2`, code `7183014`.
+The FOSS ARM64 build passed GitHub Actions, and the user confirmed that it
+installed through ADB and passed all five device smoke tests. It is **not a
+public release**.
 
 - Internal test package: `com.yooshastan.ultmessenger.foss.beta`
-- Latest [verified internal test build](https://github.com/yooshastan/yooshastan-ultmessenger/actions/runs/41748928866)
+- Latest [verified internal test build](https://github.com/yooshastan/yooshastan-ultmessenger/actions/runs/41776629944)
 - Permanent public FOSS package planned: `com.yooshastan.ultmessenger.foss` (separate installation)
-- Public release signing: **in preparation**, not complete
+- Public release signing: **in preparation**, not complete; the first protected
+  workflow run failed its source-test preflight before invoking any signing
 
 ## What Ultgram focuses on
 
