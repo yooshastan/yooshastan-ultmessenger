@@ -11,19 +11,18 @@ POLICY = ROOT / "scripts/integrate-native-strict.py"
 AUDIT = ROOT / "settings/src/com/yooshastan/ultmessenger/settings/UltNetworkSourceMatrix.java"
 
 class Alpha11BC(TestCase):
-    def test_chat_tab_configuration_is_local_and_restorable(self):
+    def test_native_folder_bar_is_kept_and_local_sorting_stays_read_only(self):
         ui = UI.read_text()
         chat = CHAT.read_text()
         model = MODEL.read_text()
-        for feature in ("showTabCustomization(context)", "showTabOrder(context",
-                        "showOfflineTranslationStatus(context)",
-                        "showNetworkPathCoverage(context)"):
-            self.assertIn(feature, ui)
-        self.assertIn("UltChatView.visibleTabs(", chat)
-        self.assertIn("ultCategoryRow.removeAllViews()", chat)
-        self.assertIn("UltChatView.nextVisibleTab(", chat)
+        self.assertIn("showChatViewPicker(context)", ui)
+        self.assertIn("showOfflineTranslationStatus(context)", ui)
+        self.assertIn("showNetworkPathCoverage(context)", ui)
+        self.assertIn("isUltChatViewActive()", chat)
+        self.assertIn("UltChatView.compareUnreadFirst(", chat)
         self.assertIn("tabConfigKey(int account)", model)
-        self.assertIn("modes.add(ALL)", model)
+        self.assertNotIn("installUltCategoryBar(", chat)
+        self.assertNotIn("ultSwipeTarget", chat)
         self.assertIn("getString(key, UltChatView.defaultTabConfig())", ui)
 
     def test_audit_model_is_copied_and_contains_no_active_monitor(self):
