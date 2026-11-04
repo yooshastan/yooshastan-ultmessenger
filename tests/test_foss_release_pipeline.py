@@ -126,7 +126,7 @@ class WorkflowContract(unittest.TestCase):
         workflow = (ROOT / ".github/workflows/android-foss-release-sign.yml").read_text()
         self.assertIn("workflow_dispatch:", workflow)
         self.assertNotIn("pull_request:", workflow)
-        self.assertNotIn("release.keystore", workflow)
+        self.assertIn('test ! -e "$source_dir/TMessagesProj/config/release.keystore"', workflow)
         self.assertIn("refs/heads/main", workflow)
         self.assertIn("environment: ultgram-release", workflow)
         build = workflow.split("  build-unsigned:", 1)[1].split("  sign-private:", 1)[0]
