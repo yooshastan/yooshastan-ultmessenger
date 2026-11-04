@@ -27,7 +27,7 @@ class SettingsIntegrationTest(TestCase):
             model = root / integration.DEST
             self.assertTrue(model.is_file())
             ui = model.read_text()
-            self.assertIn('"Chats and categories"', ui)
+            self.assertIn('"Chats and sorting"', ui)
             self.assertIn('"Themes and display"', ui)
             self.assertIn('"Network diagnostics"', ui)
             self.assertIn('"Downloads"', ui)
