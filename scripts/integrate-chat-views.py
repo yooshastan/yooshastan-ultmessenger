@@ -60,6 +60,18 @@ ACTIVITY_MENU_ITEMS = """        if (folderId == 0 && communityId == 0 && !onlyS
             io.add(R.drawable.msg_customize, "ULT: Downloads", () ->
                     presentFragment(new com.yooshastan.ultmessenger.settings.UltDownloadsActivity()));
             io.add(R.drawable.msg_customize, "ULT: Chat Views", this::showUltChatViewPicker);
+            // Use Telegram's existing full search with sender/date/media filters.
+            // The ordinary Search Chats field remains unchanged.
+            io.add(R.drawable.outline_header_search, "ULT: Advanced search", () -> {
+                showSearch(true, false, true, true);
+                if (fragmentSearchFieldWatcher != null && fragmentSearchField != null) {
+                    fragmentSearchFieldWatcher.toggleSearch(true);
+                    AndroidUtilities.runOnUIThread(() -> {
+                        fragmentSearchField.editText.requestFocus();
+                        AndroidUtilities.showKeyboard(fragmentSearchField.editText);
+                    }, 100);
+                }
+            });
             io.addGap();
         }
 
