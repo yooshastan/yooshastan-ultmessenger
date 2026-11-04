@@ -165,3 +165,24 @@ jobs:
           java -cp "$classes" UltReleaseNotesTest
           javac -d "$classes" settings/src/com/yooshastan/ultmessenger/settings/UltPrivacySession.java settings/tests/UltPrivacySessionTest.java
           java -cp "$classes" UltPrivacySessionTest
+
+      - name: Combined beta 0.3 — navigation, search and native connection contracts
+        if: github.ref == 'refs/heads/feature/beta01-navigation-message-polish' || github.head_ref == 'feature/beta01-navigation-message-polish'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests -v
+          python3 -m unittest discover -s chat/tests -p 'test_*.py' -v
+          python3 -m unittest discover -s conversation/tests -p 'test_*.py' -v
+          python3 -m unittest discover -s settings/tests -p 'test_*.py' -v
+          python3 -m unittest discover -s proxy/tests -p 'test_*.py' -v
+          classes="$(mktemp -d)"
+          trap 'rm -rf "$classes"' EXIT
+          javac -d "$classes" \
+            settings/src/com/yooshastan/ultmessenger/settings/UltConnectionGuidance.java \
+            settings/tests/UltConnectionGuidanceTest.java
+          java -cp "$classes" UltConnectionGuidanceTest
+          javac -d "$classes" \
+            settings/src/com/yooshastan/ultmessenger/settings/UltReleaseNotes.java \
+            settings/tests/UltReleaseNotesTest.java
+          java -cp "$classes" UltReleaseNotesTest
