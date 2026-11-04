@@ -1,8 +1,12 @@
 name: Ultgram FOSS ARM64 protected release candidate
 
-# Manual only, from reviewed code on the default branch.
-# Build an unsigned APK on a separate runner BEFORE granting key access.
+# Feature-branch push tests only the UNSIGNED compiler; it cannot access signing secrets.
+# Private signing remains manual-only on the reviewed main branch.
 on:
+  push:
+    branches: [feature/beta03-signing-prep]
+    paths:
+      - '.github/workflows/android-foss-release-sign.yml'
   workflow_dispatch:
 
 permissions:
@@ -14,7 +18,7 @@ concurrency:
 
 jobs:
   build-unsigned:
-    if: github.repository == 'yooshastan/yooshastan-ultmessenger' && github.ref == 'refs/heads/main'
+    if: github.repository == 'yooshastan/yooshastan-ultmessenger' && (github.ref == 'refs/heads/main' || (github.event_name == 'push' && github.ref == 'refs/heads/feature/beta03-signing-prep'))
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
