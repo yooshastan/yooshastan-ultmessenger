@@ -1,6 +1,6 @@
 name: Ultgram Beta 0.3 Combined FOSS ARM64
 
-# One batched native APK for the quality-first beta candidate.
+# One batched native APK for the combined beta 0.1–0.3 internal candidate.
 # Preflight: broad owned-settings and native proxy source contracts passed. Ordinary source commits run fast checks only.
 on:
   push:
