@@ -70,10 +70,14 @@ Add these **environment secrets** (not PR comments or source files):
 | `ULT_RELEASE_STORE_PASSWORD` | Its password |
 | `ULT_RELEASE_KEY_PASSWORD` | Key password (PKCS12 usually same as store password) |
 
-Add one **environment variable** (not secret) called
-`ULT_RELEASE_CERT_SHA256` containing your newly generated certificate
-SHA-256 digest as **64 lowercase hex characters with no colons**.
-This must **not** equal the inherited internal signer
+Add the PUBLIC certificate fingerprint under the exact name
+`ULT_RELEASE_CERT_SHA256`, either as a GitHub **Environment variable**
+(preferred) or as an **Environment secret** within `ultgram-release`.
+A repository-level Variable or Secret with the same exact name is also
+supported. The workflow checks Variables first, then Secrets, and
+**fails closed** if the value is absent or doesn't match the signer.
+Use **64 hex characters with no colons**. This public fingerprint
+must **not** equal the inherited internal signer
 `a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab`.
 
 If you have GitHub CLI installed and authenticated locally, avoid exposing
