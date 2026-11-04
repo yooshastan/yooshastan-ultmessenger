@@ -1,9 +1,9 @@
 package com.yooshastan.ultmessenger.settings;
 
-/** Source-owned, truthful release notes for the 0.13c+d candidate. */
+/** Source-owned, signing-neutral release notes for Ultgram Beta 3.2. */
 public final class UltReleaseNotes {
     public static final String PREFERENCES = "ult_release_notes";
-    public static final String DISPLAY_VERSION = "Ultgram Beta 0.3 Combined RC1";
+    public static final String DISPLAY_VERSION = "Ultgram Beta 3.2";
 
     private UltReleaseNotes() {}
 
@@ -20,7 +20,7 @@ public final class UltReleaseNotes {
     }
 
     public static String message(String androidVersion) {
-        return "ULTGRAM BETA 0.3 — CONSOLIDATED INTERNAL CANDIDATE\n\n"
+        return "ULTGRAM BETA 3.2 — REFINEMENT AND RELIABILITY\n\n"
                 + "BETA 0.1 · INTERFACE STABILIZATION\n"
                 + "• Telegram's own folder tabs and bottom navigation are the only category bars. "
                 + "The overlapping floating Ultgram strip is gone.\n"
@@ -39,8 +39,8 @@ public final class UltReleaseNotes {
                 + "LIMITS\n"
                 + "• Connection status is not independent DNS/media/call route proof. "
                 + "No automatic direct fallback or whole-device kill switch is added.\n"
-                + "• Debug-signed internal build. Public signing, upgrade verification "
-                + "and device regression checks are pending.\n\n"
+                + "• Android upgrades require the same package ID and signing certificate. "
+                + "Separate internal and public packages do not migrate app data.\n\n"
                 + "Android package: " + androidVersion;
 
     }
