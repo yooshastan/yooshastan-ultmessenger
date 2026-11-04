@@ -32,7 +32,7 @@ class RC1(TestCase):
         self.assertIn("moveTab(String saved", CHAT.read_text())
         ui = UI.read_text()
         self.assertIn("showNetworkPathCoverage(context)", ui)
-        self.assertIn("showTabCustomization(context)", ui)
+        self.assertIn("showChatViewPicker(context)", ui)
         self.assertIn("showOfflineTranslationStatus(context)", ui)
         audit = AUDIT.read_text()
         self.assertIn("NOT ROUTE-VERIFIED", audit)
