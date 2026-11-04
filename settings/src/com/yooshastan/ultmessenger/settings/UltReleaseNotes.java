@@ -3,7 +3,7 @@ package com.yooshastan.ultmessenger.settings;
 /** Source-owned, truthful release notes for the 0.13c+d candidate. */
 public final class UltReleaseNotes {
     public static final String PREFERENCES = "ult_release_notes";
-    public static final String DISPLAY_VERSION = "Ultgram Beta 0.1 Quality Pass RC2";
+    public static final String DISPLAY_VERSION = "Ultgram Beta 0.3 Combined RC1";
 
     private UltReleaseNotes() {}
 
@@ -20,20 +20,27 @@ public final class UltReleaseNotes {
     }
 
     public static String message(String androidVersion) {
-        return "BETA 0.1 — INTERNAL QUALITY PASS\n\n"
-                + "• Ultgram Settings now has a shorter, clearer menu.\n"
-                + "• Downloads is the single place for queue, recent files, Save As, "
-                + "network rules and storage links. Rare actions are under More.\n"
-                + "• Privacy keeps real controls visible: proxy selection, native strict "
-                + "guard, screenshot protection, external links and local identity cover.\n"
-                + "• Network diagnostics are in Advanced and remain read-only. "
-                + "They do not verify all network traffic routes.\n"
-                + "• Inactive DoQ and tracker-rule previews are no longer promoted "
-                + "as usable privacy protections.\n\n"
-                + "UNCHANGED: Messaging, translation, eligible story saving, "
-                + "native proxy behavior and existing cache preferences.\n\n"
-                + "This is a debug-signed internal candidate, not a public beta. "
-                + "Protected media cannot be exported through Ultgram tools.\n\n"
+        return "ULTGRAM BETA 0.3 — CONSOLIDATED INTERNAL CANDIDATE\n\n"
+                + "BETA 0.1 · INTERFACE STABILIZATION\n"
+                + "• Telegram's own folder tabs and bottom navigation are the only category bars. "
+                + "The overlapping floating Ultgram strip is gone.\n"
+                + "• Message long-press has one ULT Copy reference action; "
+                + "eligible documents additionally offer Copy file info. "
+                + "Telegram's normal Message Details remains available.\n"
+                + "• Existing downloads, proxy, translation, story and cache behavior remains.\n\n"
+                + "BETA 0.2 · ADVANCED SEARCH\n"
+                + "• Chats menu → ULT: Advanced search opens Telegram's native full "
+                + "message/media search with sender and date filters. "
+                + "No second search index, storage, or message export.\n\n"
+                + "BETA 0.3 · CONNECTION RELIABILITY\n"
+                + "• Existing Advanced → Network diagnostics now explains Telegram's "
+                + "connection, proxy, and network state in plain language. "
+                + "The native strict-proxy implementation was not changed.\n\n"
+                + "LIMITS\n"
+                + "• Connection status is not independent DNS/media/call route proof. "
+                + "No automatic direct fallback or whole-device kill switch is added.\n"
+                + "• Debug-signed internal build. Public signing, upgrade verification "
+                + "and device regression checks are pending.\n\n"
                 + "Android package: " + androidVersion;
 
     }
