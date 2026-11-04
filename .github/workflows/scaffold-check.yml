@@ -28,6 +28,12 @@ jobs:
       - name: Test prototype configuration helper
         run: python3 -m unittest discover -s tests -v
 
+      - name: Check legacy release notices against archived documents
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s settings/tests -p 'test_alpha10i3_rc1_release_contract.py' -v
+
       - name: Fast Alpha 0.11 network / chat / translation contract checks
         if: github.ref == 'refs/heads/feature/alpha11bc-batched' || github.head_ref == 'feature/alpha11bc-batched'
         shell: bash
