@@ -7,18 +7,15 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class Alpha12BatchContract(TestCase):
-    def test_category_bar_density_is_per_account_and_reversible(self):
+    def test_local_view_sorting_preserves_native_folder_navigation(self):
         model = (ROOT / "conversation/src/com/yooshastan/ultmessenger/conversation/UltChatView.java").read_text()
         patch = (ROOT / "scripts/integrate-chat-views.py").read_text()
         settings = (ROOT / "settings/src/com/yooshastan/ultmessenger/settings/UltSettingsActivity.java").read_text()
-        for expected in ("barStyleKey(int account)", "BAR_COMPACT", "BAR_COMFORTABLE",
-                         "BAR_SPACIOUS", "barHeightDp(", "chipHeightDp(", "chipPaddingDp("):
-            self.assertIn(expected, model)
-        for expected in ("UltChatView.barHeightDp(barStyle)", "UltChatView.chipHeightDp(barStyle)",
-                         "UltChatView.chipPaddingDp(barStyle)", "ultCategoryRow.removeAllViews()"):
-            self.assertIn(expected, patch)
-        self.assertIn("showCategoryBarAppearance(context)", settings)
-        self.assertIn('prefs.edit().remove(key).apply()', settings)
+        self.assertIn("accountKey(int account)", model)
+        self.assertIn("compareUnreadFirst(", model)
+        self.assertIn("setSingleChoiceItems(UltChatView.LABELS", patch)
+        self.assertIn("showChatViewPicker(context)", settings)
+        self.assertNotIn("installUltCategoryBar(", patch)
         self.assertNotIn("setDialogFilter(", patch)
 
     def test_theme_previews_are_read_only_and_offer_both_modes(self):
@@ -39,7 +36,7 @@ class Alpha12BatchContract(TestCase):
         integration = (ROOT / "scripts/integrate-message-tools.py").read_text()
         self.assertIn("messageReference(", model)
         self.assertIn("publicMessageLink(publicUsername, messageId)", model)
-        self.assertIn("ULT: Copy message reference", integration)
+        self.assertIn("ULT: Copy reference", integration)
         self.assertIn("currentEncryptedChat == null && currentChat != null", integration)
         self.assertIn("!selectedObject.isSponsored()", integration)
         self.assertIn("UltChatTools.messageReference(", integration)
