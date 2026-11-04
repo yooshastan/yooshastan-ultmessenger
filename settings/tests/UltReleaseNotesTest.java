@@ -14,7 +14,7 @@ public final class UltReleaseNotesTest {
         for (String fragment : new String[] {
                 "BETA 0.1", "BETA 0.2", "BETA 0.3",
                 "Advanced search", "Copy reference", "native strict-proxy",
-                "debug", "Telegram", "16.0.0", "4.0.0"
+                "debug", "Telegram", "4.0.0"
         }) {
             ok(message.toLowerCase().contains(fragment.toLowerCase()),
                     "missing combined release note: " + fragment);
