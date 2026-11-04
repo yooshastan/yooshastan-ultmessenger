@@ -186,3 +186,11 @@ jobs:
             settings/src/com/yooshastan/ultmessenger/settings/UltReleaseNotes.java \
             settings/tests/UltReleaseNotesTest.java
           java -cp "$classes" UltReleaseNotesTest
+
+      - name: Signing preparation — offline key script guardrails
+        if: github.ref == 'refs/heads/feature/beta03-signing-prep' || github.head_ref == 'feature/beta03-signing-prep'
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n scripts/create-ultgram-release-key.sh
+          python3 -m unittest discover -s tests -p 'test_beta_signing_prep.py' -v
