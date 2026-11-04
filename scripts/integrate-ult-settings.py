@@ -21,6 +21,7 @@ MEDIA_MODELS = (
     Path("settings/src/com/yooshastan/ultmessenger/settings/UltNetworkEvidence.java"),
     Path("settings/src/com/yooshastan/ultmessenger/settings/UltPrivacyLabActivity.java"),
     Path("settings/src/com/yooshastan/ultmessenger/settings/UltPrivacySession.java"),
+    Path("settings/src/com/yooshastan/ultmessenger/settings/UltConnectionGuidance.java"),
 )
 DNS_MODELS = (
     Path("settings/src/com/yooshastan/ultmessenger/settings/UltDnsPosture.java"),

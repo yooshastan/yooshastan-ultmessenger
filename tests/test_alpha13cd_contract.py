@@ -19,7 +19,7 @@ class Alpha13CD(TestCase):
         self.assertIn("ULT: Downloads", chats)
         self.assertIn("UltDownloadsActivity()", chats)
         self.assertIn("UltReleaseNotes.java", installer)
-        self.assertIn("Quality Pass", notes)
+        self.assertIn("Beta 0.3 Combined", notes)
     def test_save_as_is_explicit_saf_and_fail_closed(self):
         downloads = source("settings/src/com/yooshastan/ultmessenger/settings/UltDownloadsActivity.java")
         for needle in ("Intent.ACTION_CREATE_DOCUMENT", "Intent.CATEGORY_OPENABLE",

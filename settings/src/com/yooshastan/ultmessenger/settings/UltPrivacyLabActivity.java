@@ -147,7 +147,9 @@ public final class UltPrivacyLabActivity extends BaseFragment {
         status.setText("Android active transport: " + network
                 + "\nNative proxy-only requested: " + (requested ? "ON" : "OFF")
                 + "\nNative socket guard reported: " + (observed ? "ON" : "OFF")
-                + "\nTelegram connection state code: " + connection
+                + "\nTelegram: " + UltConnectionGuidance.label(connection)
+                + "\nNext step: " + UltConnectionGuidance.advice(
+                        connection, requested, observed, network)
                 + "\nAndroid Private DNS: " + UltAndroidDnsInspector.inspect(context)
                 + "\n\nRoute proof: NOT VERIFIED. This is state observation, not egress capture.");
         StringBuilder seen = new StringBuilder();

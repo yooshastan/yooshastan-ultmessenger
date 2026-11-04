@@ -1,10 +1,10 @@
-name: Ultgram Beta 0.1 Quality Pass FOSS ARM64
+name: Ultgram Beta 0.3 Combined FOSS ARM64
 
-# One batched native APK for the quality-first beta candidate.
+# One batched native APK for the combined beta 0.1–0.3 internal candidate.
 # Preflight: broad owned-settings and native proxy source contracts passed. Ordinary source commits run fast checks only.
 on:
   push:
-    branches: [feature/beta01-privacy-media, feature/beta01-quality-trim]
+    branches: [feature/beta01-privacy-media, feature/beta01-quality-trim, feature/beta01-navigation-message-polish]
     paths:
       - '.github/workflows/android-beta.yml'
   workflow_dispatch:
@@ -217,7 +217,7 @@ jobs:
           set -euo pipefail
           if [[ "${{ matrix.variant }}" == 'foss' ]]; then
             cd .work/mercurygram-upstream
-            ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug -PMG_BUILD_TAG=16.0.0.0.2 -PMG_BETA_VERSION_CODE=7183012 -PMG_BETA_VERSION_NAME=16.0.0-beta01.2 --no-daemon --console=plain
+            ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug -PMG_BUILD_TAG=16.0.0.0.3 -PMG_BETA_VERSION_CODE=7183013 -PMG_BETA_VERSION_NAME=16.0.0-beta03.1 --no-daemon --console=plain
           else
             cd .work/telegram-upstream
             ./gradlew :TMessagesProj_App:assembleAfatDebug --no-daemon --console=plain
@@ -233,13 +233,13 @@ jobs:
             echo "::error::Expected one compiled APK, found ${#apks[@]}"
             exit 1
           fi
-          cp -- "${apks[0]}" "artifacts/ult-beta01-quality-foss-arm64-debug.apk"
+          cp -- "${apks[0]}" "artifacts/ult-beta03-combined-foss-arm64-debug.apk"
           (
             cd artifacts
-            sha256sum ult-beta01-quality-foss-arm64-debug.apk > SHA256SUMS
+            sha256sum ult-beta03-combined-foss-arm64-debug.apk > SHA256SUMS
           )
           {
-            printf '%s\n' "Candidate: Ultgram Beta 0.1 quality-first UI cleanup (INTERNAL debug test APK; NOT public beta)"
+            printf '%s\n' "Candidate: Ultgram Beta 0.3 combined UI, native search and reconnect guidance (INTERNAL debug APK; NOT public beta)"
             printf 'Repo: yooshastan/yooshastan-ultmessenger\n'
             printf 'Repo commit: %s\n' "$GITHUB_SHA"
             printf 'Pinned Mercurygram source: %s\n' "$(tr -d '\r\n ' < upstream/mercurygram.sha)"
@@ -253,7 +253,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 scripts/apk_release_gate.py --apk artifacts/ult-beta01-quality-foss-arm64-debug.apk --report artifacts/SIGNING_INFO.txt
+          python3 scripts/apk_release_gate.py --apk artifacts/ult-beta03-combined-foss-arm64-debug.apk --report artifacts/SIGNING_INFO.txt
           test -s artifacts/SIGNING_INFO.txt
           grep -q 'Upgrade compatibility: NOT CHECKED' artifacts/SIGNING_INFO.txt
 
@@ -261,7 +261,7 @@ jobs:
         if: steps.prerequisites.outputs.ready == 'true' && success()
         uses: actions/upload-artifact@v4
         with:
-          name: ult-beta01-quality-foss-android
+          name: ult-beta03-combined-foss-android
           path: artifacts/*
           if-no-files-found: error
           retention-days: 30

@@ -12,10 +12,12 @@ public final class UltReleaseNotesTest {
                 "upgrade reopens changelog");
         String message = UltReleaseNotes.message(a);
         for (String fragment : new String[] {
-                "Downloads", "More", "strict", "translation", "Network diagnostics",
-                "DoQ", "tracker", "debug-signed", "Protected media", "4.0.0"
+                "BETA 0.1", "BETA 0.2", "BETA 0.3",
+                "Advanced search", "Copy reference", "native strict-proxy",
+                "debug", "Telegram", "4.0.0"
         }) {
-            ok(message.contains(fragment), "missing concise release note: " + fragment);
+            ok(message.toLowerCase().contains(fragment.toLowerCase()),
+                    "missing combined release note: " + fragment);
         }
         ok(!message.contains("Media Studio:"), "retired duplicate screen is not advertised");
         ok(!message.contains("0.13c+d"), "legacy changelog details are not repeated");

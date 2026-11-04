@@ -25,7 +25,7 @@ ADAPTER_MOVE = "        if (shouldHideUltArchiveRow()) {\n            // Resolve
 ADAPTER_ARCHIVE = "            boolean hasArchive = !shouldHideUltArchiveRow() && folderId == 0 && dialogsType == 0 && MessagesController.getInstance(currentAccount).dialogs_dict.get(DialogObject.makeFolderDialogId(1)) != null;\n"
 
 ACTIVITY_FIELDS = """
-    // Local, account-specific display preset. The server's folders and dialog order are untouched.
+    // Local Telegram chat list view/sort choice; no duplicate floating tab bar.
     private void showUltChatViewPicker() {
         final Activity activity = getParentActivity();
         if (activity == null) {
@@ -46,7 +46,6 @@ ACTIVITY_FIELDS = """
                             }
                         }
                     }
-                    refreshUltCategoryBar();
                     dialog.dismiss();
                 })
                 .setNegativeButton(android.R.string.cancel, null)
@@ -54,225 +53,24 @@ ACTIVITY_FIELDS = """
     }
 
 
-    // Quick tab cycle uses the same local per-account preferences as the picker.
-    // No Telegram folder, read-state or backend ordering is changed.
-    private void advanceUltChatView() {
-        final Activity activity = getParentActivity();
-        if (activity == null) {
-            return;
-        }
-        final SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences(
-                UltChatView.PREFERENCES, Context.MODE_PRIVATE);
-        final String key = UltChatView.accountKey(currentAccount);
-        final String next = UltChatView.nextVisibleTab(
-                preferences.getString(key, UltChatView.ALL),
-                preferences.getString(UltChatView.tabConfigKey(currentAccount),
-                        UltChatView.defaultTabConfig()));
-        preferences.edit().putString(key, next).apply();
-        if (viewPages != null) {
-            for (ViewPage page : viewPages) {
-                if (page != null && page.dialogsAdapter != null) {
-                    page.dialogsAdapter.updateList(null);
-                }
-            }
-        }
-        refreshUltCategoryBar();
-        android.widget.Toast.makeText(activity,
-                "ULT View: " + UltChatView.LABELS[UltChatView.modeIndex(next)],
-                android.widget.Toast.LENGTH_SHORT).show();
-    }
-    private android.widget.TextView ultSwipeTarget;
-    private float ultSwipeDownX;
-    private float ultSwipeDownY;
-
-    /** Navigate only through the account's visible local categories. */
-    private void stepUltCategoryMode(int direction) {
-        final SharedPreferences prefs = ApplicationLoader.applicationContext.getSharedPreferences(
-                UltChatView.PREFERENCES, Context.MODE_PRIVATE);
-        final String next = UltChatView.stepVisibleTab(
-                prefs.getString(UltChatView.accountKey(currentAccount), UltChatView.ALL),
-                prefs.getString(UltChatView.tabConfigKey(currentAccount),
-                        UltChatView.defaultTabConfig()), direction);
-        setUltCategoryMode(next);
-    }
-
-    private android.widget.HorizontalScrollView ultCategoryBar;
-    private android.widget.LinearLayout ultCategoryRow;
-
-    private boolean isUltCategoryBarEnabled() {
-        return ApplicationLoader.applicationContext.getSharedPreferences(
-                UltChatView.PREFERENCES, Context.MODE_PRIVATE)
-                .getBoolean(UltChatView.quickBarKey(currentAccount), false);
-    }
-
-    private void setUltCategoryMode(String mode) {
-        ApplicationLoader.applicationContext.getSharedPreferences(
-                UltChatView.PREFERENCES, Context.MODE_PRIVATE)
-                .edit().putString(UltChatView.accountKey(currentAccount), UltChatView.sanitize(mode)).apply();
-        if (viewPages != null) {
-            for (ViewPage page : viewPages) {
-                if (page != null && page.dialogsAdapter != null) {
-                    page.dialogsAdapter.updateList(null);
-                }
-            }
-        }
-        refreshUltCategoryBar();
-    }
-
-    private void refreshUltCategoryBar() {
-        if (ultCategoryBar == null || ultCategoryRow == null) return;
-        boolean mainChats = folderId == 0 && communityId == 0 && !onlySelect
-                && initialDialogsType == DIALOGS_TYPE_DEFAULT && TextUtils.isEmpty(searchString);
-        ultCategoryBar.setVisibility(mainChats && isUltCategoryBarEnabled()
-                ? View.VISIBLE : View.GONE);
-        final SharedPreferences prefs = ApplicationLoader.applicationContext.getSharedPreferences(
-                UltChatView.PREFERENCES, Context.MODE_PRIVATE);
-        final String mode = prefs.getString(UltChatView.accountKey(currentAccount), UltChatView.ALL);
-        // Gesture handling is confined to a dedicated, opt-in target.
-        final boolean enableSwipePad = mainChats && isUltCategoryBarEnabled()
-                && prefs.getBoolean(UltChatView.swipePadKey(currentAccount), false);
-        if (ultSwipeTarget != null) {
-            ultSwipeTarget.setVisibility(enableSwipePad ? View.VISIBLE : View.GONE);
-        }
-        final String barStyle = UltChatView.sanitizeBarStyle(prefs.getString(
-                UltChatView.barStyleKey(currentAccount), UltChatView.BAR_COMFORTABLE));
-        final android.view.ViewGroup.LayoutParams barParams = ultCategoryBar.getLayoutParams();
-        if (barParams != null) {
-            barParams.height = AndroidUtilities.dp(UltChatView.barHeightDp(barStyle));
-            if (barParams instanceof android.widget.FrameLayout.LayoutParams) {
-                ((android.widget.FrameLayout.LayoutParams) barParams).rightMargin =
-                        AndroidUtilities.dp(enableSwipePad ? 84 : 12);
-            }
-            ultCategoryBar.setLayoutParams(barParams);
-        }
-        if (ultSwipeTarget != null) {
-            final android.view.ViewGroup.LayoutParams swipeParams = ultSwipeTarget.getLayoutParams();
-            if (swipeParams != null) {
-                swipeParams.height = AndroidUtilities.dp(UltChatView.barHeightDp(barStyle));
-                ultSwipeTarget.setLayoutParams(swipeParams);
-            }
-        }
-        ultCategoryBar.setPadding(AndroidUtilities.dp(5),
-                AndroidUtilities.dp(UltChatView.BAR_COMPACT.equals(barStyle) ? 2 : 4),
-                AndroidUtilities.dp(5),
-                AndroidUtilities.dp(UltChatView.BAR_COMPACT.equals(barStyle) ? 2 : 4));
-        final String[] visible = UltChatView.visibleTabs(prefs.getString(
-                UltChatView.tabConfigKey(currentAccount), UltChatView.defaultTabConfig()));
-        ultCategoryRow.removeAllViews();
-        for (String choice : visible) {
-            android.widget.TextView chip = new android.widget.TextView(ultCategoryRow.getContext());
-            chip.setText(UltChatView.quickTabLabel(choice));
-            chip.setGravity(Gravity.CENTER);
-            chip.setTextSize(UltChatView.barFontSp(
-                    prefs.getString(UltChatView.barFontKey(currentAccount), UltChatView.FONT_NORMAL)));
-            chip.setMinHeight(AndroidUtilities.dp(UltChatView.chipHeightDp(barStyle)));
-            chip.setPadding(AndroidUtilities.dp(UltChatView.chipPaddingDp(barStyle)), 0,
-                    AndroidUtilities.dp(UltChatView.chipPaddingDp(barStyle)), 0);
-            chip.setClickable(true);
-            chip.setFocusable(true);
-            chip.setOnClickListener(v -> setUltCategoryMode(choice));
-            boolean selected = choice.equals(mode);
-            chip.setTextColor(getThemedColor(selected
-                    ? Theme.key_windowBackgroundWhiteBlueText
-                    : Theme.key_windowBackgroundWhiteBlackText));
-            android.graphics.drawable.GradientDrawable fill = new android.graphics.drawable.GradientDrawable();
-            fill.setColor(selected ? getThemedColor(Theme.key_windowBackgroundGray) : android.graphics.Color.TRANSPARENT);
-            fill.setCornerRadius(AndroidUtilities.dp(16));
-            chip.setBackground(fill);
-            chip.setSelected(selected);
-            ultCategoryRow.addView(chip, new android.widget.LinearLayout.LayoutParams(
-                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
-                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT));
-        }
-    }
-
-    private void installUltCategoryBar(Context context, android.widget.FrameLayout container) {
-        if (folderId != 0 || communityId != 0 || onlySelect
-                || initialDialogsType != DIALOGS_TYPE_DEFAULT || !TextUtils.isEmpty(searchString)) {
-            ultCategoryBar = null;
-            ultCategoryRow = null;
-            return;
-        }
-        ultCategoryBar = new android.widget.HorizontalScrollView(context);
-        ultCategoryBar.setHorizontalScrollBarEnabled(false);
-        ultCategoryBar.setFillViewport(false);
-        ultCategoryBar.setPadding(AndroidUtilities.dp(5), AndroidUtilities.dp(4),
-                AndroidUtilities.dp(5), AndroidUtilities.dp(4));
-        android.graphics.drawable.GradientDrawable panel = new android.graphics.drawable.GradientDrawable();
-        panel.setColor(getThemedColor(Theme.key_windowBackgroundWhite));
-        panel.setCornerRadius(AndroidUtilities.dp(18));
-        ultCategoryBar.setBackground(panel);
-        ultCategoryBar.setElevation(AndroidUtilities.dp(3));
-        ultCategoryRow = new android.widget.LinearLayout(context);
-        ultCategoryRow.setOrientation(android.widget.LinearLayout.HORIZONTAL);
-        ultCategoryBar.addView(ultCategoryRow, new android.widget.HorizontalScrollView.LayoutParams(
-                android.widget.HorizontalScrollView.LayoutParams.WRAP_CONTENT,
-                android.widget.HorizontalScrollView.LayoutParams.MATCH_PARENT));
-        // Floating, opt-in strip above the bottom message composer/primary action area.
-        // It does not replace or mutate Telegram folder tabs.
-        container.addView(ultCategoryBar, LayoutHelper.createFrame(
-                LayoutHelper.MATCH_PARENT, UltChatView.barHeightDp(UltChatView.BAR_COMFORTABLE),
-                Gravity.BOTTOM, 12, 0, 12, 92));
-
-        // Dedicated swipe surface: never intercept chat-row scrolling, folder swipes
-        // or Android edge-back. A tap also advances for accessibility.
-        ultSwipeTarget = new android.widget.TextView(context);
-        ultSwipeTarget.setText("↔");
-        ultSwipeTarget.setTextSize(24);
-        ultSwipeTarget.setGravity(Gravity.CENTER);
-        ultSwipeTarget.setContentDescription(
-                "Ultgram category navigator: swipe left or right, tap for next category");
-        ultSwipeTarget.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteBlueText));
-        android.graphics.drawable.GradientDrawable navPanel =
-                new android.graphics.drawable.GradientDrawable();
-        navPanel.setColor(getThemedColor(Theme.key_windowBackgroundWhite));
-        navPanel.setCornerRadius(AndroidUtilities.dp(18));
-        ultSwipeTarget.setBackground(navPanel);
-        ultSwipeTarget.setClickable(true);
-        ultSwipeTarget.setOnClickListener(view -> stepUltCategoryMode(1));
-        ultSwipeTarget.setOnTouchListener((view, event) -> {
-            switch (event.getActionMasked()) {
-                case android.view.MotionEvent.ACTION_DOWN:
-                    ultSwipeDownX = event.getX();
-                    ultSwipeDownY = event.getY();
-                    return true;
-                case android.view.MotionEvent.ACTION_UP:
-                    final float dx = event.getX() - ultSwipeDownX;
-                    final float dy = event.getY() - ultSwipeDownY;
-                    if (Math.abs(dx) >= AndroidUtilities.dp(24)
-                            && Math.abs(dx) > Math.abs(dy) * 1.4f) {
-                        stepUltCategoryMode(dx < 0 ? 1 : -1);
-                    } else if (Math.abs(dx) < AndroidUtilities.dp(12)
-                            && Math.abs(dy) < AndroidUtilities.dp(12)) {
-                        view.performClick();
-                    }
-                    return true;
-                case android.view.MotionEvent.ACTION_CANCEL:
-                    return true;
-                default:
-                    return true;
-            }
-        });
-        container.addView(ultSwipeTarget, LayoutHelper.createFrame(
-                64, UltChatView.barHeightDp(UltChatView.BAR_COMFORTABLE),
-                Gravity.RIGHT | Gravity.BOTTOM, 0, 0, 12, 92));
-        refreshUltCategoryBar();
-    }
 
 """
 ACTIVITY_MENU_ITEMS = """        if (folderId == 0 && communityId == 0 && !onlySelect
                 && initialDialogsType == DIALOGS_TYPE_DEFAULT) {
-            // Direct from Chats: no longer buried in Ultgram Settings.
             io.add(R.drawable.msg_customize, "ULT: Downloads", () ->
                     presentFragment(new com.yooshastan.ultmessenger.settings.UltDownloadsActivity()));
             io.add(R.drawable.msg_customize, "ULT: Chat Views", this::showUltChatViewPicker);
-            io.add(R.drawable.msg_customize, "ULT: Next Chat Tab", this::advanceUltChatView);
-            io.addChecked(isUltCategoryBarEnabled(), "ULT: Show category bar", () -> {
-                ApplicationLoader.applicationContext.getSharedPreferences(
-                        UltChatView.PREFERENCES, Context.MODE_PRIVATE)
-                        .edit().putBoolean(UltChatView.quickBarKey(currentAccount),
-                                !isUltCategoryBarEnabled()).apply();
-                refreshUltCategoryBar();
+            // Use Telegram's existing full search with sender/date/media filters.
+            // The ordinary Search Chats field remains unchanged.
+            io.add(R.drawable.outline_header_search, "ULT: Advanced search", () -> {
+                showSearch(true, false, true, true);
+                if (fragmentSearchFieldWatcher != null && fragmentSearchField != null) {
+                    fragmentSearchFieldWatcher.toggleSearch(true);
+                    AndroidUtilities.runOnUIThread(() -> {
+                        fragmentSearchField.editText.requestFocus();
+                        AndroidUtilities.showKeyboard(fragmentSearchField.editText);
+                    }, 100);
+                }
             });
             io.addGap();
         }
@@ -372,12 +170,8 @@ def integrate(root: Path) -> tuple[Path, Path]:
                     "import com.yooshastan.ultmessenger.conversation.UltChatView;\n")
     activity = once(activity, ACTIVITY_METHOD, ACTIVITY_FIELDS + ACTIVITY_METHOD)
     activity = once(activity, ACTIVITY_MENU, ACTIVITY_MENU_ITEMS + ACTIVITY_MENU)
-    activity = once(activity, ACTIVITY_RETURN,
-                    ACTIVITY_RETURN.replace("        return fragmentView;",
-                                            "        installUltCategoryBar(context, contentView);\\n        return fragmentView;".replace("\\n", "\n")))
-    activity = once(activity, ACTIVITY_RESUME,
-                    ACTIVITY_RESUME + "        refreshUltCategoryBar();\n")
-
+    # Keep Telegram's native folders, search bar and bottom navigation intact.
+    # No floating Ultgram category bar or swipe overlay gets installed.
     adapter = once(adapter, ADAPTER_IMPORT, ADAPTER_IMPORT +
                    "import com.yooshastan.ultmessenger.conversation.UltChatView;\n")
     adapter = once(adapter, ADAPTER_CLASS, ADAPTER_CLASS + ADAPTER_METHODS)
