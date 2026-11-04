@@ -11,222 +11,56 @@ CONSTANT_ANCHOR = "    public final static int OPTION_COPY = 3;\n"
 MENU_ANCHOR = "        if (showWelcomeMessageRevertOption(primaryMessage)) {\n"
 HANDLER_ANCHOR = "            case OPTION_COPY: {\n"
 
-CONSTANTS = """    public final static int OPTION_ULT_COPY_MESSAGE_ID = 0x554c56;
-    public final static int OPTION_ULT_COPY_SENDER_ID = 0x554c57;
-    public final static int OPTION_ULT_COPY_UNIX_TIME = 0x554c58;
-    public final static int OPTION_ULT_COPY_MEDIA_DETAILS = 0x554c59;
-    public final static int OPTION_ULT_COPY_ISO_UTC_TIME = 0x554c5a;
-    public final static int OPTION_ULT_COPY_PUBLIC_MESSAGE_LINK = 0x554c5b;
-    public final static int OPTION_ULT_COPY_FILE_SUMMARY = 0x554c5c;
+CONSTANTS = """    // Two focused actions instead of a long row of near-duplicate copy items.
     public final static int OPTION_ULT_COPY_MESSAGE_REFERENCE = 0x554c5d;
-    public final static int OPTION_ULT_COPY_FILENAME = 0x554c5e;
-    public final static int OPTION_ULT_COPY_MEDIA_CITATION = 0x554c5f;
-    public final static int OPTION_ULT_COPY_PUBLIC_MESSAGE_MARKDOWN = 0x554c60;
-    public final static int OPTION_ULT_COPY_METADATA_JSON = 0x554c61;
+    public final static int OPTION_ULT_COPY_FILE_SUMMARY = 0x554c5c;
 """
-MENU = """        // ULT: local read-only metadata; never copy private message content.
+MENU = """        // One readable reference for IDs, UTC and eligible public permalink.
+        // Telegram's own Message Details and Copy actions remain above.
         if (selectedObject != null && selectedObject.messageOwner != null
-                && selectedObject.getId() != 0 && !selectedObject.isSponsored()) {
-            items.add("ULT: Copy message ID");
-            options.add(OPTION_ULT_COPY_MESSAGE_ID);
-            icons.add(R.drawable.msg_copy);
-            items.add("ULT: Copy message reference");
+                && selectedObject.getId() > 0 && !selectedObject.isSponsored()) {
+            items.add("ULT: Copy reference");
             options.add(OPTION_ULT_COPY_MESSAGE_REFERENCE);
             icons.add(R.drawable.msg_copy);
-            items.add("ULT: Copy metadata (JSON)");
-            options.add(OPTION_ULT_COPY_METADATA_JSON);
-            icons.add(R.drawable.msg_copy);
-            if (selectedObject.getFromChatId() != 0) {
-                items.add("ULT: Copy sender peer ID");
-                options.add(OPTION_ULT_COPY_SENDER_ID);
-                icons.add(R.drawable.msg_copy);
-            }
-            if (selectedObject.messageOwner.date > 0) {
-                items.add("ULT: Copy message time (Unix UTC)");
-                options.add(OPTION_ULT_COPY_UNIX_TIME);
-                icons.add(R.drawable.msg_copy);
-                items.add("ULT: Copy message time (ISO UTC)");
-                options.add(OPTION_ULT_COPY_ISO_UTC_TIME);
-                icons.add(R.drawable.msg_copy);
-            }
-            // Only an actual public channel/supergroup can have a valid
-            // t.me/<username>/<message ID> permalink.
-            if (currentEncryptedChat == null && currentChat != null
-                    && ChatObject.isChannel(currentChat) && selectedObject.getId() > 0
-                    && UltChatTools.publicMessageLink(
-                        ChatObject.getPublicUsername(currentChat), selectedObject.getId()) != null) {
-                items.add("ULT: Copy public message link");
-                options.add(OPTION_ULT_COPY_PUBLIC_MESSAGE_LINK);
-                icons.add(R.drawable.msg_copy);
-                items.add("ULT: Copy public message link (Markdown)");
-                options.add(OPTION_ULT_COPY_PUBLIC_MESSAGE_MARKDOWN);
-                icons.add(R.drawable.msg_copy);
-            }
-            if (selectedObject.getDocument() != null) {
-                items.add("ULT: Copy document details");
-                options.add(OPTION_ULT_COPY_MEDIA_DETAILS);
-                icons.add(R.drawable.msg_copy);
-                items.add("ULT: Copy file summary");
+            if (selectedObject.getDocument() != null
+                    && !selectedObject.messageOwner.noforwards) {
+                items.add("ULT: Copy file info");
                 options.add(OPTION_ULT_COPY_FILE_SUMMARY);
-                icons.add(R.drawable.msg_copy);
-                items.add("ULT: Copy safe file name");
-                options.add(OPTION_ULT_COPY_FILENAME);
-                icons.add(R.drawable.msg_copy);
-                items.add("ULT: Copy media citation");
-                options.add(OPTION_ULT_COPY_MEDIA_CITATION);
                 icons.add(R.drawable.msg_copy);
             }
         }
 
 """
-HANDLERS = """            case OPTION_ULT_COPY_FILENAME: {
-                if (selectedObject != null && selectedObject.getDocument() != null
-                        && !selectedObject.isSponsored()) {
-                    final String name = UltChatTools.safeFileName(
-                            org.telegram.messenger.FileLoader.getDocumentFileName(
-                                    selectedObject.getDocument()));
-                    AndroidUtilities.addToClipboard(name);
-                    android.widget.Toast.makeText(getParentActivity(), "Safe file name copied",
-                            android.widget.Toast.LENGTH_SHORT).show();
-                }
-                break;
-            }
-            case OPTION_ULT_COPY_MEDIA_CITATION: {
+HANDLERS = """            case OPTION_ULT_COPY_MESSAGE_REFERENCE: {
+                // No private/secret t.me links; values copied only on explicit tap.
                 if (selectedObject != null && selectedObject.messageOwner != null
-                        && selectedObject.getDocument() != null && !selectedObject.isSponsored()) {
-                    final org.telegram.tgnet.TLRPC.Document file = selectedObject.getDocument();
-                    final String publicName = currentEncryptedChat == null && currentChat != null
-                            && ChatObject.isChannel(currentChat)
-                            ? ChatObject.getPublicUsername(currentChat) : null;
-                    final String citation = UltChatTools.mediaCitation(
-                            org.telegram.messenger.FileLoader.getDocumentFileName(file),
-                            file.mime_type, file.size, selectedObject.getId(),
-                            selectedObject.messageOwner.date, publicName);
-                    if (citation != null) {
-                        AndroidUtilities.addToClipboard(citation);
-                        android.widget.Toast.makeText(getParentActivity(),
-                                "Media citation copied", android.widget.Toast.LENGTH_SHORT).show();
-                    }
-                }
-                break;
-            }
-            case OPTION_ULT_COPY_METADATA_JSON: {
-                if (selectedObject != null && selectedObject.messageOwner != null
-                        && !selectedObject.isSponsored()) {
-                    final String publicName = currentEncryptedChat == null && currentChat != null
-                            && ChatObject.isChannel(currentChat)
-                            ? ChatObject.getPublicUsername(currentChat) : null;
-                    final String metadata = UltChatTools.messageMetadataJson(
-                            selectedObject.getId(), selectedObject.getFromChatId(),
-                            selectedObject.messageOwner.date, publicName);
-                    if (metadata != null) {
-                        AndroidUtilities.addToClipboard(metadata);
-                        android.widget.Toast.makeText(getParentActivity(),
-                                "Local metadata copied", android.widget.Toast.LENGTH_SHORT).show();
-                    }
-                }
-                break;
-            }
-            case OPTION_ULT_COPY_MESSAGE_REFERENCE: {
-                // Only supply a username for a public channel/supergroup.
-                // Never generate a link for private chats or secret chats.
-                if (selectedObject != null && selectedObject.messageOwner != null
-                        && !selectedObject.isSponsored()) {
-                    final String publicName = currentEncryptedChat == null && currentChat != null
-                            && ChatObject.isChannel(currentChat)
+                        && selectedObject.getId() > 0 && !selectedObject.isSponsored()) {
+                    final String publicName = currentEncryptedChat == null
+                            && currentChat != null && ChatObject.isChannel(currentChat)
                             ? ChatObject.getPublicUsername(currentChat) : null;
                     final String reference = UltChatTools.messageReference(
                             selectedObject.getId(), selectedObject.getFromChatId(),
                             selectedObject.messageOwner.date, publicName);
                     if (reference != null) {
                         AndroidUtilities.addToClipboard(reference);
-                        android.widget.Toast.makeText(getParentActivity(), "Message reference copied",
-                                android.widget.Toast.LENGTH_SHORT).show();
-                    }
-                }
-                break;
-            }
-            case OPTION_ULT_COPY_MESSAGE_ID: {
-                AndroidUtilities.addToClipboard(UltChatTools.numericId(selectedObject.getId()));
-                android.widget.Toast.makeText(getParentActivity(), "Message ID copied",
-                        android.widget.Toast.LENGTH_SHORT).show();
-                break;
-            }
-            case OPTION_ULT_COPY_SENDER_ID: {
-                final long senderPeerId = selectedObject.getFromChatId();
-                if (senderPeerId != 0) {
-                    AndroidUtilities.addToClipboard(UltChatTools.numericId(senderPeerId));
-                    android.widget.Toast.makeText(getParentActivity(), "Sender peer ID copied",
-                            android.widget.Toast.LENGTH_SHORT).show();
-                }
-                break;
-            }
-            case OPTION_ULT_COPY_UNIX_TIME: {
-                final String timestamp = UltChatTools.unixTimestamp(selectedObject.messageOwner.date);
-                if (timestamp != null) {
-                    AndroidUtilities.addToClipboard(timestamp);
-                    android.widget.Toast.makeText(getParentActivity(), "Unix timestamp copied",
-                            android.widget.Toast.LENGTH_SHORT).show();
-                }
-                break;
-            }
-            case OPTION_ULT_COPY_ISO_UTC_TIME: {
-                final String isoUtc = selectedObject.messageOwner != null
-                        ? UltChatTools.utcTimestamp(selectedObject.messageOwner.date) : null;
-                if (isoUtc != null) {
-                    AndroidUtilities.addToClipboard(isoUtc);
-                    android.widget.Toast.makeText(getParentActivity(), "UTC timestamp copied",
-                            android.widget.Toast.LENGTH_SHORT).show();
-                }
-                break;
-            }
-            case OPTION_ULT_COPY_PUBLIC_MESSAGE_MARKDOWN: {
-                // Public channel/supergroup only; recheck protection at tap time.
-                if (selectedObject != null && !selectedObject.isSponsored()
-                        && currentEncryptedChat == null && currentChat != null
-                        && ChatObject.isChannel(currentChat) && selectedObject.getId() > 0) {
-                    final String markdown = UltChatTools.publicMessageMarkdown(
-                            ChatObject.getPublicUsername(currentChat), selectedObject.getId());
-                    if (markdown != null) {
-                        AndroidUtilities.addToClipboard(markdown);
                         android.widget.Toast.makeText(getParentActivity(),
-                                "Public Markdown link copied", android.widget.Toast.LENGTH_SHORT).show();
-                    }
-                }
-                break;
-            }
-            case OPTION_ULT_COPY_PUBLIC_MESSAGE_LINK: {
-                // Revalidate at tap-time: chat metadata can change while menu is open.
-                if (currentEncryptedChat == null && currentChat != null
-                        && ChatObject.isChannel(currentChat) && selectedObject.getId() > 0) {
-                    final String publicMessageLink = UltChatTools.publicMessageLink(
-                            ChatObject.getPublicUsername(currentChat), selectedObject.getId());
-                    if (publicMessageLink != null) {
-                        AndroidUtilities.addToClipboard(publicMessageLink);
-                        android.widget.Toast.makeText(getParentActivity(), "Public message link copied",
-                                android.widget.Toast.LENGTH_SHORT).show();
+                                "Reference copied", android.widget.Toast.LENGTH_SHORT).show();
                     }
                 }
                 break;
             }
             case OPTION_ULT_COPY_FILE_SUMMARY: {
-                if (selectedObject != null && selectedObject.getDocument() != null) {
-                    final org.telegram.tgnet.TLRPC.Document document = selectedObject.getDocument();
-                    AndroidUtilities.addToClipboard(UltChatTools.mediaSummary(
-                            org.telegram.messenger.FileLoader.getDocumentFileName(document),
-                            document.mime_type, document.size));
-                    android.widget.Toast.makeText(getParentActivity(), "File summary copied",
-                            android.widget.Toast.LENGTH_SHORT).show();
-                }
-                break;
-            }
-            case OPTION_ULT_COPY_MEDIA_DETAILS: {
-                if (selectedObject.getDocument() != null) {
-                    AndroidUtilities.addToClipboard(UltChatTools.mediaDetails(
-                            selectedObject.getDocument().mime_type,
-                            selectedObject.getDocument().size));
-                    android.widget.Toast.makeText(getParentActivity(), "Document details copied",
-                            android.widget.Toast.LENGTH_SHORT).show();
+                if (selectedObject != null && selectedObject.messageOwner != null
+                        && selectedObject.getDocument() != null
+                        && !selectedObject.isSponsored()
+                        && !selectedObject.messageOwner.noforwards) {
+                    final org.telegram.tgnet.TLRPC.Document file = selectedObject.getDocument();
+                    final String summary = UltChatTools.mediaSummary(
+                            org.telegram.messenger.FileLoader.getDocumentFileName(file),
+                            file.mime_type, file.size);
+                    AndroidUtilities.addToClipboard(summary);
+                    android.widget.Toast.makeText(getParentActivity(),
+                            "File info copied", android.widget.Toast.LENGTH_SHORT).show();
                 }
                 break;
             }
