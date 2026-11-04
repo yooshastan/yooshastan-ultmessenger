@@ -65,7 +65,7 @@ def configure(root: Path, env=None) -> None:
         if signing_release.count(old_line) != 1:
             raise ValueError("Unexpected pinned upstream release signing field: " + old_line.split()[0])
         signing_release = signing_release.replace(old_line, new_line, 1)
-    if any(token in signing_release for token in ("release.keystore", "RELEASE_STORE_PASSWORD", "RELEASE_KEY_PASSWORD", "RELEASE_KEY_ALIAS")):
+    if any(token in signing_release for token in ("release.keystore", "storePassword RELEASE_STORE_PASSWORD", "keyPassword RELEASE_KEY_PASSWORD", "keyAlias RELEASE_KEY_ALIAS")):
         raise ValueError("Upstream release signing fallback remains")
     changed = old[:start] + signing_release + old[end:]
     if changed.count(DEBUG_ONLY_VERSION_ANCHOR) != 1:
