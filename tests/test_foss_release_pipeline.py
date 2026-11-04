@@ -144,7 +144,7 @@ class WorkflowContract(unittest.TestCase):
         self.assertIn("vars.ULT_RELEASE_CERT_SHA256 || secrets.ULT_RELEASE_CERT_SHA256", sign)
         self.assertIn('if [[ -z "$ULT_RELEASE_CERT_SHA256" ]]', sign)
         self.assertIn("do not disable verification", sign)
-        self.assertIn("--cert-sha256 \\"$ULT_RELEASE_CERT_SHA256\\"", sign)
+        self.assertIn('--cert-sha256 "$ULT_RELEASE_CERT_SHA256"', sign)
         self.assertNotIn("gh release create", sign)
         self.assertNotIn("generate-key", sign)
 
