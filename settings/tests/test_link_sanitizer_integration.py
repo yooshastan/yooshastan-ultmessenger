@@ -12,6 +12,16 @@ spec.loader.exec_module(module)
 
 
 class LinkSanitizerIntegrationTest(unittest.TestCase):
+    def test_safe_pasted_url_spans_and_rotating_share_tokens(self):
+        policy = (ROOT / "settings/src/com/yooshastan/ultmessenger/settings/UltLinkSanitizerPolicy.java").read_text()
+        wrapper = (ROOT / "settings/src/com/yooshastan/ultmessenger/settings/UltLinkSanitizer.java").read_text()
+        self.assertIn('key.equals("avpt")', policy)
+        self.assertIn('key.equals("stkn")', policy)
+        self.assertIn('isHost(host, "instagram.com")', policy)
+        self.assertIn("span instanceof URLSpan", wrapper)
+        self.assertIn("displayed.equals(((URLSpan) span).getURL())", wrapper)
+        self.assertIn("if (!(span instanceof URLSpan)) return text", wrapper)
+
     def setup_source(self, root):
         target = root / module.CHAT
         target.parent.mkdir(parents=True)

@@ -95,8 +95,23 @@ public final class UltLinkSanitizerPolicy {
         if (key.equals("fbclid") || key.equals("gclid") || key.equals("dclid")
                 || key.equals("msclkid") || key.equals("mc_cid") || key.equals("mc_eid")
                 || key.equals("_hsenc") || key.equals("_hsmi")) return true;
+        // Instagram rotates its share-attribution token names. Keep this
+        // exact, site-scoped allowlist rather than stripping all four-letter
+        // query keys: e.g. img_index and story_media_id are functional.
         if (isHost(host, "instagram.com")
-                && (key.equals("igshid") || key.equals("igsh") || key.equals("bqrl"))) return true;
+                && (key.equals("igshid") || key.equals("igsh")
+                    || key.equals("igsi") || key.equals("ig_rid")
+                    || key.equals("stkn") || key.equals("avpt")
+                    || key.equals("bqrl") || key.equals("cnvx")
+                    || key.equals("cplk") || key.equals("dlrf")
+                    || key.equals("dmpr") || key.equals("evlk")
+                    || key.equals("exln") || key.equals("fqnt")
+                    || key.equals("gwpx") || key.equals("hvrq")
+                    || key.equals("jplx") || key.equals("knvt")
+                    || key.equals("lqvp") || key.equals("mdxt")
+                    || key.equals("obrf") || key.equals("psln")
+                    || key.equals("rpxt") || key.equals("srtk")
+                    || key.equals("vrfl") || key.equals("xtok"))) return true;
         if ((isHost(host, "youtu.be") || isHost(host, "youtube.com"))
                 && key.equals("si")) return true;
         return false;

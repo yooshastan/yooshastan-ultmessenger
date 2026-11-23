@@ -11,6 +11,29 @@ public class UltLinkSanitizerPolicyTest {
         equal(UltLinkSanitizerPolicy.cleanUrl(
                 "https://www.instagram.com/reel/Dft9iuNq8VQ/?bqrl=MWY4cWU2Mmd3OGg4bw=="),
                 "https://www.instagram.com/reel/Dft9iuNq8VQ/");
+        // Device regression: anonymous-posted Instagram Reel still had avpt.
+        equal(UltLinkSanitizerPolicy.cleanUrl(
+                "https://www.instagram.com/reel/DelvqtyyXy9/?avpt=aWhiYWY3ZmFwbTJ0"),
+                "https://www.instagram.com/reel/DelvqtyyXy9/");
+        equal(UltLinkSanitizerPolicy.cleanText(
+                "watch https://www.instagram.com/reel/DelvqtyyXy9/?avpt=aWhiYWY3ZmFwbTJ0"),
+                "watch https://www.instagram.com/reel/DelvqtyyXy9/");
+        for (String key : new String[]{"avpt","stkn","cnvx","dmpr","evlk","fqnt",
+                                      "gwpx","hvrq","jplx","knvt","lqvp","srtk","xtok"}) {
+            equal(UltLinkSanitizerPolicy.cleanUrl(
+                    "https://www.instagram.com/reel/ABC123/?"+key+"=share"),
+                    "https://www.instagram.com/reel/ABC123/");
+        }
+        // Functional query fields, signed URLs and other domains are preserved.
+        equal(UltLinkSanitizerPolicy.cleanUrl(
+                "https://www.instagram.com/p/ABC123/?avpt=share&img_index=2&hl=en"),
+                "https://www.instagram.com/p/ABC123/?img_index=2&hl=en");
+        equal(UltLinkSanitizerPolicy.cleanUrl(
+                "https://www.instagram.com/reel/ABC123/?avpt=share&token=signed"),
+                "https://www.instagram.com/reel/ABC123/?avpt=share&token=signed");
+        equal(UltLinkSanitizerPolicy.cleanUrl(
+                "https://example.org/reel/ABC123/?avpt=share"),
+                "https://example.org/reel/ABC123/?avpt=share");
         equal(UltLinkSanitizerPolicy.cleanUrl("https://youtu.be/3-B6fmO08UY?si=track"),
                 "https://youtu.be/3-B6fmO08UY");
         equal(UltLinkSanitizerPolicy.cleanText(
