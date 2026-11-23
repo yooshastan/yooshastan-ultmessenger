@@ -13,7 +13,7 @@ class Beta01QualityContract(unittest.TestCase):
         settings = read("settings/src/com/yooshastan/ultmessenger/settings/UltSettingsActivity.java")
         main = settings.split("addSection(context, content, \"ULTGRAM\");", 1)[1].split(
             "fragmentView = scroll;", 1)[0]
-        self.assertEqual(main.count("addLink(context, content,"), 11)
+        self.assertEqual(main.count("addLink(context, content,"), 12)
         self.assertEqual(main.count('"Downloads",'), 1)
         self.assertNotIn('new UltMediaStudioActivity()', main)
         for label in ('"Proxy manager"', '"Strict proxy (native sockets)"',
