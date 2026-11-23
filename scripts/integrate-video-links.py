@@ -23,50 +23,73 @@ SETTINGS_METHOD = """    private void showVideoLinkSettings() {
         final int account = currentAccount;
         final boolean enabled = com.yooshastan.ultmessenger.video.UltVideoAutoSave.isEnabled(account);
         final boolean wifiOnly = com.yooshastan.ultmessenger.video.UltVideoAutoSave.isWifiOnly(account);
+        final boolean strict = com.yooshastan.ultmessenger.video.UltVideoAutoSave.strictModeRequested();
+        final String state = enabled ? (strict ? "ON (PAUSED: strict proxy)" : "ON") : "OFF";
+
+        // The primary dialog intentionally has NO setMessage(). Android's AlertDialog
+        // can hide setItems() entirely when a large message is also set (device regression).
         showSecureDialog(activity, new android.app.AlertDialog.Builder(activity)
-                .setTitle("Auto-save video links")
-                .setMessage("New chat messages with public HTTPS video URLs can be saved to "
-                        + "Downloads/Ultgram. This uses Android DownloadManager, not Telegram's "
-                        + "media queue. Maximum declared file size: 100 MiB. Direct videos and "
-                        + "web pages with standard OG metadata are supported. "
-                        + "An experimental on-device extractor also handles public "
-                        + "YouTube, Instagram and other supported video-site URLs. "
-                        + "Some URLs, DRM and login-only media may still fail. "
-                        + "External sites are contacted directly, OUTSIDE Telegram MTProxy; "
-                        + "they can see your network IP. Automatically paused when Ultgram "
-                        + "native strict proxy is enabled. Existing messages are not scanned. "
-                        + "With Wi-Fi-only selected, links received on metered networks are skipped.")
+                .setTitle("Video link downloads")
                 .setItems(new String[]{
-                        "Automatic saving: " + (enabled ? "ON" : "OFF"),
-                        "Wi-Fi/unmetered only: " + (wifiOnly ? "ON" : "OFF"),
-                        "Downloads queued/saved this installation: "
-                                + com.yooshastan.ultmessenger.video.UltVideoAutoSave.queuedCount(account),
-                        "Last video attempt: "
-                                + com.yooshastan.ultmessenger.video.UltVideoAutoSave.lastResult(account)
+                        "Auto-save: " + state,
+                        "Wi-Fi / unmetered only: " + (wifiOnly ? "ON" : "OFF"),
+                        "Last attempt: "
+                                + com.yooshastan.ultmessenger.video.UltVideoAutoSave.lastResult(account),
+                        "Queued/saved: "
+                                + com.yooshastan.ultmessenger.video.UltVideoAutoSave.queuedCount(account)
                 }, (dialog, choice) -> {
                     if (choice == 0) {
                         if (enabled) {
                             com.yooshastan.ultmessenger.video.UltVideoAutoSave.setEnabled(account, false);
-                            showDownloadToast("External video auto-save disabled");
+                            showDownloadToast("Video auto-save OFF");
+                            showVideoLinkSettings();
                         } else {
                             showSecureDialog(activity, new android.app.AlertDialog.Builder(activity)
                                     .setTitle("Enable external video downloads?")
-                                    .setMessage("Ultgram will automatically contact external websites "
-                                            + "from new messages without opening links manually. "
-                                            + "External HTTP(S) requests do NOT use Telegram's proxy. "
-                                            + "Only enable this if you accept that privacy and "
-                                            + "data/storage cost. Strict MTProxy mode pauses it.")
-                                    .setNegativeButton("Cancel", null)
+                                    .setMessage("New chat URLs may be contacted without opening them. "
+                                            + "The destination sees your network IP. These downloads "
+                                            + "do NOT use Telegram MTProxy. Strict proxy mode pauses "
+                                            + "video auto-save. Only use media you may legally save.")
+                                    .setNegativeButton("Cancel", (d, w) -> showVideoLinkSettings())
                                     .setPositiveButton("Enable", (d, w) -> {
                                         com.yooshastan.ultmessenger.video.UltVideoAutoSave.setEnabled(account, true);
-                                        showDownloadToast("Auto-save enabled for new video links");
+                                        showDownloadToast("Video auto-save ON");
+                                        showVideoLinkSettings();
                                     }));
                         }
                     } else if (choice == 1) {
                         com.yooshastan.ultmessenger.video.UltVideoAutoSave.setWifiOnly(account, !wifiOnly);
-                        showDownloadToast(!wifiOnly ? "Unmetered only enabled" : "Mobile data allowed");
+                        showDownloadToast(!wifiOnly ? "Wi-Fi / unmetered only ON" : "Mobile data allowed");
+                        showVideoLinkSettings();
+                    } else if (choice == 2) {
+                        showSecureDialog(activity, new android.app.AlertDialog.Builder(activity)
+                                .setTitle("Last video attempt")
+                                .setMessage(com.yooshastan.ultmessenger.video.UltVideoAutoSave.lastResult(account))
+                                .setPositiveButton("Back", (d, w) -> showVideoLinkSettings()));
+                    } else if (choice == 3) {
+                        showDownloadToast("Saved media: Downloads/Ultgram");
+                        showVideoLinkSettings();
                     }
                 })
+                .setNeutralButton("Privacy", (dialog, which) -> showVideoLinkHelp())
+                .setPositiveButton("Done", null));
+    }
+
+    private void showVideoLinkHelp() {
+        final Activity activity = getParentActivity();
+        if (activity == null) return;
+        showSecureDialog(activity, new android.app.AlertDialog.Builder(activity)
+                .setTitle("Video link privacy & limits")
+                .setMessage("Auto-save is OFF by default. It checks only new messages, "
+                        + "including messages you send yourself, once enabled. "
+                        + "Direct video files and experimental YouTube/Instagram "
+                        + "extraction are supported; site restrictions may cause failures. "
+                        + "Files go to Downloads/Ultgram (up to 100 MiB per video). "
+                        + "Wi-Fi / unmetered only is ON by default. "
+                        + "External sites see your connection IP because these requests "
+                        + "are outside Telegram MTProxy. Strict proxy mode pauses downloads. "
+                        + "The app does not scan old messages or bypass protected media.")
+                .setNegativeButton("Back", (d, w) -> showVideoLinkSettings())
                 .setPositiveButton("Done", null));
     }
 

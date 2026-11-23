@@ -29,8 +29,8 @@ class SigningPrepContracts(unittest.TestCase):
 
     def test_internal_debug_apk_workflow_preserves_signing_separation(self):
         workflow = (ROOT / ".github/workflows/android-beta.yml").read_text()
-        self.assertIn("16.0.0-beta03.4", workflow)
-        self.assertIn("7183016", workflow)
+        self.assertIn("16.0.0-beta03.4.1", workflow)
+        self.assertIn("7183017", workflow)
         self.assertIn("assembleAfatFdArm64Debug", workflow)
         self.assertIn("integrate-native-strict.py", workflow)
         self.assertIn("integrate-translation.py", workflow)

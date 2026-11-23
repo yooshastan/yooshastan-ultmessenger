@@ -29,6 +29,13 @@ class IntegrationTest(unittest.TestCase):
             module.integrate(root)
             self.assertIn("UltVideoAutoSave.install()", app.read_text())
             self.assertIn("showVideoLinkSettings", ui.read_text())
+            # Primary AlertDialog must display toggle items without a huge message.
+            primary = module.SETTINGS_METHOD.split(".setItems(", 1)[0]
+            self.assertNotIn(".setMessage(", primary)
+            self.assertIn('"Auto-save: " + state', module.SETTINGS_METHOD)
+            self.assertIn('setNeutralButton("Privacy"', module.SETTINGS_METHOD)
+            self.assertIn('showVideoLinkHelp()', module.SETTINGS_METHOD)
+            self.assertIn('showVideoLinkSettings();', module.SETTINGS_METHOD)
             self.assertIn("Video links", ui.read_text())
             self.assertIn("cancelPendingForStrict", strict.read_text())
             self.assertIn("youtubedl-android:library:0.18.1", gradle.read_text())

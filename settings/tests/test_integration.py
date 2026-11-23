@@ -31,12 +31,14 @@ class SettingsIntegrationTest(TestCase):
             self.assertIn('"Themes and display"', ui)
             self.assertIn('"Network diagnostics"', ui)
             self.assertIn('"Downloads"', ui)
+            self.assertIn('"Link sanitizer"', ui)
+            self.assertIn('UltLinkSanitizer.setEnabled(', ui)
             self.assertIn("UltReleaseNotes.seenKey(", ui)
             self.assertIn("ConnectionsManager.setUltStrictNativeProxyEnabled", ui)
             self.assertIn("UltAndroidDnsInspector.inspect", ui)
             self.assertIn("DoQ QUIC backend: NOT INSTALLED", ui)
             self.assertEqual(ui.split("fragmentView = scroll;", 1)[0].count(
-                "addLink(context, content,"), 11)
+                "addLink(context, content,"), 12)
             self.assertNotIn("UltMediaStudioActivity.java", str(integration.MEDIA_MODELS))
             for extra in integration.MEDIA_MODELS:
                 self.assertTrue((model.parent / extra.name).is_file())

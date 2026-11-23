@@ -1,8 +1,8 @@
-# Ultgram: auto-save video links (experimental Beta 3.4)
+# Ultgram: auto-save video links (experimental Beta 3.4.1)
 
 This opt-in feature observes **newly received** Telegram messages while Ultgram is running and examines their visible HTTPS links (up to three per message). It does not use a bot, send chat contents to an extraction service, or ask the Telegram server to fetch external media.
 
-**User flow:** Ultgram Settings → Downloads → Video links → Automatic saving → Enable. Defaults: OFF, unmetered/Wi-Fi-only ON, file size must be known and no greater than 100 MiB. Downloaded files are queued using Android DownloadManager to the device's **Downloads/Ultgram** directory, separate from Telegram's native download queue. Android can finish an already queued transfer after Ultgram closes.
+**User flow:** Ultgram Settings → Downloads → Video links → **Auto-save: OFF** → **Enable**. The first screen lists controls immediately, with privacy details behind the separate **Privacy** button; toggles reopen the short dialog to show updated state. Defaults: OFF, unmetered/Wi-Fi-only ON, file size must be known and no greater than 100 MiB. Downloaded files are queued using Android DownloadManager to the device's **Downloads/Ultgram** directory, separate from Telegram's native download queue. Android can finish an already queued transfer after Ultgram closes.
 
 **Supported in this first pass:**
 - Public HTTPS video files returned as \`video/*\` (or octet-stream for known video file extensions).
@@ -32,3 +32,8 @@ Only allowed public HTTPS hosts are probed. Non-public DNS answers, local/privat
 5. Verify the APK package identity, versionCode and certificate against the installed Beta 3.2 before trying an upgrade.
 
 **Release gate:** Beta 3.4 is for internal QA only. Strict native proxy requests cancellation of active yt-dlp subprocesses on a best-effort basis, but this is NOT a system VPN kill switch and cannot guarantee zero packets after a mode switch. Dependency licenses, privacy/routing and cancellation need independent device review. Keep signed public releases blocked until checks pass. Automatic link sanitization remains deferred as GitHub issue #70.
+
+
+## Separate link-sanitizer option in Beta 3.4.1
+
+Under **Ultgram Settings → Privacy and connection → Link sanitizer**, enable conservative OFF-by-default tracking-parameter cleaning before sending ordinary text. Processing occurs entirely on the device, not through a cleaning API. Known share identifiers such as Instagram `bqrl` and YouTube `si` are removed while video IDs, YouTube timestamps, and non-tracking query parameters remain. Authenticated/signed URLs are unchanged. Rich text containing styled entities may be skipped. A cleaned message omits its precomputed URL preview to avoid sending a preview for the unsanitized URL. Incoming messages, message edits, captions, and old chat history are not changed. More extensive link cleanup belongs to the next iteration after this beta's on-device QA.

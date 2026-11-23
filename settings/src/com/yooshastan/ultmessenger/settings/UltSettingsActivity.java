@@ -119,6 +119,9 @@ public final class UltSettingsActivity extends BaseFragment {
         addLink(context, content, "External link confirmation",
                 "Ask before opening links outside the Telegram proxy",
                 () -> showExternalLinkGuard(context));
+        addLink(context, content, "Link sanitizer",
+                "Remove recognized tracking parameters from sent links (OFF by default)",
+                () -> showUltLinkSanitizer(context));
         addLink(context, content, "Local identity cover",
                 "Mask account cards in this settings screen only",
                 () -> showLocalIdentityCover(context));
@@ -1173,6 +1176,28 @@ public final class UltSettingsActivity extends BaseFragment {
                     dialog.dismiss();
                 })
                 .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    private void showUltLinkSanitizer(Context context) {
+        final boolean enabled = UltLinkSanitizer.isEnabled(context, currentAccount);
+        new UltSecureDialogBuilder(context)
+                .setTitle("Outgoing link sanitizer: " + (enabled ? "ON" : "OFF"))
+                .setMessage("When enabled, Ultgram removes known tracking-only URL "
+                        + "parameters before sending ordinary text messages. "
+                        + "The link is cleaned on your phone; no external service is contacted. "
+                        + "YouTube video IDs, timestamps, product choices and signed/authenticated "
+                        + "URLs are preserved. Richly formatted text and captions may be skipped "
+                        + "to avoid breaking Telegram entities. Link previews for altered "
+                        + "messages are disabled to prevent attaching the original URL. "
+                        + "Incoming messages are not altered.")
+                .setNeutralButton(enabled ? "Disable" : "Enable", (dialog, which) -> {
+                    UltLinkSanitizer.setEnabled(context, currentAccount, !enabled);
+                    android.widget.Toast.makeText(context,
+                            !enabled ? "Link sanitizer ON" : "Link sanitizer OFF",
+                            android.widget.Toast.LENGTH_SHORT).show();
+                })
+                .setPositiveButton("Done", null)
                 .show();
     }
 
