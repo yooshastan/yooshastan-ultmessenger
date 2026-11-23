@@ -16,6 +16,13 @@ public final class UltVideoLinkRulesTest {
         check(!UltVideoLinkRules.isAllowedUrl("https://user:password@example.org/a.mp4"));
         check(!UltVideoLinkRules.isAllowedUrl("https://example.org:8096/a.mp4"));
         check(UltVideoLinkRules.isAllowedUrl("https://media.example.org/a.mp4"));
+        check(UltVideoLinkRules.isSiteUrl("https://youtu.be/3-B6fmO08UY"));
+        check(UltVideoLinkRules.isSiteUrl("https://www.instagram.com/reel/Dft9iuNq8VQ/?bqrl=MWY4cWU2Mmd3OGg4bw=="));
+        check(UltVideoLinkRules.isSiteUrl("https://m.youtube.com/watch?v=3-B6fmO08UY"));
+        check(!UltVideoLinkRules.isSiteUrl("https://evil-youtube.com/watch?v=x"));
+        check(!UltVideoLinkRules.isSiteUrl("https://evil.instagram.com.evil.net/reel/x"));
+        check(!UltVideoLinkRules.isSiteUrl("https://127.0.0.1/test.mp4"));
+        check(!UltVideoLinkRules.isSiteUrl("http://youtu.be/3-B6fmO08UY"));
         check(!UltVideoLinkRules.hasVideoExtension("https://example.org/page"));
         check("https://cdn.example.org/video.mp4?a=1&b=2".equals(
                 UltVideoLinkRules.htmlVideoUrl(

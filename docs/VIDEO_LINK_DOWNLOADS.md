@@ -1,4 +1,4 @@
-# Ultgram: auto-save video links (experimental Beta 3.3)
+# Ultgram: auto-save video links (experimental Beta 3.4)
 
 This opt-in feature observes **newly received** Telegram messages while Ultgram is running and examines their visible HTTPS links (up to three per message). It does not use a bot, send chat contents to an extraction service, or ask the Telegram server to fetch external media.
 
@@ -9,7 +9,9 @@ This opt-in feature observes **newly received** Telegram messages while Ultgram 
 - Public HTTPS pages exposing a standard \`og:video\` / \`og:video:secure_url\` / \`twitter:player:stream\` URL that resolves to a real video file with a declared size.
 - HTTPS redirects to public hosts with public DNS addresses.
 
-**Not supported/guaranteed:** YouTube, Instagram, TikTok, X, or other JavaScript/streaming pages that do not expose a public directly downloadable video URL; DASH/HLS playlists; DRM; private/authenticated content; HTTP; unknown-size files. This is *not yet* a universal yt-dlp replacement. File-size checking uses server-declared sizes and is not a hard byte-accurate limit on untrusted servers.
+**Experimental site extraction in Beta 3.4:** Public YouTube/Instagram and selected other video domains use embedded yt-dlp-android 0.18.1 with FFmpeg, app-owned temporary storage, and a final MediaStore export to Downloads/Ultgram. The extractor runs ON DEVICE, without a bot or external extractor service. Real-world success depends on the provider; do not claim Instagram/YouTube compatibility until tested on the phone. Site-specific bot protections, authentication, JavaScript changes, unavailable formats, or DRM may prevent downloads. The library's bundled yt-dlp/Python version may require updates after device testing.
+
+**Limits:** Site downloads combine yt-dlp's max-filesize option with a 250 ms workspace watchdog and 100 MiB final copy limit. Direct-file DownloadManager transfers still rely on server-declared sizes; that is not a hard downloaded-byte limit.
 
 ## Privacy and safeguards
 
@@ -29,4 +31,4 @@ Only allowed public HTTPS hosts are probed. Non-public DNS answers, local/privat
 4. Verify secret/protected messages are not downloaded, and enabling native strict cancels incomplete external transfers while preserving completed videos. Check Downloads/Ultgram using normal Android tools.
 5. Verify the APK package identity, versionCode and certificate against the installed Beta 3.2 before trying an upgrade.
 
-**Follow-up:** Evaluate a sandboxed, maintained multi-site extractor for social/streaming sites. That is a separate, more complex addition, not a capability of this first APK.
+**Release gate:** Beta 3.4 is for internal QA only. Strict native proxy requests cancellation of active yt-dlp subprocesses on a best-effort basis, but this is NOT a system VPN kill switch and cannot guarantee zero packets after a mode switch. Dependency licenses, privacy/routing and cancellation need independent device review. Keep signed public releases blocked until checks pass. Automatic link sanitization remains deferred as GitHub issue #70.

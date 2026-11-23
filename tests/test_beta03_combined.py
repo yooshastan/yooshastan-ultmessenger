@@ -54,8 +54,8 @@ class Beta03Contracts(unittest.TestCase):
 
     def test_stable_signing_and_beta_version_are_distinct(self):
         workflow = read(".github/workflows/android-beta.yml")
-        self.assertIn("16.0.0-beta03.3", workflow)
-        self.assertIn("7183015", workflow)
+        self.assertIn("16.0.0-beta03.4", workflow)
+        self.assertIn("7183016", workflow)
         self.assertIn("ult-beta03-combined-foss-arm64-debug.apk", workflow)
         self.assertIn("scripts/integrate-native-strict.py", workflow)
         self.assertIn("scripts/integrate-translation.py", workflow)

@@ -79,6 +79,22 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
         preferences().edit().putBoolean(setting("wifi_only", account), enabled).apply();
     }
 
+    public static String lastResult(int account) {
+        return preferences().getString(setting("last_result", account), "No video attempt yet");
+    }
+
+    public static void noteResult(int account, String status) {
+        preferences().edit().putString(setting("last_result", account), status).apply();
+    }
+
+    private static synchronized void markSiteCompleted(int account, String key) {
+        Set<String> seen = new HashSet<>(preferences().getStringSet("seen", Collections.emptySet()));
+        if (seen.size() >= 1000) seen.clear();
+        seen.add(fingerprint(key));
+        preferences().edit().putStringSet("seen", seen)
+                .putInt(setting("queued", account), queuedCount(account) + 1).apply();
+    }
+
     public static int queuedCount(int account) {
         return preferences().getInt(setting("queued", account), 0);
     }
@@ -120,11 +136,20 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
                 EXECUTOR.execute(() -> {
                     try {
                         if (!isEnabled(account) || strictModeRequested()
-                                || !networkAllowed()) return;
+                                || !networkAllowed(account)) return;
+                        if (UltVideoLinkRules.isSiteUrl(url)) {
+                            noteResult(account, "Starting on-device site extractor");
+                            if (UltVideoSiteDownloader.download(
+                                    ApplicationLoader.applicationContext, account, url)) {
+                                markSiteCompleted(account, key);
+                            }
+                            return;
+                        }
                         Probe probe = probe(url);
                         if (probe == null || !isEnabled(account) || strictModeRequested()
-                                || !networkAllowed() || isQueued(key)) return;
+                                || !networkAllowed(account) || isQueued(key)) return;
                         enqueue(probe, key);
+                        noteResult(account, "Direct video queued in Downloads/Ultgram");
                     } catch (Exception ignored) {
                         // No URL/token logging. Unsupported/private resources are skipped.
                     } finally {
@@ -135,7 +160,7 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
         }
     }
 
-    private boolean networkAllowed() {
+    public static boolean networkAllowed(int account) {
         ConnectivityManager cm = (ConnectivityManager) ApplicationLoader.applicationContext
                 .getSystemService(Context.CONNECTIVITY_SERVICE);
         if (cm == null) return false;
@@ -168,6 +193,7 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
     /** Cancel incomplete owned external transfers on strict-mode activation. */
     public static synchronized void cancelPendingForStrict() {
         if (!strictModeRequested()) return;
+        UltVideoSiteDownloader.cancelAll();
         Context context = ApplicationLoader.applicationContext;
         DownloadManager dm = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
         if (dm == null) return;
@@ -272,7 +298,7 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
         Context context = ApplicationLoader.applicationContext;
         DownloadManager dm = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
         if (dm == null) return;
-        if (strictModeRequested() || !isEnabled(account) || !networkAllowed()) return;
+        if (strictModeRequested() || !isEnabled(account) || !networkAllowed(account)) return;
         String extension = video.mime.contains("webm") ? ".webm"
                 : video.mime.contains("quicktime") ? ".mov"
                 : video.mime.contains("3gpp") ? ".3gp"

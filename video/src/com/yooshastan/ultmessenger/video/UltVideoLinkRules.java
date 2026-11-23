@@ -61,6 +61,21 @@ public final class UltVideoLinkRules {
         }
     }
 
+    /** Only use dynamic site extraction for explicitly recognized platforms. */
+    public static boolean isSiteUrl(String value) {
+        if (!isAllowedUrl(value)) return false;
+        try {
+            String host = new URI(value).getHost().toLowerCase(Locale.US);
+            String[] allowed = {"youtube.com", "youtu.be", "youtube-nocookie.com",
+                    "instagram.com", "vimeo.com", "tiktok.com", "twitter.com", "x.com",
+                    "facebook.com", "fb.watch", "threads.net"};
+            for (String domain : allowed) {
+                if (host.equals(domain) || host.endsWith("." + domain)) return true;
+            }
+        } catch (Exception ignored) { }
+        return false;
+    }
+
     public static boolean hasVideoExtension(String url) {
         try {
             String path = new URI(url).getPath();

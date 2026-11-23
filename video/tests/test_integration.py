@@ -15,6 +15,11 @@ class IntegrationTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             app, ui, strict = root / module.APP, root / module.DOWNLOADS, root / module.STRICT
+            gradle, manifest = root / module.GRADLE, root / module.MANIFEST
+            gradle.parent.mkdir(parents=True, exist_ok=True)
+            gradle.write_text("dependencies {\n" + module.GRADLE_ANCHOR + "}\n")
+            manifest.parent.mkdir(parents=True, exist_ok=True)
+            manifest.write_text("<manifest>" + module.MANIFEST_ANCHOR + "</application></manifest>")
             strict.parent.mkdir(parents=True, exist_ok=True)
             strict.write_text("before\n" + module.STRICT_ANCHOR + "after\n")
             app.parent.mkdir(parents=True, exist_ok=True)
@@ -26,7 +31,9 @@ class IntegrationTest(unittest.TestCase):
             self.assertIn("showVideoLinkSettings", ui.read_text())
             self.assertIn("Video links", ui.read_text())
             self.assertIn("cancelPendingForStrict", strict.read_text())
-            for name in ("UltVideoAutoSave.java", "UltVideoLinkRules.java"):
+            self.assertIn("youtubedl-android:library:0.18.1", gradle.read_text())
+            self.assertIn("extractNativeLibs", manifest.read_text())
+            for name in ("UltVideoAutoSave.java", "UltVideoLinkRules.java", "UltVideoSiteDownloader.java"):
                 self.assertTrue((root / module.DEST / name).exists())
             with self.assertRaises(ValueError):
                 module.integrate(root)
@@ -35,6 +42,11 @@ class IntegrationTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             app, ui, strict = root / module.APP, root / module.DOWNLOADS, root / module.STRICT
+            gradle, manifest = root / module.GRADLE, root / module.MANIFEST
+            gradle.parent.mkdir(parents=True, exist_ok=True)
+            gradle.write_text("dependencies {\n" + module.GRADLE_ANCHOR + "}\n")
+            manifest.parent.mkdir(parents=True, exist_ok=True)
+            manifest.write_text("<manifest>" + module.MANIFEST_ANCHOR + "</application></manifest>")
             strict.parent.mkdir(parents=True, exist_ok=True)
             strict.write_text("before\n" + module.STRICT_ANCHOR + "after\n")
             app.parent.mkdir(parents=True, exist_ok=True)
