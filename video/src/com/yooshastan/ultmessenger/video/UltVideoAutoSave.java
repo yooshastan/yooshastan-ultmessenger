@@ -52,6 +52,7 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
                 if (OBSERVERS[a] != null) continue;
                 OBSERVERS[a] = new UltVideoAutoSave(a);
                 NotificationCenter.getInstance(a).addObserver(OBSERVERS[a], NotificationCenter.didReceiveNewMessages);
+                NotificationCenter.getInstance(a).addObserver(OBSERVERS[a], NotificationCenter.messageReceivedByServer);
             }
             if (strictModeRequested()) cancelPendingForStrict();
         });
@@ -107,56 +108,76 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
 
     @Override
     public void didReceivedNotification(int id, int eventAccount, Object... args) {
-        if (id != NotificationCenter.didReceiveNewMessages || eventAccount != account
-                || !isEnabled(account) || strictModeRequested()
-                || args.length < 2 || !(args[0] instanceof Long)
-                || !(args[1] instanceof ArrayList)) return;
+        if (eventAccount != account || !isEnabled(account) || strictModeRequested()) return;
+        if (id == NotificationCenter.didReceiveNewMessages) {
+            if (args.length < 2 || !(args[0] instanceof Long)
+                    || !(args[1] instanceof ArrayList)) return;
+            long dialogId = (Long) args[0];
+            if (DialogObject.isEncryptedDialog(dialogId)) return;
+            for (Object raw : (ArrayList<?>) args[1]) {
+                if (!(raw instanceof MessageObject)) continue;
+                MessageObject message = (MessageObject) raw;
+                if (message.messageOwner == null || message.messageOwner.noforwards
+                        || message.isSponsored()) continue;
+                // Wait until the server acknowledges our own messages; avoids
+                // downloading once for a local temporary ID and again for server ID.
+                if (message.messageOwner.out) continue;
+                queueLinks(dialogId, message.messageOwner);
+            }
+        } else if (id == NotificationCenter.messageReceivedByServer) {
+            // Telegram dispatches outgoing server-confirmed messages here.
+            // Example arguments: oldId, newId, TLRPC.Message, dialogId, ...
+            if (args.length < 4 || !(args[2] instanceof TLRPC.Message)
+                    || !(args[3] instanceof Long)) return;
+            TLRPC.Message sent = (TLRPC.Message) args[2];
+            long dialogId = (Long) args[3];
+            if (DialogObject.isEncryptedDialog(dialogId) || sent.noforwards) return;
+            queueLinks(dialogId, sent);
+        }
+    }
 
-        long dialogId = (Long) args[0];
-        if (DialogObject.isEncryptedDialog(dialogId)) return;
-        for (Object raw : (ArrayList<?>) args[1]) {
-            if (!(raw instanceof MessageObject)) continue;
-            MessageObject message = (MessageObject) raw;
-            if (message.messageOwner == null || message.messageOwner.noforwards
-                    || message.isSponsored()) continue;
-            List<String> urls = new ArrayList<>(
-                    UltVideoLinkRules.findUrls(message.messageOwner.message));
-            if (message.messageOwner.entities != null) {
-                for (TLRPC.MessageEntity entity : message.messageOwner.entities) {
-                    if (entity instanceof TLRPC.TL_messageEntityTextUrl) {
-                        String target = ((TLRPC.TL_messageEntityTextUrl) entity).url;
-                        if (UltVideoLinkRules.isAllowedUrl(target) && !urls.contains(target)
-                                && urls.size() < 3) urls.add(target);
-                    }
+    private void queueLinks(long dialogId, TLRPC.Message owner) {
+        if (owner == null) return;
+        List<String> urls = new ArrayList<>(UltVideoLinkRules.findUrls(owner.message));
+        if (owner.entities != null) {
+            for (TLRPC.MessageEntity entity : owner.entities) {
+                if (entity instanceof TLRPC.TL_messageEntityTextUrl) {
+                    String target = ((TLRPC.TL_messageEntityTextUrl) entity).url;
+                    if (UltVideoLinkRules.isAllowedUrl(target) && !urls.contains(target)
+                            && urls.size() < 3) urls.add(target);
                 }
             }
-            for (String url : urls) {
-                String key = account + ":" + dialogId + ":" + message.getId() + ":" + url;
-                if (isQueued(key) || !IN_FLIGHT.add(key)) continue;
-                EXECUTOR.execute(() -> {
-                    try {
-                        if (!isEnabled(account) || strictModeRequested()
-                                || !networkAllowed(account)) return;
-                        if (UltVideoLinkRules.isSiteUrl(url)) {
-                            noteResult(account, "Starting on-device site extractor");
-                            if (UltVideoSiteDownloader.download(
-                                    ApplicationLoader.applicationContext, account, url)) {
-                                markSiteCompleted(account, key);
-                            }
-                            return;
+        }
+        for (String url : urls) {
+            String key = account + ":" + dialogId + ":" + owner.id + ":" + url;
+            if (isQueued(key) || !IN_FLIGHT.add(key)) continue;
+            EXECUTOR.execute(() -> {
+                try {
+                    if (!isEnabled(account) || strictModeRequested()
+                            || !networkAllowed(account)) return;
+                    if (UltVideoLinkRules.isSiteUrl(url)) {
+                        noteResult(account, "Starting on-device site extractor");
+                        if (UltVideoSiteDownloader.download(
+                                ApplicationLoader.applicationContext, account, url)) {
+                            markSiteCompleted(account, key);
                         }
-                        Probe probe = probe(url);
-                        if (probe == null || !isEnabled(account) || strictModeRequested()
-                                || !networkAllowed(account) || isQueued(key)) return;
-                        enqueue(probe, key);
-                        noteResult(account, "Direct video queued in Downloads/Ultgram");
-                    } catch (Exception ignored) {
-                        // No URL/token logging. Unsupported/private resources are skipped.
-                    } finally {
-                        IN_FLIGHT.remove(key);
+                        return;
                     }
-                });
-            }
+                    Probe probe = probe(url);
+                    if (probe == null || !isEnabled(account) || strictModeRequested()
+                            || !networkAllowed(account) || isQueued(key)) {
+                        noteResult(account, "No directly downloadable video found");
+                        return;
+                    }
+                    enqueue(probe, key);
+                    noteResult(account, "Direct video queued in Downloads/Ultgram");
+                } catch (Exception ignored) {
+                    noteResult(account, "Failed to process video URL");
+                    // Never log chat URLs or query tokens.
+                } finally {
+                    IN_FLIGHT.remove(key);
+                }
+            });
         }
     }
 

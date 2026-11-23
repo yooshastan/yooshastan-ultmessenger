@@ -17,7 +17,7 @@ This opt-in feature observes **newly received** Telegram messages while Ultgram 
 
 External link inspection and downloads use Android HTTP(S)/DownloadManager, **not Telegram's MTProto proxy**. A remote website can learn the network IP and that a link appeared in the user's chat. The feature is explicitly consent-gated and will not inspect messages when the Ultgram native strict proxy preference is on; it checks again before enqueueing. Android VPN behavior depends on system routing and split-tunnel policies and is not guaranteed by the app.
 
-Secret chats, sponsored content and messages marked \`noforwards\` are excluded. This is not a bypass for protected media or disappearing content. Only URLs in new message text and explicit text-URL entities are considered; old chat history is never scanned. No URL or token is logged, and queued transfer IDs are not transmitted to Yooshastan services.
+Secret chats, sponsored content and messages marked \`noforwards\` are excluded. This is not a bypass for protected media or disappearing content. Only URLs in new message text and explicit text-URL entities are considered, including newly sent messages after server acknowledgement; old chat history is never scanned. No URL or token is logged, and queued transfer IDs are not transmitted to Yooshastan services.
 
 Only allowed public HTTPS hosts are probed. Non-public DNS answers, local/private IPs, userinfo URLs, HTTP, custom ports, and unknown file lengths are rejected. At most two background resolver tasks run concurrently and up to 1000 message-link fingerprints are deduplicated locally. These safeguards reduce risk but are not a network sandbox.
 

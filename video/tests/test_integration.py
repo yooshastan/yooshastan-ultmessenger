@@ -64,6 +64,8 @@ class IntegrationTest(unittest.TestCase):
         self.assertIn("message.messageOwner.noforwards", worker)
         self.assertIn("DialogObject.isEncryptedDialog", worker)
         self.assertIn("DownloadManager.Request", worker)
+        self.assertIn("NotificationCenter.messageReceivedByServer", worker)
+        self.assertIn("queueLinks(dialogId, sent)", worker)
         self.assertIn("cancelPendingForStrict()", worker)
         self.assertNotIn("java.net.Socket(", worker)
 
