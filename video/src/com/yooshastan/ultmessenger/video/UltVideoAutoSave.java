@@ -39,7 +39,8 @@ import java.util.concurrent.Executors;
 public final class UltVideoAutoSave implements NotificationCenter.NotificationCenterDelegate {
     private static final String PREFS = "ult_video_link_autosave_v1";
     private static final long MAX_BYTES = 100L * 1024 * 1024;
-    private static final ExecutorService EXECUTOR = Executors.newFixedThreadPool(2);
+    // Single worker prevents concurrent transfers from interleaving diagnostics.
+    private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
     private static final Set<String> IN_FLIGHT = Collections.synchronizedSet(new HashSet<>());
     private static final UltVideoAutoSave[] OBSERVERS = new UltVideoAutoSave[UserConfig.MAX_ACCOUNT_COUNT];
     private final int account;
@@ -107,11 +108,34 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
         if (seen.size() >= 1000) seen.clear();
         seen.add(fingerprint(key));
         preferences().edit().putStringSet("seen", seen)
-                .putInt(setting("queued", account), queuedCount(account) + 1).apply();
+                .putInt(setting("queued", account), queuedCount(account) + 1)
+                .putInt(setting("site_saved_count", account),
+                        completedSiteSaves(account) + 1).apply();
     }
 
     public static int queuedCount(int account) {
         return preferences().getInt(setting("queued", account), 0);
+    }
+
+    /** Only confirmed site MediaStore exports; counter starts new in Beta 3.4.4. */
+    public static int completedSiteSaves(int account) {
+        return preferences().getInt(setting("site_saved_count", account), 0);
+    }
+
+    public static String lastSourceCategory(int account) {
+        return preferences().getString(setting("last_source", account),
+                "No source recorded");
+    }
+
+    public static long lastAttemptMillis(int account) {
+        return preferences().getLong(setting("last_attempt_at", account), 0L);
+    }
+
+    private static void noteAttempt(int account, String url) {
+        preferences().edit()
+                .putString(setting("last_source", account), UltVideoLinkRules.sourceCategory(url))
+                .putLong(setting("last_attempt_at", account),
+                        System.currentTimeMillis()).apply();
     }
 
     public static boolean strictModeRequested() {
@@ -167,8 +191,19 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
             if (isQueued(key) || !IN_FLIGHT.add(key)) continue;
             EXECUTOR.execute(() -> {
                 try {
-                    if (!isEnabled(account) || strictModeRequested()
-                            || !networkAllowed(account)) return;
+                    noteAttempt(account, url);
+                    if (!isEnabled(account)) {
+                        noteResult(account, "Skipped: automatic downloads OFF");
+                        return;
+                    }
+                    if (strictModeRequested()) {
+                        noteResult(account, "Paused by native strict proxy");
+                        return;
+                    }
+                    if (!networkAllowed(account)) {
+                        noteResult(account, "Skipped: unmetered network unavailable");
+                        return;
+                    }
                     if (UltVideoLinkRules.isSiteUrl(url)) {
                         noteResult(account, "Starting on-device site extractor");
                         if (UltVideoSiteDownloader.download(
@@ -181,7 +216,7 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
                     Probe probe = probe(url);
                     if (probe == null || !isEnabled(account) || strictModeRequested()
                             || !networkAllowed(account) || isQueued(key)) {
-                        noteResult(account, "No directly downloadable video found");
+                        noteResult(account, "No public direct video or OG metadata on this webpage; site extractor was not used");
                         return;
                     }
                     enqueue(probe, key);

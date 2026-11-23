@@ -76,6 +76,28 @@ public final class UltVideoLinkRules {
         return false;
     }
 
+    /** Only a category is stored for diagnostics; no URL/path/query is persisted. */
+    public static String sourceCategory(String url) {
+        if (!isAllowedUrl(url)) return "Invalid/excluded link";
+        try {
+            String host = new URI(url).getHost().toLowerCase(Locale.US);
+            if (isDomain(host, "youtube.com") || isDomain(host, "youtu.be")
+                    || isDomain(host, "youtube-nocookie.com")) return "YouTube";
+            if (isDomain(host, "instagram.com")) return "Instagram";
+            if (isDomain(host, "tiktok.com")) return "TikTok";
+            if (isDomain(host, "vimeo.com")) return "Vimeo";
+            if (isDomain(host, "facebook.com") || isDomain(host, "fb.watch")) return "Facebook";
+            if (isDomain(host, "twitter.com") || isDomain(host, "x.com")) return "X/Twitter";
+            if (isDomain(host, "threads.net")) return "Threads";
+            if (hasVideoExtension(url)) return "Direct video file";
+            return "Other HTTPS webpage (metadata only)";
+        } catch (Exception ignored) { return "Invalid/excluded link"; }
+    }
+
+    private static boolean isDomain(String host, String domain) {
+        return host.equals(domain) || host.endsWith("." + domain);
+    }
+
     public static boolean hasVideoExtension(String url) {
         try {
             String path = new URI(url).getPath();

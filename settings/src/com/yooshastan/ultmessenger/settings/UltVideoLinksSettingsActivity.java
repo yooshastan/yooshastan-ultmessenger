@@ -72,8 +72,9 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
         addHeading(content, context, "Send downloaded videos into my chats");
         addText(content, context,
                 "When YOU post a public video link, a successfully downloaded MP4 "
-                        + "is sent as a SECOND Telegram message to that same chat. "
-                        + "Others in the chat will see and receive it. OFF by default.", 14);
+                        + "is sent as a SECOND Telegram message in an ordinary one-to-one "
+                        + "chat or Saved Messages. Groups, channels and anonymous posts "
+                        + "are excluded until sender identity can be preserved. OFF by default.", 14);
         postToChatButton = addButton(content, context, "", () -> {
             if (UltVideoAutoSave.isPostToChat(currentAccount)) {
                 UltVideoAutoSave.setPostToChat(currentAccount, false);
@@ -94,7 +95,9 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
                             + "as another message. Every participant may see it. "
                             + "Videos may consume mobile data and storage. "
                             + "Only completed MP4s are eligible. "
-                            + "This does not post incoming links or protected media.")
+                            + "This test beta excludes groups and anonymous senders "
+                            + "to preserve sender identity. This does not post incoming "
+                            + "links or protected media.")
                     .setNegativeButton("Cancel", null)
                     .setPositiveButton("Enable auto-post", (dialog, which) -> {
                         UltVideoAutoSave.setPostToChat(currentAccount, true);
@@ -132,10 +135,22 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
         postToChatButton.setEnabled(enabled || post);
         unmeteredButton.setText("Wi-Fi / unmetered only: "
                 + (UltVideoAutoSave.isWifiOnly(currentAccount) ? "ON" : "OFF"));
-        status.setText("Last attempt: " + UltVideoAutoSave.lastResult(currentAccount)
-                + "\nCompleted/queued: " + UltVideoAutoSave.queuedCount(currentAccount)
+        final long attemptedAt = UltVideoAutoSave.lastAttemptMillis(currentAccount);
+        final String attemptTime = attemptedAt > 0
+                ? java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT)
+                    .format(new java.util.Date(attemptedAt))
+                : "Not yet recorded";
+        status.setText("Last inspected: " + UltVideoAutoSave.lastSourceCategory(currentAccount)
+                + " (" + attemptTime + ")"
+                + "\nResult: " + UltVideoAutoSave.lastResult(currentAccount)
+                + "\nConfirmed site files saved (new counter): "
+                + UltVideoAutoSave.completedSiteSaves(currentAccount)
+                + "\nHistorical queued/saved total (NOT verified delivered): "
+                + UltVideoAutoSave.queuedCount(currentAccount)
                 + "\nNative strict proxy: " + (strict ? "ON - downloader PAUSED" : "OFF"));
-        limitation.setText("New outgoing text links only for chat auto-post; "
+        limitation.setText("Automatic chat posting is restricted to one-to-one "
+                + "chats and Saved Messages, not groups/anonymous/channel identities. "
+                + "New outgoing text links only for chat auto-post; "
                 + "other users' links are never auto-posted. Site extraction is experimental; "
                 + "YouTube/Instagram may fail. Videos are also saved under Downloads/Ultgram. "
                 + "No cookies or authentication bypass. An active Android VPN may have "

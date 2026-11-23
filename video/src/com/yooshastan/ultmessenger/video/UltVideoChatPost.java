@@ -4,6 +4,7 @@ import android.content.Context;
 
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.SendMessagesHelper;
 
 import java.io.File;
@@ -30,6 +31,7 @@ public final class UltVideoChatPost {
                                   int originalMessageId, File completedVideo,
                                   boolean outgoingLink) {
         if (!outgoingLink || originalMessageId == 0 || dialogId == 0
+                || !DialogObject.isUserDialog(dialogId)
                 || !UltVideoAutoSave.canAutoPost(account)
                 || completedVideo == null || !completedVideo.isFile()
                 || !completedVideo.getName().toLowerCase(java.util.Locale.US).endsWith(".mp4")

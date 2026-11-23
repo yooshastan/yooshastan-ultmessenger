@@ -17,6 +17,17 @@ public final class UltVideoLinkRulesTest {
         check(!UltVideoLinkRules.isAllowedUrl("https://example.org:8096/a.mp4"));
         check(UltVideoLinkRules.isAllowedUrl("https://media.example.org/a.mp4"));
         check(UltVideoLinkRules.isSiteUrl("https://youtu.be/3-B6fmO08UY"));
+        check("YouTube".equals(UltVideoLinkRules.sourceCategory("https://youtu.be/3-B6fmO08UY")));
+        check("Instagram".equals(UltVideoLinkRules.sourceCategory(
+                "https://www.instagram.com/reel/DelvqtyyXy9/?avpt=aWhiYWY3ZmFwbTJ0")));
+        check("Other HTTPS webpage (metadata only)".equals(
+                UltVideoLinkRules.sourceCategory("https://example.org/article?secret=opaque")));
+        check("Direct video file".equals(
+                UltVideoLinkRules.sourceCategory("https://cdn.example.org/a.mp4?token=abc")));
+        check("Invalid/excluded link".equals(
+                UltVideoLinkRules.sourceCategory("http://instagram.com/reel/x")));
+        check("Other HTTPS webpage (metadata only)".equals(
+                UltVideoLinkRules.sourceCategory("https://evil-instagram.com/reel/x")));
         check(UltVideoLinkRules.isSiteUrl("https://www.instagram.com/reel/Dft9iuNq8VQ/?bqrl=MWY4cWU2Mmd3OGg4bw=="));
         check(UltVideoLinkRules.isSiteUrl("https://m.youtube.com/watch?v=3-B6fmO08UY"));
         check(!UltVideoLinkRules.isSiteUrl("https://evil-youtube.com/watch?v=x"));

@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
+import org.telegram.messenger.DialogObject;
 
 import com.yausername.ffmpeg.FFmpeg;
 import com.yausername.youtubedl_android.YoutubeDL;
@@ -144,7 +145,12 @@ public final class UltVideoSiteDownloader {
             }
             UltVideoAutoSave.noteResult(account, "Saved to Downloads/Ultgram");
             if (outgoingLink && UltVideoAutoSave.isPostToChat(account)) {
-                if (!UltVideoChatPost.enqueue(context, account, dialogId,
+                if (!DialogObject.isUserDialog(dialogId)) {
+                    // Telegram can post as channel/anonymous identity in groups.
+                    // The ordinary media send API does not inherit that identity.
+                    UltVideoAutoSave.noteResult(account,
+                            "Saved locally; auto-post paused for group/anonymous sender safety");
+                } else if (!UltVideoChatPost.enqueue(context, account, dialogId,
                         originalMessageId, result, true)) {
                     UltVideoAutoSave.noteResult(account,
                             "Saved locally; automatic Telegram send was not queued");

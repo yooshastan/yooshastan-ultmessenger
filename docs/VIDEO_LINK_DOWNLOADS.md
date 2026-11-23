@@ -1,4 +1,4 @@
-# Ultgram: auto-save video links (experimental Beta 3.4.2)
+# Ultgram: auto-save video links (experimental Beta 3.4.4)
 
 This opt-in feature observes **newly received** Telegram messages while Ultgram is running and examines their visible HTTPS links (up to three per message). It does not use a bot, send chat contents to an extraction service, or ask the Telegram server to fetch external media.
 
@@ -49,3 +49,10 @@ Beta 3.4.1 on-device screenshot showed a generic extractor failure. Beta 3.4.2 c
 ## Device fix in Beta 3.4.3: rotating Instagram share IDs
 
 A screenshot of a sent Reel link retaining `?avpt=...` exposed a gap: previous sanitation rules listed `bqrl` but not Instagram's newer rotating `avpt` share token. The Instagram-only tracking allowlist now includes known rotating identifiers (`avpt`, `stkn`, `srtk`, etc.) without a catch-all that could remove functional four-character query keys. Video shortcodes, carousel `img_index`, language `hl`, and signed/authentication query strings remain intact. Also permit ordinary auto-linked pasted URLSpan text **only** when the visible URL equals its target and there is no other CharacterStyle; preserve custom text links and formatted content unchanged. No cleaning of already-sent messages. Device verification needed specifically for anonymous sending and Telegram's alternative send paths. The Instagram downloader's "login or denied access" status is unrelated to this link sanitizer fix and remains a separate site access limitation.
+
+
+### Beta 3.4.4: device diagnostics and sender-identity guard
+
+The original screen's `Completed/queued` count combined merely queued Android download requests with previous successful site saves and **did not prove delivery to Telegram chats**. The new screen adds **Confirmed site files saved (new counter)**, starting from zero in this version, and separately labels the historical queue/saved count as unverified. For each new attempt it stores only a safe **source category** (e.g. Instagram, YouTube, Other HTTPS webpage), local attempt time and outcome; no chat URL paths/query tokens are stored. The direct-page error now makes clear that no advanced site extractor was invoked. Operations are serialized to prevent out-of-order status overwrites.
+
+**Sender safety restriction:** Telegram allows groups and channels to send as an anonymous/admin/channel identity. The plain native media uploader does not automatically inherit that send-as identity. Until origin identity can be verified and passed explicitly, automatic second-message posting is limited to ordinary one-to-one chats and Saved Messages, and **disabled for group/channel/anonymous sending**. External download attempts can still be made with opt-in. This restriction is intentional to prevent revealing a user's personal sender identity. Existing site login/bot denial remains unaddressed; a build passing CI does not demonstrate Instagram/YouTube compatibility.

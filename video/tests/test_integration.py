@@ -59,10 +59,18 @@ class IntegrationTest(unittest.TestCase):
         self.assertIn("queueLinks(dialogId, sent, true)", worker)
         self.assertIn("queueLinks(dialogId, message.messageOwner, false)", worker)
         self.assertIn("isPostToChat(int account)", worker)
+        self.assertIn("noteAttempt(account, url)", worker)
+        self.assertIn("completedSiteSaves(int account)", worker)
+        self.assertIn("lastSourceCategory(int account)", worker)
+        self.assertIn("Executors.newSingleThreadExecutor()", worker)
+        self.assertIn("sourceCategory(String url)",
+            (ROOT / "video/src/com/yooshastan/ultmessenger/video/UltVideoLinkRules.java").read_text())
         self.assertIn("outgoingLink && UltVideoAutoSave.isPostToChat(account)", site)
         self.assertIn("UltVideoChatPost.enqueue(", site)
         self.assertIn("SendMessagesHelper.prepareSendingVideo(", chat)
         self.assertIn("!UltVideoAutoSave.canAutoPost(account)", chat)
+        self.assertIn("DialogObject.isUserDialog(dialogId)", chat)
+        self.assertIn("Saved locally; auto-post paused for group/anonymous sender safety", site)
         self.assertIn("UltVideoFailure.publicReason(", site)
         self.assertNotIn("java.net.Socket(", worker)
 
