@@ -58,7 +58,8 @@ public final class UltVideoSiteDownloader {
     }
 
     /** Called only for URLs that passed UltVideoLinkRules.isSiteUrl(). */
-    public static boolean download(Context context, int account, String url) {
+    public static boolean download(Context context, int account, String url,
+                                   long dialogId, int originalMessageId, boolean outgoingLink) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             UltVideoAutoSave.noteResult(account, "Site downloads require Android 10+");
             return false;
@@ -76,6 +77,7 @@ public final class UltVideoSiteDownloader {
         }
         ACTIVE.put(processId, stopped);
         ScheduledFuture<?> guard = null;
+        String stage = "initialization";
         try {
             if (!allowed(account)) return false;
             // The Android library contains its own Python/yt-dlp and FFmpeg runtimes.
@@ -83,6 +85,7 @@ public final class UltVideoSiteDownloader {
             YoutubeDL.getInstance().init(context);
             FFmpeg.getInstance().init(context);
             if (!allowed(account) || stopped.get()) return false;
+            stage = "download";
 
             YoutubeDLRequest request = new YoutubeDLRequest(url);
             request.addOption("--no-playlist");
@@ -128,21 +131,31 @@ public final class UltVideoSiteDownloader {
                 UltVideoAutoSave.noteResult(account, "Download stopped by protection or size limit");
                 return false;
             }
+            stage = "verification";
             File result = selectFinishedVideo(work);
             if (result == null || result.length() <= 0 || result.length() > MAX_BYTES) {
                 UltVideoAutoSave.noteResult(account, "No supported video file within 100 MiB");
                 return false;
             }
+            stage = "saving";
             if (!publish(context, result, account)) {
                 UltVideoAutoSave.noteResult(account, "Failed to save video");
                 return false;
             }
             UltVideoAutoSave.noteResult(account, "Saved to Downloads/Ultgram");
+            if (outgoingLink && UltVideoAutoSave.isPostToChat(account)) {
+                if (!UltVideoChatPost.enqueue(context, account, dialogId,
+                        originalMessageId, result, true)) {
+                    UltVideoAutoSave.noteResult(account,
+                            "Saved locally; automatic Telegram send was not queued");
+                }
+            }
             return true;
-        } catch (Exception ignored) {
-            // Exceptions can contain private URLs and query tokens; do not log them.
+        } catch (Exception failure) {
+            // Exceptions can contain private URLs or query tokens; never show raw text.
             UltVideoAutoSave.noteResult(account, stopped.get()
-                    ? "Download cancelled" : "Site unavailable, unsupported, or extractor failed");
+                    ? "Download cancelled or blocked by protection"
+                    : UltVideoFailure.publicReason(failure, stage));
             return false;
         } finally {
             stopped.set(true);

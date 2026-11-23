@@ -1,8 +1,8 @@
-# Ultgram: auto-save video links (experimental Beta 3.4.1)
+# Ultgram: auto-save video links (experimental Beta 3.4.2)
 
 This opt-in feature observes **newly received** Telegram messages while Ultgram is running and examines their visible HTTPS links (up to three per message). It does not use a bot, send chat contents to an extraction service, or ask the Telegram server to fetch external media.
 
-**User flow:** Ultgram Settings → Downloads → Video links → **Auto-save: OFF** → **Enable**. The first screen lists controls immediately, with privacy details behind the separate **Privacy** button; toggles reopen the short dialog to show updated state. Defaults: OFF, unmetered/Wi-Fi-only ON, file size must be known and no greater than 100 MiB. Downloaded files are queued using Android DownloadManager to the device's **Downloads/Ultgram** directory, separate from Telegram's native download queue. Android can finish an already queued transfer after Ultgram closes.
+**User flow:** Ultgram Settings → **Downloads and Storage → Video links & auto-post**. This is a direct settings row, not a hidden horizontal toolbar. The screen offers separate **Auto-save video links** (OFF by default), **Automatically send video to chat** (OFF by default), and **Wi-Fi / unmetered only**, plus last-attempt status. Turning auto-save OFF also turns chat posting OFF. Defaults: OFF, unmetered/Wi-Fi-only ON, file size must be known and no greater than 100 MiB. Downloaded files are queued using Android DownloadManager to the device's **Downloads/Ultgram** directory, separate from Telegram's native download queue. Android can finish an already queued transfer after Ultgram closes.
 
 **Supported in this first pass:**
 - Public HTTPS video files returned as \`video/*\` (or octet-stream for known video file extensions).
@@ -37,3 +37,10 @@ Only allowed public HTTPS hosts are probed. Non-public DNS answers, local/privat
 ## Separate link-sanitizer option in Beta 3.4.1
 
 Under **Ultgram Settings → Privacy and connection → Link sanitizer**, enable conservative OFF-by-default tracking-parameter cleaning before sending ordinary text. Processing occurs entirely on the device, not through a cleaning API. Known share identifiers such as Instagram `bqrl` and YouTube `si` are removed while video IDs, YouTube timestamps, and non-tracking query parameters remain. Authenticated/signed URLs are unchanged. Rich text containing styled entities may be skipped. A cleaned message omits its precomputed URL preview to avoid sending a preview for the unsanitized URL. Incoming messages, message edits, captions, and old chat history are not changed. More extensive link cleanup belongs to the next iteration after this beta's on-device QA.
+
+
+## Outgoing chat video auto-post (experimental Beta 3.4.2)
+
+After explicit separate opt-in, only a supported site video URL **you posted** after Telegram server acknowledgement is eligible. A successful extracted MP4 is saved locally, staged in app-private storage, and handed to Telegram's native asynchronous media-upload queue as an additional message in the same chat. This is **not a delivery guarantee**; verify the resulting message in the conversation. Incoming links never auto-post. Failed extraction, protected/secret messages, disabling the feature, strict native proxy mode, and unsupported files cannot auto-post. Local staged files are retained for pending asynchronous uploads; a later staging operation removes files over 7 days old. Telegram MTProxy does NOT cover external extractor traffic; strict mode requests cancellation but is not a system VPN kill switch. Auto-post currently applies to successfully extracted MP4 site videos, not separate Android DownloadManager direct-file transfers. Forum topics, paid chats, and restricted content require additional device QA; do not use for public production releases until verified.
+
+Beta 3.4.1 on-device screenshot showed a generic extractor failure. Beta 3.4.2 classifies common failure categories without logging or displaying private URLs. Actual root cause still requires device testing. Link sanitizer remains a separate working, opt-in feature and is unchanged.

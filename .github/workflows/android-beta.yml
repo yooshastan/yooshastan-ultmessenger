@@ -1,4 +1,4 @@
-name: Ultgram Beta 3.4.1 Video Links + Sanitizer FOSS ARM64
+name: Ultgram Beta 3.4.2 Video Chat Auto-post FOSS ARM64
 
 # One batched native APK for the combined beta 0.1–0.3 internal candidate.
 # Preflight: broad owned-settings and native proxy source contracts passed. Ordinary source commits run fast checks only.
@@ -166,6 +166,8 @@ jobs:
           mkdir -p /tmp/ult-video-link-classes
           javac -d /tmp/ult-video-link-classes video/src/com/yooshastan/ultmessenger/video/UltVideoLinkRules.java video/tests/UltVideoLinkRulesTest.java
           java -cp /tmp/ult-video-link-classes UltVideoLinkRulesTest
+          javac -d /tmp/ult-video-link-classes video/src/com/yooshastan/ultmessenger/video/UltVideoFailure.java video/tests/UltVideoFailureTest.java
+          java -cp /tmp/ult-video-link-classes UltVideoFailureTest
           python3 -m unittest discover -s tests -p 'test_beta01_privacy_media.py'
           mkdir -p /tmp/ult-beta01-model-classes
           javac -d /tmp/ult-beta01-model-classes settings/src/com/yooshastan/ultmessenger/settings/UltPrivacySession.java settings/tests/UltPrivacySessionTest.java settings/src/com/yooshastan/ultmessenger/settings/UltMediaIndex.java settings/tests/UltMediaIndexTest.java
@@ -239,7 +241,7 @@ jobs:
           set -euo pipefail
           if [[ "${{ matrix.variant }}" == 'foss' ]]; then
             cd .work/mercurygram-upstream
-            ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug -PMG_BUILD_TAG=16.0.0.0.5 -PMG_BETA_VERSION_CODE=7183017 -PMG_BETA_VERSION_NAME=16.0.0-beta03.4.1 --no-daemon --console=plain
+            ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug -PMG_BUILD_TAG=16.0.0.0.6 -PMG_BETA_VERSION_CODE=7183018 -PMG_BETA_VERSION_NAME=16.0.0-beta03.4.2 --no-daemon --console=plain
           else
             cd .work/telegram-upstream
             ./gradlew :TMessagesProj_App:assembleAfatDebug --no-daemon --console=plain
@@ -261,7 +263,7 @@ jobs:
             sha256sum ult-beta03-combined-foss-arm64-debug.apk > SHA256SUMS
           )
           {
-            printf '%s\n' "Candidate: Ultgram Beta 3.4.1: video controls visible + opt-in local outgoing link sanitizer (INTERNAL debug APK; NOT public beta)"
+            printf '%s\n' "Candidate: Ultgram Beta 3.4.2: visible Video links settings + opt-in chat auto-post and extractor diagnostics (INTERNAL debug APK; NOT public beta)"
             printf 'Repo: yooshastan/yooshastan-ultmessenger\n'
             printf 'Repo commit: %s\n' "$GITHUB_SHA"
             printf 'Pinned Mercurygram source: %s\n' "$(tr -d '\r\n ' < upstream/mercurygram.sha)"

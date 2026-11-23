@@ -102,6 +102,9 @@ public final class UltSettingsActivity extends BaseFragment {
         addLink(context, content, "Downloads",
                 "One queue, history and file tools; network rules are inside",
                 () -> presentFragment(new UltDownloadsActivity()));
+        addLink(context, content, "Video links & auto-post",
+                "Save videos and optionally send them into chats where you post links",
+                () -> presentFragment(new UltVideoLinksSettingsActivity()));
         addLink(context, content, "Storage and cache",
                 "Cache size, maintenance and Telegram's storage manager",
                 () -> showUltStorageControls(context));

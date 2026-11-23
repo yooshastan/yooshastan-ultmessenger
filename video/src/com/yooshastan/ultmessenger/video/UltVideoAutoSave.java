@@ -72,6 +72,20 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
         preferences().edit().putBoolean(setting("enabled", account), enabled).apply();
     }
 
+    /** A separate, explicitly opt-in setting; never enabled by default. */
+    public static boolean isPostToChat(int account) {
+        return preferences().getBoolean(setting("post_to_chat", account), false);
+    }
+
+    public static void setPostToChat(int account, boolean enabled) {
+        preferences().edit().putBoolean(setting("post_to_chat", account), enabled).apply();
+    }
+
+    public static boolean canAutoPost(int account) {
+        return isEnabled(account) && isPostToChat(account)
+                && !strictModeRequested() && networkAllowed(account);
+    }
+
     public static boolean isWifiOnly(int account) {
         return preferences().getBoolean(setting("wifi_only", account), true);
     }
@@ -122,7 +136,7 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
                 // Wait until the server acknowledges our own messages; avoids
                 // downloading once for a local temporary ID and again for server ID.
                 if (message.messageOwner.out) continue;
-                queueLinks(dialogId, message.messageOwner);
+                queueLinks(dialogId, message.messageOwner, false);
             }
         } else if (id == NotificationCenter.messageReceivedByServer) {
             // Telegram dispatches outgoing server-confirmed messages here.
@@ -132,11 +146,11 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
             TLRPC.Message sent = (TLRPC.Message) args[2];
             long dialogId = (Long) args[3];
             if (DialogObject.isEncryptedDialog(dialogId) || sent.noforwards) return;
-            queueLinks(dialogId, sent);
+            queueLinks(dialogId, sent, true);
         }
     }
 
-    private void queueLinks(long dialogId, TLRPC.Message owner) {
+    private void queueLinks(long dialogId, TLRPC.Message owner, boolean outgoingLink) {
         if (owner == null) return;
         List<String> urls = new ArrayList<>(UltVideoLinkRules.findUrls(owner.message));
         if (owner.entities != null) {
@@ -158,7 +172,8 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
                     if (UltVideoLinkRules.isSiteUrl(url)) {
                         noteResult(account, "Starting on-device site extractor");
                         if (UltVideoSiteDownloader.download(
-                                ApplicationLoader.applicationContext, account, url)) {
+                                ApplicationLoader.applicationContext, account, url,
+                                dialogId, owner.id, outgoingLink)) {
                             markSiteCompleted(account, key);
                         }
                         return;
