@@ -27,10 +27,10 @@ class SigningPrepContracts(unittest.TestCase):
         self.assertIn("Never reuse an upstream source-distributed keystore", notes)
         self.assertIn("private key and passwords are not", notes)
 
-    def test_existing_debug_apk_workflow_unchanged(self):
+    def test_internal_debug_apk_workflow_preserves_signing_separation(self):
         workflow = (ROOT / ".github/workflows/android-beta.yml").read_text()
-        self.assertIn("16.0.0-beta03.1", workflow)
-        self.assertIn("7183013", workflow)
+        self.assertIn("16.0.0-beta03.3", workflow)
+        self.assertIn("7183015", workflow)
         self.assertIn("assembleAfatFdArm64Debug", workflow)
         self.assertIn("integrate-native-strict.py", workflow)
         self.assertIn("integrate-translation.py", workflow)

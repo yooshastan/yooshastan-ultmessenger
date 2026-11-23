@@ -55,15 +55,15 @@ class Beta01QualityContract(unittest.TestCase):
         self.assertNotIn("proxyAddress", model + privacy)
         self.assertNotIn("setUltStrictNativeProxyEnabled(", privacy)
 
-    def test_existing_strict_translation_build_chain_unmodified(self):
+    def test_strict_translation_build_chain_preserved(self):
         beta = read(".github/workflows/android-beta.yml")
         alpha = read(".github/workflows/android-alpha.yml")
         self.assertIn("scripts/integrate-native-strict.py", beta)
         self.assertIn("scripts/integrate-translation.py", beta)
         self.assertIn("scripts/integrate-native-strict.py", alpha)
         self.assertIn("scripts/integrate-translation.py", alpha)
-        self.assertIn("7183013", beta)
-        self.assertIn("16.0.0-beta03.1", beta)
+        self.assertIn("7183015", beta)
+        self.assertIn("16.0.0-beta03.3", beta)
         self.assertIn("feature/beta01-quality-trim", beta)
 
 if __name__ == "__main__":
