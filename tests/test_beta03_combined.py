@@ -54,13 +54,15 @@ class Beta03Contracts(unittest.TestCase):
 
     def test_stable_signing_and_beta_version_are_distinct(self):
         workflow = read(".github/workflows/android-beta.yml")
-        self.assertIn("16.0.0-beta03.1", workflow)
-        self.assertIn("7183013", workflow)
+        self.assertIn("16.0.0-beta03.3", workflow)
+        self.assertIn("7183015", workflow)
         self.assertIn("ult-beta03-combined-foss-arm64-debug.apk", workflow)
         self.assertIn("scripts/integrate-native-strict.py", workflow)
         self.assertIn("scripts/integrate-translation.py", workflow)
         self.assertIn("scripts/apk_release_gate.py", workflow)
         self.assertIn("feature/beta01-navigation-message-polish", workflow)
+        self.assertIn("scripts/integrate-video-links.py", workflow)
+        self.assertIn("UltVideoLinkRulesTest", workflow)
 
 if __name__ == "__main__":
     unittest.main()
