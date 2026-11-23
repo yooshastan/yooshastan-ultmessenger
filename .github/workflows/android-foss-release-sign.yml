@@ -4,7 +4,7 @@ name: Ultgram FOSS ARM64 protected release candidate
 # Private signing remains manual-only on the reviewed main branch.
 on:
   push:
-    branches: [feature/beta03-signing-prep]
+    branches: [feature/beta03-signing-prep, feature/auto-video-link-downloads]
     paths:
       - '.github/workflows/android-foss-release-sign.yml'
   workflow_dispatch:
@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   build-unsigned:
-    if: github.repository == 'yooshastan/yooshastan-ultmessenger' && (github.ref == 'refs/heads/main' || (github.event_name == 'push' && github.ref == 'refs/heads/feature/beta03-signing-prep'))
+    if: github.repository == 'yooshastan/yooshastan-ultmessenger' && (github.ref == 'refs/heads/main' || (github.event_name == 'push' && (github.ref == 'refs/heads/feature/beta03-signing-prep' || github.ref == 'refs/heads/feature/auto-video-link-downloads')))
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
@@ -44,6 +44,10 @@ jobs:
           python3 -m unittest discover -s conversation/tests -p 'test_*.py' -v
           python3 -m unittest discover -s settings/tests -p 'test_*.py' -v
           python3 -m unittest discover -s proxy/tests -p 'test_*.py' -v
+          python3 -m unittest discover -s video/tests -p 'test_*.py' -v
+          mkdir -p /tmp/ult-video-release-tests
+          javac -d /tmp/ult-video-release-tests video/src/com/yooshastan/ultmessenger/video/UltVideoLinkRules.java video/tests/UltVideoLinkRulesTest.java
+          java -cp /tmp/ult-video-release-tests UltVideoLinkRulesTest
       - name: Install pinned Android and native build prerequisites
         shell: bash
         run: |
@@ -78,6 +82,7 @@ jobs:
           python3 scripts/integrate-ult-settings.py "$source_dir"
           python3 scripts/integrate-cache-limit.py "$source_dir"
           python3 scripts/integrate-native-strict.py "$source_dir"
+          python3 scripts/integrate-video-links.py "$source_dir"
           python3 scripts/integrate-screen-privacy.py "$source_dir"
           python3 scripts/prepare-foss-unsigned-release.py "$source_dir"
           test ! -e "$source_dir/TMessagesProj/config/release.keystore"
@@ -87,9 +92,9 @@ jobs:
           set -euo pipefail
           cd .work/mercurygram-upstream
           ./gradlew :TMessagesProj_App:assembleAfatFdArm64Release \
-            -PMG_BUILD_TAG=16.0.0.0.4 \
-            -PMG_BETA_VERSION_CODE=7183014 \
-            -PMG_BETA_VERSION_NAME=16.0.0-beta03.2 \
+            -PMG_BUILD_TAG=16.0.0.0.5 \
+            -PMG_BETA_VERSION_CODE=7183015 \
+            -PMG_BETA_VERSION_NAME=16.0.0-beta03.3 \
             --no-daemon --console=plain
       - name: Stage UNSIGNED APK and reject unexpected pre-signed output
         shell: bash
@@ -107,7 +112,11 @@ jobs:
             exit 1
           fi
           "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging artifacts/ult-beta03-foss-arm64-unsigned.apk |
-            grep -F "package: name='com.yooshastan.ultmessenger.foss' versionCode='7183014' versionName='16.0.0-beta03.2'"
+            grep -F "package: name='com.yooshastan.ultmessenger.foss' versionCode='7183015' versionName='16.0.0-beta03.3'"
+          if "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging artifacts/ult-beta03-foss-arm64-unsigned.apk | grep -q "application-debuggable"; then
+            echo '::error::Unsigned release is unexpectedly debuggable'
+            exit 1
+          fi
           sha256sum artifacts/ult-beta03-foss-arm64-unsigned.apk > artifacts/UNSIGNED_SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
@@ -181,8 +190,8 @@ jobs:
           # No echo of the configured value or private signing material.
           python3 scripts/verify-foss-release-apk.py \
             --apk artifacts/ult-beta03-foss-arm64-release.apk \
-            --version-code 7183014 \
-            --version-name 16.0.0-beta03.2 \
+            --version-code 7183015 \
+            --version-name 16.0.0-beta03.3 \
             --cert-sha256 "$ULT_RELEASE_CERT_SHA256" \
             --report artifacts/RELEASE_INFO.txt
           test -s artifacts/RELEASE_INFO.txt
