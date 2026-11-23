@@ -53,6 +53,7 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
                 OBSERVERS[a] = new UltVideoAutoSave(a);
                 NotificationCenter.getInstance(a).addObserver(OBSERVERS[a], NotificationCenter.didReceiveNewMessages);
             }
+            if (strictModeRequested()) cancelPendingForStrict();
         });
     }
 
@@ -164,6 +165,34 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
         }
     }
 
+    /** Cancel incomplete owned external transfers on strict-mode activation. */
+    public static synchronized void cancelPendingForStrict() {
+        if (!strictModeRequested()) return;
+        Context context = ApplicationLoader.applicationContext;
+        DownloadManager dm = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
+        if (dm == null) return;
+        Set<String> owned = new HashSet<>(preferences().getStringSet("owned_ids", Collections.emptySet()));
+        for (String raw : owned) {
+            try {
+                long id = Long.parseLong(raw);
+                boolean completed = false;
+                try (android.database.Cursor cursor =
+                             dm.query(new DownloadManager.Query().setFilterById(id))) {
+                    if (cursor != null && cursor.moveToFirst()) {
+                        int status = cursor.getInt(
+                                cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS));
+                        completed = status == DownloadManager.STATUS_SUCCESSFUL
+                                || status == DownloadManager.STATUS_FAILED;
+                    }
+                }
+                if (!completed) dm.remove(id);
+            } catch (Exception ignored) {
+                // Do not log URL contents. Device QA must verify cancellation.
+            }
+        }
+        preferences().edit().remove("owned_ids").apply();
+    }
+
     private static final class Probe {
         final String url, mime;
         Probe(String url, String mime) { this.url = url; this.mime = mime; }
@@ -239,6 +268,7 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
     }
 
     private void enqueue(Probe video, String key) {
+        synchronized (UltVideoAutoSave.class) {
         Context context = ApplicationLoader.applicationContext;
         DownloadManager dm = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
         if (dm == null) return;
@@ -263,8 +293,13 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
             Set<String> seen = new HashSet<>(preferences().getStringSet("seen", Collections.emptySet()));
             if (seen.size() >= 1000) seen.clear();
             seen.add(fingerprint(key));
+            Set<String> owned = new HashSet<>(
+                    preferences().getStringSet("owned_ids", Collections.emptySet()));
+            owned.add(Long.toString(downloadId));
             preferences().edit().putStringSet("seen", seen)
+                    .putStringSet("owned_ids", owned)
                     .putInt(setting("queued", account), queuedCount(account) + 1).apply();
+        }
         }
     }
 }

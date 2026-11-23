@@ -14,7 +14,9 @@ class IntegrationTest(unittest.TestCase):
     def test_pinned_hooks_and_models(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            app, ui = root / module.APP, root / module.DOWNLOADS
+            app, ui, strict = root / module.APP, root / module.DOWNLOADS, root / module.STRICT
+            strict.parent.mkdir(parents=True, exist_ok=True)
+            strict.write_text("before\n" + module.STRICT_ANCHOR + "after\n")
             app.parent.mkdir(parents=True, exist_ok=True)
             ui.parent.mkdir(parents=True, exist_ok=True)
             app.write_text("before\n" + module.APP_ANCHOR + "after\n")
@@ -23,6 +25,7 @@ class IntegrationTest(unittest.TestCase):
             self.assertIn("UltVideoAutoSave.install()", app.read_text())
             self.assertIn("showVideoLinkSettings", ui.read_text())
             self.assertIn("Video links", ui.read_text())
+            self.assertIn("cancelPendingForStrict", strict.read_text())
             for name in ("UltVideoAutoSave.java", "UltVideoLinkRules.java"):
                 self.assertTrue((root / module.DEST / name).exists())
             with self.assertRaises(ValueError):
@@ -31,7 +34,9 @@ class IntegrationTest(unittest.TestCase):
     def test_fail_closed_when_pinned_source_changes(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            app, ui = root / module.APP, root / module.DOWNLOADS
+            app, ui, strict = root / module.APP, root / module.DOWNLOADS, root / module.STRICT
+            strict.parent.mkdir(parents=True, exist_ok=True)
+            strict.write_text("before\n" + module.STRICT_ANCHOR + "after\n")
             app.parent.mkdir(parents=True, exist_ok=True)
             ui.parent.mkdir(parents=True, exist_ok=True)
             app.write_text(module.APP_ANCHOR)
@@ -47,6 +52,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertIn("message.messageOwner.noforwards", worker)
         self.assertIn("DialogObject.isEncryptedDialog", worker)
         self.assertIn("DownloadManager.Request", worker)
+        self.assertIn("cancelPendingForStrict()", worker)
         self.assertNotIn("java.net.Socket(", worker)
 
 if __name__ == "__main__":

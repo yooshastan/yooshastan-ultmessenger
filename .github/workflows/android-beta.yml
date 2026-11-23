@@ -9,6 +9,8 @@ on:
       - '.github/workflows/android-beta.yml'
       - 'video/**'
       - 'scripts/integrate-video-links.py'
+      - 'tests/test_beta01_privacy_media.py'
+      - 'tests/test_beta_signing_prep.py'
       - 'tests/test_beta03_combined.py'
   workflow_dispatch:
 
@@ -213,9 +215,9 @@ jobs:
             python3 scripts/integrate-chat-views.py "$source_dir"
             python3 scripts/integrate-story-save.py "$source_dir"
             python3 scripts/integrate-ult-settings.py "$source_dir"
-            python3 scripts/integrate-video-links.py "$source_dir"
             python3 scripts/integrate-cache-limit.py "$source_dir"
             python3 scripts/integrate-native-strict.py "$source_dir"
+            python3 scripts/integrate-video-links.py "$source_dir"
             python3 scripts/integrate-screen-privacy.py "$source_dir"
           fi
       - name: Compile Pixel-compatible ARM64 debug APK

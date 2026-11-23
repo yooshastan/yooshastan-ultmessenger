@@ -26,7 +26,7 @@ Only allowed public HTTPS hosts are probed. Non-public DNS answers, local/privat
 1. CI source contracts and Android build must pass for the pinned Mercurygram revision.
 2. On-device: enable/disable, direct MP4, web page OG video, redirect, 404, unknown size, oversize, duplicate, metered/offline behavior.
 3. Confirm strict proxy ON causes **no external probe**, including mode changes during resolution.
-4. Verify secret/protected messages are not downloaded and Downloads/Ultgram files can be opened and deleted using normal Android tools.
+4. Verify secret/protected messages are not downloaded, and enabling native strict cancels incomplete external transfers while preserving completed videos. Check Downloads/Ultgram using normal Android tools.
 5. Verify the APK package identity, versionCode and certificate against the installed Beta 3.2 before trying an upgrade.
 
 **Follow-up:** Evaluate a sandboxed, maintained multi-site extractor for social/streaming sites. That is a separate, more complex addition, not a capability of this first APK.
