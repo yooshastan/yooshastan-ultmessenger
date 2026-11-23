@@ -74,7 +74,8 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
                 "When YOU post a public video link, a successfully downloaded MP4 "
                         + "is sent as a SECOND Telegram message in an ordinary one-to-one "
                         + "chat or Saved Messages. Groups, channels and anonymous posts "
-                        + "are excluded until sender identity can be preserved. OFF by default.", 14);
+                        + "are allowed only when the sender identity is unchanged. "
+                + "Forum topics and broadcast channels remain excluded. OFF by default.", 14);
         postToChatButton = addButton(content, context, "", () -> {
             if (UltVideoAutoSave.isPostToChat(currentAccount)) {
                 UltVideoAutoSave.setPostToChat(currentAccount, false);
@@ -95,9 +96,11 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
                             + "as another message. Every participant may see it. "
                             + "Videos may consume mobile data and storage. "
                             + "Only completed MP4s are eligible. "
-                            + "This test beta excludes groups and anonymous senders "
-                            + "to preserve sender identity. This does not post incoming "
-                            + "links or protected media.")
+                            + "Ordinary groups are supported only when the video "
+                            + "can be sent as the SAME identity as your link. "
+                            + "Forum topics, broadcasts, paid/restricted groups are "
+                            + "excluded for safety. This does not post incoming links "
+                            + "or protected media.")
                     .setNegativeButton("Cancel", null)
                     .setPositiveButton("Enable auto-post", (dialog, which) -> {
                         UltVideoAutoSave.setPostToChat(currentAccount, true);
@@ -148,10 +151,12 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
                 + "\nHistorical queued/saved total (NOT verified delivered): "
                 + UltVideoAutoSave.queuedCount(currentAccount)
                 + "\nNative strict proxy: " + (strict ? "ON - downloader PAUSED" : "OFF"));
-        limitation.setText("Automatic chat posting is restricted to one-to-one "
-                + "chats and Saved Messages, not groups/anonymous/channel identities. "
-                + "New outgoing text links only for chat auto-post; "
-                + "other users' links are never auto-posted. Site extraction is experimental; "
+        limitation.setText("Automatic chat posting supports one-to-one chats, "
+                + "Saved Messages, and regular groups with a verified matching "
+                + "send-as identity (including anonymous group identity when it "
+                + "has not changed). Forum topics and broadcast channels are paused. "
+                + "New outgoing text links only; other members' links never auto-post. "
+                + "Site extraction is experimental; "
                 + "YouTube/Instagram may fail. Videos are also saved under Downloads/Ultgram. "
                 + "No cookies or authentication bypass. An active Android VPN may have "
                 + "different routing rules; MTProxy does not cover this extractor.");

@@ -208,7 +208,7 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
                         noteResult(account, "Starting on-device site extractor");
                         if (UltVideoSiteDownloader.download(
                                 ApplicationLoader.applicationContext, account, url,
-                                dialogId, owner.id, outgoingLink)) {
+                                dialogId, owner, outgoingLink)) {
                             markSiteCompleted(account, key);
                         }
                         return;

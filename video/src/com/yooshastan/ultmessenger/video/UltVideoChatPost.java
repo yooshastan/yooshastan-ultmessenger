@@ -4,21 +4,28 @@ import android.content.Context;
 
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.DialogObject;
+import org.telegram.messenger.MessageObject;
+import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.SendMessagesHelper;
+import org.telegram.tgnet.TLRPC;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Locale;
 import java.util.UUID;
 
 /**
- * Explicitly opt-in: send ONLY a successfully downloaded MP4 from an OWN,
- * server-confirmed text link to the same normal Telegram dialog.
+ * Opt-in native Telegram media send after downloading a video link authored
+ * by this account. Group auto-post is permitted only if the currently active
+ * "send as" identity STILL matches the one used by the original message.
  *
- * Do not delete the staged file until Telegram can finish its asynchronous
- * upload. A bounded age-based cleanup runs on subsequent successful staging.
+ * No anonymous/admin identity is replaced by the personal account. Channels,
+ * forum topics, paid/group-restricted chats are withheld until supported
+ * with the correct author, topic and payment context.
  */
 public final class UltVideoChatPost {
     private static final long MAX_BYTES = 100L * 1024L * 1024L;
@@ -27,14 +34,46 @@ public final class UltVideoChatPost {
 
     private UltVideoChatPost() { }
 
+    /**
+     * Validate the destination on the UI thread again immediately before
+     * creating Telegram's send request, not only before downloading.
+     */
+    public static boolean safeDestination(int account, long dialogId, TLRPC.Message original) {
+        if (original == null || !original.out || original.id <= 0
+                || original.noforwards || original.peer_id == null || dialogId == 0
+                || DialogObject.isEncryptedDialog(dialogId)
+                || MessageObject.getDialogId(original) != dialogId) {
+            return false;
+        }
+        if (DialogObject.isUserDialog(dialogId)) return true;
+        if (!DialogObject.isChatDialog(dialogId)) return false;
+
+        MessagesController mc = MessagesController.getInstance(account);
+        TLRPC.Chat chat = mc.getChat(-dialogId);
+        if (chat == null || chat.forum || chat.monoforum
+                || ChatObject.isChannelAndNotMegaGroup(chat)
+                || !ChatObject.canSendVideo(chat)
+                || mc.getSendPaidMessagesStars(dialogId) > 0) {
+            return false;
+        }
+
+        // For an anonymous group admin this is the group's/channel's peer,
+        // NOT the user's personal ID. The regular native media send path gets
+        // its sender from ChatObject.getSendAsPeerId just before dispatch.
+        // Only auto-post while the same identity is selected.
+        final long originalSender = MessageObject.getPeerId(original.from_id);
+        final long activeSender = ChatObject.getSendAsPeerId(
+                chat, mc.getChatFull(-dialogId), true);
+        return originalSender != 0 && originalSender == activeSender;
+    }
+
     public static boolean enqueue(Context context, int account, long dialogId,
-                                  int originalMessageId, File completedVideo,
+                                  TLRPC.Message original, File completedVideo,
                                   boolean outgoingLink) {
-        if (!outgoingLink || originalMessageId == 0 || dialogId == 0
-                || !DialogObject.isUserDialog(dialogId)
-                || !UltVideoAutoSave.canAutoPost(account)
+        if (!outgoingLink || !UltVideoAutoSave.canAutoPost(account)
+                || !safeDestination(account, dialogId, original)
                 || completedVideo == null || !completedVideo.isFile()
-                || !completedVideo.getName().toLowerCase(java.util.Locale.US).endsWith(".mp4")
+                || !completedVideo.getName().toLowerCase(Locale.US).endsWith(".mp4")
                 || completedVideo.length() <= 0 || completedVideo.length() > MAX_BYTES) {
             return false;
         }
@@ -57,7 +96,7 @@ public final class UltVideoChatPost {
             out.getFD().sync();
             stagedOk = copied > 0 && copied == completedVideo.length();
         } catch (IOException ignored) {
-            // File contents and chat URLs are not logged.
+            // Never log a private URL or a video file path.
         }
         if (!stagedOk) {
             staged.delete();
@@ -65,26 +104,32 @@ public final class UltVideoChatPost {
         }
 
         AndroidUtilities.runOnUIThread(() -> {
-            if (!UltVideoAutoSave.canAutoPost(account)) {
+            if (!UltVideoAutoSave.canAutoPost(account)
+                    || !safeDestination(account, dialogId, original)) {
                 staged.delete();
-                UltVideoAutoSave.noteResult(account, "Auto-post stopped: option or network protection changed");
+                UltVideoAutoSave.noteResult(account,
+                        "Saved locally; group sender, rights or network policy changed");
                 return;
             }
             try {
-                // This uses Telegram's native media upload/send queue.
-                // It does not call any external posting API and does not bypass MTProxy.
+                final MessageObject replyToLink = DialogObject.isChatDialog(dialogId)
+                        ? new MessageObject(account, original, false, false) : null;
+
+                // Telegram's own upload queue uses the current send-as peer,
+                // validated above. Replying to the original link anchors this
+                // second message to the right conversation.
                 SendMessagesHelper.prepareSendingVideo(
                         AccountInstance.getInstance(account),
                         staged.getAbsolutePath(),
                         null, null, null, dialogId,
-                        null, null, null, null, null, 0, null,
+                        replyToLink, null, null, null, null, 0, null,
                         true, 0, 0, false, false,
                         "", null, 0, 0);
                 UltVideoAutoSave.noteResult(account,
-                        "Video handed to Telegram upload queue; verify delivery in chat");
+                        "Video queued as a reply in the originating chat; check delivery");
             } catch (RuntimeException ignored) {
                 UltVideoAutoSave.noteResult(account,
-                        "Video saved locally; Telegram rejected auto-post preparation");
+                        "Video saved locally; Telegram rejected media send");
             }
         });
         return true;

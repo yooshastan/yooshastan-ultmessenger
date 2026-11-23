@@ -62,8 +62,8 @@ class Beta01QualityContract(unittest.TestCase):
         self.assertIn("scripts/integrate-translation.py", beta)
         self.assertIn("scripts/integrate-native-strict.py", alpha)
         self.assertIn("scripts/integrate-translation.py", alpha)
-        self.assertIn("7183020", beta)
-        self.assertIn("16.0.0-beta03.4.4", beta)
+        self.assertIn("7183021", beta)
+        self.assertIn("16.0.0-beta03.4.5", beta)
         self.assertIn("feature/beta01-quality-trim", beta)
 
 if __name__ == "__main__":

@@ -7,6 +7,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
+
+import org.telegram.tgnet.TLRPC;
 import org.telegram.messenger.DialogObject;
 
 import com.yausername.ffmpeg.FFmpeg;
@@ -60,7 +62,7 @@ public final class UltVideoSiteDownloader {
 
     /** Called only for URLs that passed UltVideoLinkRules.isSiteUrl(). */
     public static boolean download(Context context, int account, String url,
-                                   long dialogId, int originalMessageId, boolean outgoingLink) {
+                                   long dialogId, TLRPC.Message original, boolean outgoingLink) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             UltVideoAutoSave.noteResult(account, "Site downloads require Android 10+");
             return false;
@@ -145,15 +147,13 @@ public final class UltVideoSiteDownloader {
             }
             UltVideoAutoSave.noteResult(account, "Saved to Downloads/Ultgram");
             if (outgoingLink && UltVideoAutoSave.isPostToChat(account)) {
-                if (!DialogObject.isUserDialog(dialogId)) {
-                    // Telegram can post as channel/anonymous identity in groups.
-                    // The ordinary media send API does not inherit that identity.
+                if (!UltVideoChatPost.safeDestination(account, dialogId, original)) {
                     UltVideoAutoSave.noteResult(account,
-                            "Saved locally; auto-post paused for group/anonymous sender safety");
+                            "Saved locally; group identity, permissions or topic not supported");
                 } else if (!UltVideoChatPost.enqueue(context, account, dialogId,
-                        originalMessageId, result, true)) {
+                        original, result, true)) {
                     UltVideoAutoSave.noteResult(account,
-                            "Saved locally; automatic Telegram send was not queued");
+                            "Saved locally; Telegram media auto-post not queued");
                 }
             }
             return true;
