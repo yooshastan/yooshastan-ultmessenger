@@ -33,6 +33,14 @@ class SettingsIntegrationTest(TestCase):
             self.assertIn('"Downloads"', ui)
             self.assertIn('"Video links & auto-post"', ui)
             self.assertIn("new UltVideoLinksSettingsActivity()", ui)
+            video_screen = (model.parent / "UltVideoLinksSettingsActivity.java").read_text()
+            # This class must compile independently: the same-named builder in
+            # UltSettingsActivity is private and cannot be used from this screen.
+            self.assertIn("private static final class UltSecureDialogBuilder", video_screen)
+            self.assertIn("extends android.app.AlertDialog.Builder", video_screen)
+            self.assertIn("UltScreenPrivacy.isEnabled(getContext())", video_screen)
+            self.assertIn("WindowManager.LayoutParams.FLAG_SECURE", video_screen)
+            self.assertIn("Automatically send video to chat:", video_screen)
             self.assertIn('"Link sanitizer"', ui)
             self.assertIn('UltLinkSanitizer.setEnabled(', ui)
             self.assertIn("UltReleaseNotes.seenKey(", ui)

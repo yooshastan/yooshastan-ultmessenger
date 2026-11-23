@@ -147,6 +147,33 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
         refresh();
     }
 
+    /**
+     * Preserve the same FLAG_SECURE safeguards as Ultgram Settings dialogs.
+     * UltSettingsActivity's similarly named builder is a PRIVATE nested class,
+     * so this screen needs its own accessible builder implementation.
+     */
+    private static final class UltSecureDialogBuilder extends android.app.AlertDialog.Builder {
+        UltSecureDialogBuilder(Context context) {
+            super(context);
+        }
+
+        @Override
+        public android.app.AlertDialog show() {
+            final android.app.AlertDialog dialog = create();
+            final boolean telegramPasscodeSecure =
+                    org.telegram.messenger.SharedConfig.passcodeHash.length() > 0
+                    && !org.telegram.messenger.SharedConfig.allowScreenCapture;
+            if ((telegramPasscodeSecure || UltScreenPrivacy.isEnabled(getContext()))
+                    && !org.telegram.messenger.SharedConfig.disableSecureFlags
+                    && dialog.getWindow() != null) {
+                dialog.getWindow().addFlags(
+                        android.view.WindowManager.LayoutParams.FLAG_SECURE);
+            }
+            dialog.show();
+            return dialog;
+        }
+    }
+
     private static void addHeading(LinearLayout root, Context context, String label) {
         TextView view = addText(root, context, label, 18);
         view.setTypeface(null, android.graphics.Typeface.BOLD);
