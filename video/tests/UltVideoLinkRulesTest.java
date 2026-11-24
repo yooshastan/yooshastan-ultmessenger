@@ -40,6 +40,16 @@ public final class UltVideoLinkRulesTest {
                         "<html><meta content='https://cdn.example.org/video.mp4?a=1&amp;b=2' property='og:video'></html>")));
         check(UltVideoLinkRules.htmlVideoUrl("<meta property='og:image' content='https://a.org/x.jpg'>") == null);
         check(UltVideoLinkRules.htmlVideoUrl("<meta property='og:video' content='http://site.org/x.mp4'>") == null);
+        check(UltVideoLinkRules.isSiteUrl("https://www.reddit.com/r/videos/comments/abc/post/"));
+        check(UltVideoLinkRules.isSiteUrl("https://v.redd.it/abc"));
+        check(!UltVideoLinkRules.isSiteUrl("https://reddit.com.example.org/video"));
+        check("Reddit".equals(UltVideoLinkRules.sourceCategory("https://v.redd.it/abc")));
+        check("bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b".equals(UltVideoLinkRules.videoFormat(0)));
+        check("bv*[ext=mp4][height<=720]+ba[ext=m4a]/b[ext=mp4][height<=720]/b[height<=720]"
+                .equals(UltVideoLinkRules.videoFormat(720)));
+        check(UltVideoLinkRules.videoFormat(480).contains("[height<=480]"));
+        check(UltVideoLinkRules.videoFormat(1080).contains("[height<=1080]"));
+        check(UltVideoLinkRules.videoFormat(-1).equals(UltVideoLinkRules.videoFormat(0)));
         System.out.println("UltVideoLinkRulesTest OK");
     }
 }
