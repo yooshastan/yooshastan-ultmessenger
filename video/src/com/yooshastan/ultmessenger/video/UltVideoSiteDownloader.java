@@ -46,6 +46,7 @@ import kotlin.Unit;
  */
 public final class UltVideoSiteDownloader {
     private static final Map<String, Integer> OWNERS = new ConcurrentHashMap<>();
+    private static final Map<String, AtomicReference<String>> STOP_REASONS = new ConcurrentHashMap<>();
     private static volatile String extractorVersion = "Not initialized";
 
     public static String extractorVersion() { return extractorVersion; }
@@ -55,6 +56,8 @@ public final class UltVideoSiteDownloader {
     public static void cancelAccount(int account) {
         for (Map.Entry<String, Integer> entry : OWNERS.entrySet()) {
             if (entry.getValue() != account) continue;
+            AtomicReference<String> reason = STOP_REASONS.get(entry.getKey());
+            if (reason != null) reason.compareAndSet(null, "Download stopped: cancelled by user");
             AtomicBoolean flag = ACTIVE.get(entry.getKey());
             if (flag != null) flag.set(true);
             try { YoutubeDL.getInstance().destroyProcessById(entry.getKey()); }
@@ -74,6 +77,8 @@ public final class UltVideoSiteDownloader {
 
     public static void cancelAll() {
         for (Map.Entry<String, AtomicBoolean> entry : ACTIVE.entrySet()) {
+            AtomicReference<String> reason = STOP_REASONS.get(entry.getKey());
+            if (reason != null) reason.compareAndSet(null, "Download stopped: native strict proxy enabled");
             entry.getValue().set(true);
             try {
                 YoutubeDL.getInstance().destroyProcessById(entry.getKey());
@@ -90,7 +95,12 @@ public final class UltVideoSiteDownloader {
             UltVideoAutoSave.noteResult(account, "Site downloads require Android 10+");
             return false;
         }
-        if (!UltVideoLinkRules.isSiteUrl(url) || !allowed(account)) return false;
+        if (!UltVideoLinkRules.isSiteUrl(url)) return false;
+        String initialBlock = UltVideoAutoSave.siteBlockReason(account);
+        if (initialBlock != null) {
+            UltVideoAutoSave.noteResult(account, "Download stopped: " + initialBlock);
+            return false;
+        }
 
         final int limitMiB = UltVideoAutoSave.siteLimitMiB(account);
         final long maxBytes = limitMiB * 1024L * 1024L;
@@ -103,20 +113,21 @@ public final class UltVideoSiteDownloader {
             UltVideoAutoSave.noteResult(account, "Cannot create download workspace");
             return false;
         }
+        final AtomicReference<String> stopReason = new AtomicReference<>();
+        STOP_REASONS.put(processId, stopReason);
         ACTIVE.put(processId, stopped);
         OWNERS.put(processId, account);
         ScheduledFuture<?> guard = null;
         String stage = "initialization";
-        final AtomicReference<String> stopReason = new AtomicReference<>();
         final AtomicLong lastProgress = new AtomicLong(0L);
         final AtomicLong lastProgressDisplayed = new AtomicLong(-1L);
         try {
-            if (!allowed(account)) return false;
+            if (stopBeforeWork(account, stopped, stopReason)) return false;
             // The Android library contains its own Python/yt-dlp and FFmpeg runtimes.
             // Initialization is deliberately lazy; this code runs on a worker thread.
             YoutubeDL.getInstance().init(context);
             FFmpeg.getInstance().init(context);
-            if (!allowed(account) || stopped.get()) return false;
+            if (stopBeforeWork(account, stopped, stopReason)) return false;
             stage = "download";
 
             String extractionUrl = UltVideoLinkRules.extractionUrl(url);
@@ -147,8 +158,9 @@ public final class UltVideoSiteDownloader {
                 if (!stopped.get()) {
                     final long now = SystemClock.elapsedRealtime();
                     final String reason;
-                    if (!allowed(account)) {
-                        reason = "Download stopped: network or strict-proxy protection changed";
+                    final String policyBlock = UltVideoAutoSave.siteBlockReason(account);
+                    if (policyBlock != null) {
+                        reason = "Download stopped: " + policyBlock;
                     } else if (totalBytes(work, maxBytes) > maxBytes) {
                         reason = "Download stopped: " + limitMiB + " MiB workspace limit";
                     } else if (now - startedAt >= MAX_EXTRACTION_MS) {
@@ -172,9 +184,9 @@ public final class UltVideoSiteDownloader {
                 }
             }, 0, 500, TimeUnit.MILLISECONDS);
 
-            if (!allowed(account) || stopped.get()) return false;
+            if (stopBeforeWork(account, stopped, stopReason)) return false;
             // Query the executable, not the updater's optional SharedPreferences metadata.
-            if (!allowed(account) || stopped.get()) return false;
+            if (stopBeforeWork(account, stopped, stopReason)) return false;
             try {
                 YoutubeDLRequest versionRequest = new YoutubeDLRequest(
                         java.util.Collections.<String>emptyList());
@@ -187,15 +199,16 @@ public final class UltVideoSiteDownloader {
             } catch (Exception ignored) {
                 extractorVersion = "Unknown (version query failed)";
             }
-            if (!allowed(account) || stopped.get()) return false;
+            if (stopBeforeWork(account, stopped, stopReason)) return false;
             lastProgress.set(SystemClock.elapsedRealtime());
             UltVideoAutoSave.noteResult(account, "Extracting video; 90-second inactivity limit");
             // Never display 'line': extractor output can expose URL paths,
             // authorization tokens, cookies, or personal information.
             YoutubeDL.getInstance().execute(request, processId,
                     (progress, eta, line) -> {
-                        if (!allowed(account) && stopReason.compareAndSet(null,
-                                "Download stopped: network or strict-proxy protection changed")) {
+                        String policyBlock = UltVideoAutoSave.siteBlockReason(account);
+                        if (policyBlock != null && stopReason.compareAndSet(null,
+                                "Download stopped: " + policyBlock)) {
                             stopped.set(true);
                         }
                         if (!stopped.get() && progress >= 1.0f && progress <= 100.0f) {
@@ -216,11 +229,7 @@ public final class UltVideoSiteDownloader {
                         return Unit.INSTANCE;
                     });
 
-            if (stopped.get() || !allowed(account)) {
-                UltVideoAutoSave.noteResult(account, stopReason.get() == null
-                        ? "Download cancelled or blocked by protection" : stopReason.get());
-                return false;
-            }
+            if (stopBeforeWork(account, stopped, stopReason)) return false;
             stage = "verification";
             File result = selectFinishedVideo(work);
             if (result == null || result.length() <= 0 || result.length() > maxBytes) {
@@ -229,7 +238,9 @@ public final class UltVideoSiteDownloader {
             }
             stage = "saving";
             if (!publish(context, result, account, maxBytes, stopped)) {
-                UltVideoAutoSave.noteResult(account, stopped.get() ? "Download cancelled" : "Failed to save video");
+                if (!stopBeforeWork(account, stopped, stopReason)) {
+                    UltVideoAutoSave.noteResult(account, "Failed to save video");
+                }
                 return false;
             }
             UltVideoAutoSave.noteResult(account, "Saved to Downloads/Ultgram");
@@ -246,11 +257,9 @@ public final class UltVideoSiteDownloader {
             return true;
         } catch (Exception failure) {
             // Exceptions can contain private URLs or query tokens; never show raw text.
-            UltVideoAutoSave.noteResult(account, stopped.get()
-                    ? (stopReason.get() == null
-                            ? "Download cancelled or blocked by protection"
-                            : stopReason.get())
-                    : UltVideoFailure.publicReason(failure, stage));
+            if (!stopBeforeWork(account, stopped, stopReason)) {
+                UltVideoAutoSave.noteResult(account, UltVideoFailure.publicReason(failure, stage));
+            }
             return false;
         } finally {
             stopped.set(true);
@@ -260,14 +269,24 @@ public final class UltVideoSiteDownloader {
             } catch (Exception ignored) { }
             OWNERS.remove(processId);
             ACTIVE.remove(processId);
+            STOP_REASONS.remove(processId);
             removeTree(work);
         }
     }
 
     private static boolean allowed(int account) {
-        if (UltVideoAutoSave.strictModeRequested() || !UltVideoAutoSave.isEnabled(account))
-            return false;
-        return UltVideoAutoSave.networkAllowed(account);
+        return UltVideoAutoSave.siteBlockReason(account) == null;
+    }
+
+    private static boolean stopBeforeWork(int account, AtomicBoolean stopped,
+                                          AtomicReference<String> stopReason) {
+        String block = UltVideoAutoSave.siteBlockReason(account);
+        if (block != null) stopReason.compareAndSet(null, "Download stopped: " + block);
+        if (block == null && !stopped.get() && stopReason.get() == null) return false;
+        stopped.set(true);
+        String reason = stopReason.get();
+        UltVideoAutoSave.noteResult(account, reason == null ? "Download cancelled" : reason);
+        return true;
     }
 
     private static long totalBytes(File dir, long maxBytes) {
