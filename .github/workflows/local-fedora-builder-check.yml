@@ -1,0 +1,41 @@
+name: Verify Fedora local Ultgram builder
+on:
+  push:
+    branches: [feature/auto-video-link-downloads]
+    paths:
+      - 'scripts/build-ultgram-local.py'
+      - 'docs/LOCAL_FEDORA_BUILD.md'
+      - '.github/workflows/local-fedora-builder-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Python helper syntax and pinned build settings (no Android SDK needed)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/build-ultgram-local.py
+          python3 scripts/build-ultgram-local.py --help
+          python3 scripts/build-ultgram-local.py status
+          python3 - <<'PY'
+          import importlib.util
+          from pathlib import Path
+          root = Path.cwd()
+          spec = importlib.util.spec_from_file_location(
+              "local_builder", root / "scripts/build-ultgram-local.py")
+          mod = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(mod)
+          assert len(mod.INTEGRATORS) == 17, "Expected all pinned FOSS integrations"
+          for name in mod.INTEGRATORS:
+              assert (root / "scripts" / name).is_file(), name
+          tag, code, version = mod.workflow_version()
+          assert tag and code.isdecimal() and version, (tag, code, version)
+          print("Pinned local builder metadata:", version, code)
+          PY
