@@ -48,6 +48,23 @@ class IntegrationTest(unittest.TestCase):
                 module.integrate(root)
             self.assertEqual(app.read_bytes(), before)
 
+    def test_site_controls_and_confirmed_history(self):
+        base = ROOT / "video/src/com/yooshastan/ultmessenger/video"
+        worker = (base / "UltVideoAutoSave.java").read_text()
+        site = (base / "UltVideoSiteDownloader.java").read_text()
+        ui = (ROOT / "settings/src/com/yooshastan/ultmessenger/settings/UltVideoLinksSettingsActivity.java").read_text()
+        self.assertIn("siteLimitMiB(account)", site)
+        self.assertIn("totalBytes(work, maxBytes) > maxBytes", site)
+        self.assertIn("stopped.get() || !allowed(account) || copied + n > maxBytes", site)
+        self.assertIn("cancelAccount(currentAccount)", ui)
+        self.assertIn("versionName(context)", site)
+        self.assertIn("extractionUrl(url)", site)
+        self.assertLess(site.index("resolver.update(dest, visible"), site.index("recordSiteSave(account"))
+        self.assertIn('row.put("uri", uri.toString())', worker)
+        self.assertNotIn('row.put("url"', worker)
+        self.assertIn("clearSiteHistory(currentAccount)", ui)
+        self.assertIn("statusHandler.removeCallbacks(statusTick)", ui)
+
     def test_outgoing_is_distinct_and_strict_mode_blocks(self):
         worker = (ROOT / "video/src/com/yooshastan/ultmessenger/video/UltVideoAutoSave.java").read_text()
         site = (ROOT / "video/src/com/yooshastan/ultmessenger/video/UltVideoSiteDownloader.java").read_text()
