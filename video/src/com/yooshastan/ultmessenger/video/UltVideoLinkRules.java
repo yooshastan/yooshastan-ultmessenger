@@ -68,7 +68,7 @@ public final class UltVideoLinkRules {
             String host = new URI(value).getHost().toLowerCase(Locale.US);
             String[] allowed = {"youtube.com", "youtu.be", "youtube-nocookie.com",
                     "instagram.com", "vimeo.com", "tiktok.com", "twitter.com", "x.com",
-                    "facebook.com", "fb.watch", "threads.net"};
+                    "facebook.com", "fb.watch", "threads.net", "reddit.com", "redd.it"};
             for (String domain : allowed) {
                 if (host.equals(domain) || host.endsWith("." + domain)) return true;
             }
@@ -89,6 +89,7 @@ public final class UltVideoLinkRules {
             if (isDomain(host, "facebook.com") || isDomain(host, "fb.watch")) return "Facebook";
             if (isDomain(host, "twitter.com") || isDomain(host, "x.com")) return "X/Twitter";
             if (isDomain(host, "threads.net")) return "Threads";
+            if (isDomain(host, "reddit.com") || isDomain(host, "redd.it")) return "Reddit";
             if (hasVideoExtension(url)) return "Direct video file";
             return "Other HTTPS webpage (metadata only)";
         } catch (Exception ignored) { return "Invalid/excluded link"; }
