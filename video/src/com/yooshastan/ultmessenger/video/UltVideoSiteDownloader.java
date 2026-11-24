@@ -119,7 +119,11 @@ public final class UltVideoSiteDownloader {
             if (!allowed(account) || stopped.get()) return false;
             stage = "download";
 
-            YoutubeDLRequest request = new YoutubeDLRequest(UltVideoLinkRules.extractionUrl(url));
+            String extractionUrl = UltVideoLinkRules.extractionUrl(url);
+            if ("X/Twitter".equals(UltVideoLinkRules.sourceCategory(url))) {
+                extractionUrl = com.yooshastan.ultmessenger.settings.UltLinkSanitizerPolicy.cleanUrl(extractionUrl);
+            }
+            YoutubeDLRequest request = new YoutubeDLRequest(extractionUrl);
             request.addOption("--ignore-config");
             request.addOption("--no-playlist");
             request.addOption("--no-overwrites");
