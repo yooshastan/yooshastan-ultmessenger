@@ -45,7 +45,22 @@ import kotlin.Unit;
  * Android process cancellation is best effort; this is NOT a system VPN kill switch.
  */
 public final class UltVideoSiteDownloader {
-    private static final long MAX_BYTES = 100L * 1024L * 1024L;
+    private static final Map<String, Integer> OWNERS = new ConcurrentHashMap<>();
+    private static volatile String extractorVersion = "Not initialized";
+
+    public static String extractorVersion() { return extractorVersion; }
+
+    public static boolean hasActive(int account) { return OWNERS.containsValue(account); }
+
+    public static void cancelAccount(int account) {
+        for (Map.Entry<String, Integer> entry : OWNERS.entrySet()) {
+            if (entry.getValue() != account) continue;
+            AtomicBoolean flag = ACTIVE.get(entry.getKey());
+            if (flag != null) flag.set(true);
+            try { YoutubeDL.getInstance().destroyProcessById(entry.getKey()); }
+            catch (Exception ignored) { }
+        }
+    }
     // The extractor can block without generating a callback. Both limits
     // are measured with a monotonic clock (not the adjustable wall clock).
     private static final long MAX_EXTRACTION_MS = TimeUnit.MINUTES.toMillis(4);
@@ -77,6 +92,8 @@ public final class UltVideoSiteDownloader {
         }
         if (!UltVideoLinkRules.isSiteUrl(url) || !allowed(account)) return false;
 
+        final int limitMiB = UltVideoAutoSave.siteLimitMiB(account);
+        final long maxBytes = limitMiB * 1024L * 1024L;
         String processId = "ultsite-" + UUID.randomUUID();
         AtomicBoolean stopped = new AtomicBoolean(false);
         File cacheBase = context.getExternalCacheDir();
@@ -87,6 +104,7 @@ public final class UltVideoSiteDownloader {
             return false;
         }
         ACTIVE.put(processId, stopped);
+        OWNERS.put(processId, account);
         ScheduledFuture<?> guard = null;
         String stage = "initialization";
         final AtomicReference<String> stopReason = new AtomicReference<>();
@@ -98,6 +116,11 @@ public final class UltVideoSiteDownloader {
             // Initialization is deliberately lazy; this code runs on a worker thread.
             YoutubeDL.getInstance().init(context);
             FFmpeg.getInstance().init(context);
+            try {
+                String version = YoutubeDL.getInstance().versionName(context);
+                extractorVersion = version != null && version.matches("[0-9A-Za-z._+-]{1,80}")
+                        ? version : "Unknown";
+            } catch (Exception ignored) { extractorVersion = "Unknown"; }
             if (!allowed(account) || stopped.get()) return false;
             stage = "download";
 
@@ -107,7 +130,7 @@ public final class UltVideoSiteDownloader {
             request.addOption("--no-mtime");
             request.addOption("--no-cache-dir");
             request.addOption("--no-write-thumbnail");
-            request.addOption("--max-filesize", "100M");
+            request.addOption("--max-filesize", Long.toString(maxBytes));
             request.addOption("--socket-timeout", 12);
             request.addOption("--retries", 2);
             request.addOption("--fragment-retries", 2);
@@ -126,8 +149,8 @@ public final class UltVideoSiteDownloader {
                     final String reason;
                     if (!allowed(account)) {
                         reason = "Download stopped: network or strict-proxy protection changed";
-                    } else if (totalBytes(work) > MAX_BYTES) {
-                        reason = "Download stopped: 100 MiB size limit";
+                    } else if (totalBytes(work, maxBytes) > maxBytes) {
+                        reason = "Download stopped: " + limitMiB + " MiB workspace limit";
                     } else if (now - startedAt >= MAX_EXTRACTION_MS) {
                         reason = "Extractor timed out after 4 minutes; video not saved";
                     } else if (now - lastProgress.get() >= NO_PROGRESS_MS) {
@@ -178,22 +201,22 @@ public final class UltVideoSiteDownloader {
 
             if (stopped.get() || !allowed(account)) {
                 UltVideoAutoSave.noteResult(account, stopReason.get() == null
-                        ? "Download stopped by protection" : stopReason.get());
+                        ? "Download cancelled or blocked by protection" : stopReason.get());
                 return false;
             }
             stage = "verification";
             File result = selectFinishedVideo(work);
-            if (result == null || result.length() <= 0 || result.length() > MAX_BYTES) {
-                UltVideoAutoSave.noteResult(account, "No supported video file within 100 MiB");
+            if (result == null || result.length() <= 0 || result.length() > maxBytes) {
+                UltVideoAutoSave.noteResult(account, "No supported video file within " + limitMiB + " MiB");
                 return false;
             }
             stage = "saving";
-            if (!publish(context, result, account)) {
-                UltVideoAutoSave.noteResult(account, "Failed to save video");
+            if (!publish(context, result, account, maxBytes, stopped)) {
+                UltVideoAutoSave.noteResult(account, stopped.get() ? "Download cancelled" : "Failed to save video");
                 return false;
             }
             UltVideoAutoSave.noteResult(account, "Saved to Downloads/Ultgram");
-            if (outgoingLink && UltVideoAutoSave.isPostToChat(account)) {
+            if (outgoingLink && UltVideoAutoSave.isPostToChat(account) && !stopped.get()) {
                 if (!UltVideoChatPost.safeDestination(account, dialogId, original)) {
                     UltVideoAutoSave.noteResult(account,
                             "Saved locally; group identity, permissions or topic not supported");
@@ -218,6 +241,7 @@ public final class UltVideoSiteDownloader {
             try {
                 YoutubeDL.getInstance().destroyProcessById(processId);
             } catch (Exception ignored) { }
+            OWNERS.remove(processId);
             ACTIVE.remove(processId);
             removeTree(work);
         }
@@ -229,14 +253,14 @@ public final class UltVideoSiteDownloader {
         return UltVideoAutoSave.networkAllowed(account);
     }
 
-    private static long totalBytes(File dir) {
+    private static long totalBytes(File dir, long maxBytes) {
         if (!dir.exists()) return 0L;
         if (!dir.isDirectory()) return dir.length();
         long size = 0L;
         File[] children = dir.listFiles();
         if (children != null) for (File f : children) {
-            size += totalBytes(f);
-            if (size > MAX_BYTES) return size;
+            size += totalBytes(f, maxBytes);
+            if (size > maxBytes) return size;
         }
         return size;
     }
@@ -255,8 +279,8 @@ public final class UltVideoSiteDownloader {
         return matching.size() == 1 ? matching.get(0) : null;
     }
 
-    private static boolean publish(Context context, File file, int account) {
-        if (!allowed(account)) return false;
+    private static boolean publish(Context context, File file, int account, long maxBytes, AtomicBoolean stopped) {
+        if (stopped.get() || !allowed(account)) return false;
         String originalName = file.getName().toLowerCase(Locale.US);
         String extension = originalName.substring(originalName.lastIndexOf('.') + 1);
         String mime = "video/mp4";
@@ -283,12 +307,12 @@ public final class UltVideoSiteDownloader {
                 byte[] buffer = new byte[65536];
                 long copied = 0;
                 for (int n; (n = input.read(buffer)) != -1; ) {
-                    if (!allowed(account) || copied + n > MAX_BYTES) return false;
+                    if (stopped.get() || !allowed(account) || copied + n > maxBytes) return false;
                     output.write(buffer, 0, n);
                     copied += n;
                 }
             }
-            if (!allowed(account)) return false;
+            if (stopped.get() || !allowed(account)) return false;
             ContentValues visible = new ContentValues();
             visible.put(MediaStore.MediaColumns.IS_PENDING, 0);
             if (resolver.update(dest, visible, null, null) != 1) return false;
