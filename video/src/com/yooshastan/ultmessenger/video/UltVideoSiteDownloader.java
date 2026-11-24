@@ -29,6 +29,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+
+import android.os.SystemClock;
 
 import kotlin.Unit;
 
@@ -42,6 +46,10 @@ import kotlin.Unit;
  */
 public final class UltVideoSiteDownloader {
     private static final long MAX_BYTES = 100L * 1024L * 1024L;
+    // The extractor can block without generating a callback. Both limits
+    // are measured with a monotonic clock (not the adjustable wall clock).
+    private static final long MAX_EXTRACTION_MS = TimeUnit.MINUTES.toMillis(4);
+    private static final long NO_PROGRESS_MS = TimeUnit.SECONDS.toMillis(90);
     private static final Map<String, AtomicBoolean> ACTIVE = new ConcurrentHashMap<>();
     private static final ScheduledExecutorService WATCHDOG =
             Executors.newSingleThreadScheduledExecutor();
@@ -81,6 +89,9 @@ public final class UltVideoSiteDownloader {
         ACTIVE.put(processId, stopped);
         ScheduledFuture<?> guard = null;
         String stage = "initialization";
+        final AtomicReference<String> stopReason = new AtomicReference<>();
+        final AtomicLong lastProgress = new AtomicLong(0L);
+        final AtomicLong lastProgressDisplayed = new AtomicLong(-1L);
         try {
             if (!allowed(account)) return false;
             // The Android library contains its own Python/yt-dlp and FFmpeg runtimes.
@@ -105,33 +116,69 @@ public final class UltVideoSiteDownloader {
             request.addOption("--merge-output-format", "mp4");
             request.addOption("-o", new File(work, "ult_video.%(ext)s").getAbsolutePath());
 
-            // A second byte-accurate disk check is required because --max-filesize
-            // only works reliably when the site exposes the expected size.
+            // A finite extraction timeout is essential. Some supported sites
+            // hang before they return any stdout or progress callback.
+            final long startedAt = SystemClock.elapsedRealtime();
+            lastProgress.set(startedAt);
             guard = WATCHDOG.scheduleAtFixedRate(() -> {
-                if (!allowed(account) || totalBytes(work) > MAX_BYTES) {
-                    stopped.set(true);
+                if (!stopped.get()) {
+                    final long now = SystemClock.elapsedRealtime();
+                    final String reason;
+                    if (!allowed(account)) {
+                        reason = "Download stopped: network or strict-proxy protection changed";
+                    } else if (totalBytes(work) > MAX_BYTES) {
+                        reason = "Download stopped: 100 MiB size limit";
+                    } else if (now - startedAt >= MAX_EXTRACTION_MS) {
+                        reason = "Extractor timed out after 4 minutes; video not saved";
+                    } else if (now - lastProgress.get() >= NO_PROGRESS_MS) {
+                        reason = "Extractor stalled for 90 seconds; no media progress";
+                    } else {
+                        reason = null;
+                    }
+                    if (reason != null && stopReason.compareAndSet(null, reason)) {
+                        stopped.set(true);
+                        // Set an honest terminal-looking status even if the
+                        // external process never exits its blocking read.
+                        UltVideoAutoSave.noteResult(account, reason);
+                    }
                 }
                 if (stopped.get()) {
                     try {
                         YoutubeDL.getInstance().destroyProcessById(processId);
                     } catch (Exception ignored) { }
                 }
-            }, 0, 250, TimeUnit.MILLISECONDS);
+            }, 0, 500, TimeUnit.MILLISECONDS);
 
             if (!allowed(account) || stopped.get()) return false;
-            UltVideoAutoSave.noteResult(account, "Extracting and downloading video");
-            // Java/Kotlin bridge: callback is invoked off the UI thread.
+            UltVideoAutoSave.noteResult(account, "Extracting video; 90-second inactivity limit");
+            // Never display 'line': extractor output can expose URL paths,
+            // authorization tokens, cookies, or personal information.
             YoutubeDL.getInstance().execute(request, processId,
                     (progress, eta, line) -> {
-                        if (!allowed(account)) stopped.set(true);
+                        if (!allowed(account) && stopReason.compareAndSet(null,
+                                "Download stopped: network or strict-proxy protection changed")) {
+                            stopped.set(true);
+                        }
+                        if (!stopped.get() && progress >= 1.0f && progress <= 100.0f) {
+                            lastProgress.set(SystemClock.elapsedRealtime());
+                            final long bucket = Math.min(100L, ((long) progress / 10L) * 10L);
+                            if (bucket >= 10 && bucket > lastProgressDisplayed.get()) {
+                                lastProgressDisplayed.set(bucket);
+                                UltVideoAutoSave.noteResult(account,
+                                        "Downloading video: " + bucket + "%");
+                            }
+                        }
                         if (stopped.get()) {
-                            YoutubeDL.getInstance().destroyProcessById(processId);
+                            try {
+                                YoutubeDL.getInstance().destroyProcessById(processId);
+                            } catch (Exception ignored) { }
                         }
                         return Unit.INSTANCE;
                     });
 
             if (stopped.get() || !allowed(account)) {
-                UltVideoAutoSave.noteResult(account, "Download stopped by protection or size limit");
+                UltVideoAutoSave.noteResult(account, stopReason.get() == null
+                        ? "Download stopped by protection" : stopReason.get());
                 return false;
             }
             stage = "verification";
@@ -160,7 +207,9 @@ public final class UltVideoSiteDownloader {
         } catch (Exception failure) {
             // Exceptions can contain private URLs or query tokens; never show raw text.
             UltVideoAutoSave.noteResult(account, stopped.get()
-                    ? "Download cancelled or blocked by protection"
+                    ? (stopReason.get() == null
+                            ? "Download cancelled or blocked by protection"
+                            : stopReason.get())
                     : UltVideoFailure.publicReason(failure, stage));
             return false;
         } finally {

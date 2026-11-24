@@ -59,3 +59,12 @@ The original screen's `Completed/queued` count combined merely queued Android do
 
 
 **Group QA acceptance (3.4.5):** With both auto-save and auto-post explicitly ON and native strict proxy OFF, test an ordinary group using the user's normal identity and one using 'Send anonymously'. The originating link and new video must be in the same group; the sender identity must match exactly. Switching the send-as identity between link posting and download completion must NOT trigger an auto-post. Verify that links from others do not send, that group video permissions are honored, and that a forum topic or broadcast channel does not receive a message in the wrong place. A failed extractor should never post. Test direct-file links separately: direct Android DownloadManager transfers are still local-save-only. Treat all these as unverified until actual device testing.
+
+
+## Beta 3.4.6: Bounded site extraction and clear stalled-state reporting
+
+**Observed on Android:** YouTube downloaded at least once; Instagram link was correctly categorized as Instagram and reached "Extracting and downloading video", but never completed or changed status. Prior site logins/access denial were also observed. A copy of the same status remains across page refreshes because the yt-dlp Android subprocess can block indefinitely.
+
+Beta 3.4.6 adds two monotonic-clock limits to the embedded yt-dlp process: **90 seconds with no positive media progress** and **4 minutes total**. A single watchdog requests subprocess cancellation on timeout, byte-size violation or protection changes. A terminal status is written directly even if the process is stuck in its blocking output reader. Download callbacks update rough 10%-increment progress categories **without displaying or saving yt-dlp's raw output**, which may contain private URLs, credentials or tokens. If subprocess cancellation cannot unblock its reader, the queue may still require an app restart; the status makes this limitation explicit. Upstream component internals and Android process termination need device QA to prove reliable cancellation.
+
+**This change does not by itself grant Instagram access or supply browser impersonation/cookies.** If Instagram access remains denied or stalled, investigate updated yt-dlp versions and Android-safe impersonation dependencies in issue #71, while keeping strict-proxy privacy protections and the working YouTube/group implementation. Do not call Instagram compatible based solely on a compiled APK.

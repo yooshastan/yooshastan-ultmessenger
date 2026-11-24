@@ -80,6 +80,15 @@ class IntegrationTest(unittest.TestCase):
         self.assertIn("UltVideoChatPost.safeDestination(account, dialogId, original)", site)
         self.assertNotIn("auto-post paused for group/anonymous sender safety", site)
         self.assertIn("UltVideoFailure.publicReason(", site)
+        self.assertIn("MAX_EXTRACTION_MS = TimeUnit.MINUTES.toMillis(4)", site)
+        self.assertIn("NO_PROGRESS_MS = TimeUnit.SECONDS.toMillis(90)", site)
+        self.assertIn("SystemClock.elapsedRealtime()", site)
+        self.assertIn("stopReason.compareAndSet(null, reason)", site)
+        self.assertIn("destroyProcessById(processId)", site)
+        self.assertIn("lastProgress.set(SystemClock.elapsedRealtime())", site)
+        self.assertIn('Extractor stalled for 90 seconds; no media progress', site)
+        self.assertIn('Extractor timed out after 4 minutes; video not saved', site)
+        self.assertNotIn('UltVideoAutoSave.noteResult(account, line)', site)
         self.assertNotIn("java.net.Socket(", worker)
 
 if __name__ == "__main__":
