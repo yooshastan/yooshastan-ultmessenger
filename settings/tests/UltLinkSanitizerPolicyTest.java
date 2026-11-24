@@ -66,6 +66,21 @@ public class UltLinkSanitizerPolicyTest {
         equal(UltLinkSanitizerPolicy.cleanText(
                 "Link https://instagram.com/reel/id/?bqrl=abc and https://youtu.be/id?si=x!"),
                 "Link https://instagram.com/reel/id/ and https://youtu.be/id!");
+        for (String host : new String[]{"x.com", "twitter.com", "mobile.twitter.com", "www.x.com"}) {
+            String post = "https://" + host + "/example_user/status/1234567890";
+            equal(UltLinkSanitizerPolicy.cleanUrl(post + "?s=46&t=share"), post);
+            equal(UltLinkSanitizerPolicy.cleanUrl(post + "?t=share&lang=en&s=20"), post + "?lang=en");
+            equal(UltLinkSanitizerPolicy.cleanUrl(post + "?s=46&token=secret&t=share"),
+                    post + "?s=46&token=secret&t=share");
+        }
+        equal(UltLinkSanitizerPolicy.cleanUrl("https://x.com/i/web/status/123?s=20&t=share"),
+                "https://x.com/i/web/status/123");
+        equal(UltLinkSanitizerPolicy.cleanUrl("https://x.com/search?s=foo&t=bar"),
+                "https://x.com/search?s=foo&t=bar");
+        equal(UltLinkSanitizerPolicy.cleanUrl("https://evil.x.com.example.org/u/status/123?s=46&t=x"),
+                "https://evil.x.com.example.org/u/status/123?s=46&t=x");
+        equal(UltLinkSanitizerPolicy.cleanText("watch (https://x.com/u/status/123?s=46&t=share)."),
+                "watch (https://x.com/u/status/123).");
         System.out.println("UltLinkSanitizerPolicyTest OK");
     }
 }
