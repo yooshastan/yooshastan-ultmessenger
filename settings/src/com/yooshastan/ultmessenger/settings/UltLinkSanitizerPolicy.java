@@ -100,7 +100,8 @@ public final class UltLinkSanitizerPolicy {
         // Instagram rotates its share-attribution token names. Keep this
         // exact, site-scoped allowlist rather than stripping all four-letter
         // query keys: e.g. img_index and story_media_id are functional.
-        if (isHost(host, "instagram.com")
+        if (isHost(host, "instagram.com") && path != null
+                && path.matches("/(?:reel|reels|p|tv)/[A-Za-z0-9_-]+/?")
                 && (key.equals("igshid") || key.equals("igsh")
                     || key.equals("igsi") || key.equals("ig_rid")
                     || key.equals("stkn") || key.equals("avpt")
@@ -119,7 +120,7 @@ public final class UltLinkSanitizerPolicy {
         if ((host.equals("x.com") || host.equals("www.x.com") || host.equals("mobile.x.com")
                 || host.equals("twitter.com") || host.equals("www.twitter.com") || host.equals("mobile.twitter.com"))
                 && path != null && path.matches("/(?:[A-Za-z0-9_]+/status|i/web/status)/[0-9]+/?")
-                && (key.equals("s") || key.equals("t"))) return true;
+                && oneOf(key, "s", "t", "a", "ref_src", "ref_url")) return true;
         if ((isHost(host, "youtu.be") || isHost(host, "youtube.com")
                 || isHost(host, "youtube-nocookie.com"))
                 && key.equals("si")) return true;
@@ -135,7 +136,7 @@ public final class UltLinkSanitizerPolicy {
                     "share_app_id", "share_item_id", "share_iid", "u_code");
         }
         if ((isHost(host, "facebook.com") || host.equals("fb.watch") || host.equals("fb.com"))
-                && path != null && (path.matches("/(?:reel|videos|posts|share|watch|story.php|permalink.php)(?:/.*)?")
+                && path != null && (path.matches("/(?:reel|videos|posts|share|watch|story[.]php|permalink[.]php)(?:/.*)?")
                     || path.matches("/[A-Za-z0-9._-]+/(?:videos|posts|reels)/[^/]+/?")
                     || (host.equals("fb.watch") && path.matches("/[A-Za-z0-9_-]+/?")))) {
             return oneOf(key, "mibextid", "rdid", "shbid", "shbv", "sfnsn",
