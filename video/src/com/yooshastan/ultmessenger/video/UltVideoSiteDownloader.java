@@ -124,7 +124,7 @@ public final class UltVideoSiteDownloader {
             if (!allowed(account) || stopped.get()) return false;
             stage = "download";
 
-            YoutubeDLRequest request = new YoutubeDLRequest(url);
+            YoutubeDLRequest request = new YoutubeDLRequest(UltVideoLinkRules.extractionUrl(url));
             request.addOption("--no-playlist");
             request.addOption("--no-overwrites");
             request.addOption("--no-mtime");
