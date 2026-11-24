@@ -91,13 +91,13 @@ def workflow_version():
 
 
 def prerequisites():
-    required = ("git", "python3", "ninja", "meson",
+    required = ("git", "git-lfs", "python3", "ninja", "meson",
                 "nasm", "gperf", "pkg-config", "make", "cmake", "curl")
     missing = [name for name in required if shutil.which(name) is None]
     if missing:
         die("Missing build tools: " + ", ".join(missing) +
             "\nFedora: sudo dnf install git python3 ninja-build meson nasm "
-            "gperf pkgconf-pkg-config make cmake curl unzip android-tools")
+            "gperf pkgconf-pkg-config make cmake curl unzip git-lfs android-tools")
     # Fedora 44's standard repositories no longer provide JDK 17. The
     # Fedora-packaged Adoptium repository makes temurin-17-jdk available.
     homes = []
@@ -190,6 +190,20 @@ def prepare(refresh=False):
         if output("git", "rev-parse", "HEAD", cwd=SOURCE) != pinned_revision():
             die("Local upstream checkout is not the pinned Mercurygram commit.")
         previous = STAMP.read_text().strip() if STAMP.exists() else None
+        if previous is None and not refresh:
+            # The first setup may have stopped inside an LFS-backed
+            # submodule checkout. Resume the pinned, script-owned clone
+            # in place; never remove downloaded sources or user files.
+            if (SOURCE / "API_KEYS").exists():
+                die("An incomplete local setup already contains API_KEYS. "
+                    "Refusing to reset or repeat private configuration. "
+                    "Inspect the script-owned source before proceeding.")
+            print("Resuming interrupted pinned Mercurygram submodule checkout.")
+            run("git", "-C", SOURCE, "submodule", "sync", "--recursive")
+            run("git", "-C", SOURCE, "submodule", "update", "--init", "--recursive")
+            api_id, api_hash = credentials()
+            apply_integrations(api_id, api_hash)
+            return
         if not refresh:
             if previous != current_revision():
                 die("Ultgram source has changed since local preparation.\n"

@@ -14,7 +14,7 @@ Install development utilities:
 
 ```bash
 sudo dnf install -y git python3 ninja-build meson nasm gperf \
-  pkgconf-pkg-config make cmake curl unzip android-tools
+  pkgconf-pkg-config make cmake curl unzip git-lfs android-tools
 ```
 
 The project's GitHub CI uses **JDK 17**, not Fedora 44's default newer JDK.
@@ -102,6 +102,14 @@ signing identity. For public distribution, use the separate release-signing
 procedure and perform routing/privacy/device QA.
 
 ## Troubleshooting
+
+- **git-lfs filter-process: command not found** during first checkout:
+  `sudo dnf install -y git-lfs && git lfs install`. Then run `git pull --ff-only`
+  from `~/Ultgram-local` to fetch the updated helper and rerun
+  `python3 scripts/build-ultgram-local.py build`. The helper now resumes
+  the interrupted pinned `wallet-engine` submodule checkout without deleting
+  existing downloads. If the checkout has locally edited files or a partial
+  `API_KEYS` file, it refuses a destructive retry; inspect that state first.
 
 - **JDK version error:** Install Temurin 17; the helper searches for an installed
   JDK 17 instead of using Fedora's default Java version.
