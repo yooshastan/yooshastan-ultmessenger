@@ -105,6 +105,16 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
         preferences().edit().putInt(setting("site_max_height", account), value).apply();
     }
 
+    public static int siteLimitMiB(int account) {
+        int value = preferences().getInt(setting("site_limit_mib", account), 100);
+        return value == 250 || value == 500 || value == 1024 ? value : 100;
+    }
+
+    public static void setSiteLimitMiB(int account, int value) {
+        preferences().edit().putInt(setting("site_limit_mib", account),
+                value == 250 || value == 500 || value == 1024 ? value : 100).apply();
+    }
+
     public static String lastResult(int account) {
         return preferences().getString(setting("last_result", account), "No video attempt yet");
     }
