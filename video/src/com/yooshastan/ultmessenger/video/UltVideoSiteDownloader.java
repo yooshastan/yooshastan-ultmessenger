@@ -188,7 +188,8 @@ public final class UltVideoSiteDownloader {
                             if (bucket >= 10 && bucket > lastProgressDisplayed.get()) {
                                 lastProgressDisplayed.set(bucket);
                                 UltVideoAutoSave.noteResult(account,
-                                        "Downloading video: " + bucket + "%");
+                                        "Downloading stream: " + bucket + "%"
+                                                + (eta >= 0 ? " · ETA " + eta + "s" : ""));
                             }
                         }
                         if (stopped.get()) {
@@ -317,6 +318,7 @@ public final class UltVideoSiteDownloader {
             visible.put(MediaStore.MediaColumns.IS_PENDING, 0);
             if (resolver.update(dest, visible, null, null) != 1) return false;
             done = true;
+            UltVideoAutoSave.recordSiteSave(account, name, dest, file.length());
             return true;
         } catch (Exception ignored) {
             return false;
