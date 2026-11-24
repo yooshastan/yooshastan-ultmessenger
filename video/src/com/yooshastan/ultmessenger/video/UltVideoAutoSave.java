@@ -115,6 +115,40 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
                 value == 250 || value == 500 || value == 1024 ? value : 100).apply();
     }
 
+    /** Only confirmed exports, bounded local metadata, no remote links or chat IDs. */
+    public static synchronized void recordSiteSave(int account, String name, Uri uri, long bytes) {
+        try {
+            org.json.JSONArray previous = siteHistory(account);
+            org.json.JSONObject row = new org.json.JSONObject();
+            row.put("name", name);
+            row.put("uri", uri.toString());
+            row.put("bytes", bytes);
+            row.put("saved", System.currentTimeMillis());
+            row.put("source", lastSourceCategory(account));
+            org.json.JSONArray next = new org.json.JSONArray();
+            next.put(row);
+            for (int i = 0; i < Math.min(previous.length(), 29); i++) {
+                next.put(previous.getJSONObject(i));
+            }
+            preferences().edit().putString(setting("site_history", account), next.toString()).apply();
+        } catch (Exception ignored) {
+            // History must not turn a confirmed file export into a failed download.
+        }
+    }
+
+    public static org.json.JSONArray siteHistory(int account) {
+        try {
+            return new org.json.JSONArray(preferences().getString(
+                    setting("site_history", account), "[]"));
+        } catch (org.json.JSONException ignored) {
+            return new org.json.JSONArray();
+        }
+    }
+
+    public static synchronized void clearSiteHistory(int account) {
+        preferences().edit().remove(setting("site_history", account)).apply();
+    }
+
     public static String lastResult(int account) {
         return preferences().getString(setting("last_result", account), "No video attempt yet");
     }
