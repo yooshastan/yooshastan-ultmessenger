@@ -50,6 +50,12 @@ public final class UltVideoLinkRulesTest {
         check(UltVideoLinkRules.videoFormat(480).contains("[height<=480]"));
         check(UltVideoLinkRules.videoFormat(1080).contains("[height<=1080]"));
         check(UltVideoLinkRules.videoFormat(-1).equals(UltVideoLinkRules.videoFormat(0)));
+        check("https://www.instagram.com/reel/abc/".equals(UltVideoLinkRules.extractionUrl(
+                "https://www.instagram.com/reel/abc/?igsh=abc&utm_source=share")));
+        check("https://instagram.com/p/abc/?unknown=keep%2Bme".equals(UltVideoLinkRules.extractionUrl(
+                "https://instagram.com/p/abc/?igshid=abc&unknown=keep%2Bme")));
+        check("https://youtu.be/abc?si=keep".equals(UltVideoLinkRules.extractionUrl(
+                "https://youtu.be/abc?si=keep")));
         System.out.println("UltVideoLinkRulesTest OK");
     }
 }
