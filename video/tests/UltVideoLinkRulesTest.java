@@ -54,8 +54,23 @@ public final class UltVideoLinkRulesTest {
                 "https://www.instagram.com/reel/abc/?igsh=abc&utm_source=share")));
         check("https://instagram.com/p/abc/?unknown=keep%2Bme".equals(UltVideoLinkRules.extractionUrl(
                 "https://instagram.com/p/abc/?igshid=abc&unknown=keep%2Bme")));
-        check("https://youtu.be/abc?si=keep".equals(UltVideoLinkRules.extractionUrl(
+        check("https://youtu.be/abc".equals(UltVideoLinkRules.extractionUrl(
                 "https://youtu.be/abc?si=keep")));
+        check("https://www.tiktok.com/@u/video/123".equals(UltVideoLinkRules.extractionUrl(
+                "https://www.tiktok.com/@u/video/123?_t=share")));
+        check("https://www.facebook.com/watch/?v=123".equals(UltVideoLinkRules.extractionUrl(
+                "https://www.facebook.com/watch/?v=123&mibextid=share")));
+        check("https://x.com/u/status/123".equals(UltVideoLinkRules.extractionUrl(
+                "https://x.com/u/status/123?s=46&t=share")));
+        check("https://www.reddit.com/r/videos/comments/abc/?jsc_token=secret&utm_source=app".equals(
+                UltVideoLinkRules.extractionUrl("https://www.reddit.com/r/videos/comments/abc/?jsc_token=secret&utm_source=app")));
+        check("https://vimeo.com/123".equals(UltVideoLinkRules.extractionUrl("https://vimeo.com/123?share=copy")));
+        check(UltVideoLinkRules.isSiteUrl("https://www.threads.com/@u/post/abc"));
+        check("Threads".equals(UltVideoLinkRules.sourceCategory("https://www.threads.com/@u/post/abc")));
+        check("https://www.threads.com/@u/post/abc".equals(UltVideoLinkRules.extractionUrl(
+                "https://www.threads.com/@u/post/abc?xmt=share")));
+        check("https://cdn.example.org/a.mp4?utm_source=app".equals(
+                UltVideoLinkRules.extractionUrl("https://cdn.example.org/a.mp4?utm_source=app")));
         System.out.println("UltVideoLinkRulesTest OK");
     }
 }
