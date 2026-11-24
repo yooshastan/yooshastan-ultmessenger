@@ -9,6 +9,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 
 import com.yooshastan.ultmessenger.video.UltVideoAutoSave;
+import com.yooshastan.ultmessenger.video.UltVideoSiteDownloader;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.R;
@@ -25,6 +26,15 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
     private Button postToChatButton;
     private Button unmeteredButton;
     private Button qualityButton;
+    private Button sizeButton;
+    private Button cancelButton;
+    private final android.os.Handler statusHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private final Runnable statusTick = new Runnable() {
+        @Override public void run() {
+            refresh();
+            statusHandler.postDelayed(this, 1000);
+        }
+    };
     private TextView status;
     private TextView limitation;
 
@@ -129,10 +139,25 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
                             })
                     .show();
         });
-        addText(content, context, "Applies to new site downloads only. The 100 MiB limit remains.", 13);
+        addText(content, context, "Applies to new site downloads only.", 13);
+        sizeButton = addButton(content, context, "", () -> {
+            final int[] sizes = {100, 250, 500, 1024};
+            new UltSecureDialogBuilder(context)
+                    .setTitle("Site download workspace limit")
+                    .setItems(new String[]{"100 MiB (default)", "250 MiB", "500 MiB", "1 GiB"},
+                            (dialog, which) -> {
+                                UltVideoAutoSave.setSiteLimitMiB(currentAccount, sizes[which]);
+                                refresh();
+                            }).show();
+        });
+        addText(content, context, "Limits total temporary files for new site downloads, including audio and merge files. Direct file downloads retain their 100 MiB limit.", 13);
 
         addHeading(content, context, "Download status");
         status = addText(content, context, "", 14);
+        cancelButton = addButton(content, context, "Cancel active site download", () -> {
+            UltVideoSiteDownloader.cancelAccount(currentAccount);
+            refresh();
+        });
         addButton(content, context, "Refresh status", this::refresh);
 
         addHeading(content, context, "Privacy and limits");
@@ -155,12 +180,15 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
                 + (UltVideoAutoSave.isWifiOnly(currentAccount) ? "ON" : "OFF"));
         int height = UltVideoAutoSave.maxVideoHeight(currentAccount);
         qualityButton.setText("Video quality: " + (height == 0 ? "Automatic" : "Up to " + height + "p"));
+        sizeButton.setText("Site size limit: " + UltVideoAutoSave.siteLimitMiB(currentAccount) + " MiB");
+        cancelButton.setEnabled(UltVideoSiteDownloader.hasActive(currentAccount));
         final long attemptedAt = UltVideoAutoSave.lastAttemptMillis(currentAccount);
         final String attemptTime = attemptedAt > 0
                 ? java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT)
                     .format(new java.util.Date(attemptedAt))
                 : "Not yet recorded";
-        status.setText("Last inspected: " + UltVideoAutoSave.lastSourceCategory(currentAccount)
+        status.setText("yt-dlp: " + UltVideoSiteDownloader.extractorVersion()
+                + "\nLast inspected: " + UltVideoAutoSave.lastSourceCategory(currentAccount)
                 + " (" + attemptTime + ")"
                 + "\nResult: " + UltVideoAutoSave.lastResult(currentAccount)
                 + "\nConfirmed site saves: "
@@ -181,7 +209,18 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
 
     @Override public void onResume() {
         super.onResume();
-        refresh();
+        statusHandler.removeCallbacks(statusTick);
+        statusHandler.post(statusTick);
+    }
+
+    @Override public void onPause() {
+        statusHandler.removeCallbacks(statusTick);
+        super.onPause();
+    }
+
+    @Override public void onFragmentDestroy() {
+        statusHandler.removeCallbacks(statusTick);
+        super.onFragmentDestroy();
     }
 
     /**
