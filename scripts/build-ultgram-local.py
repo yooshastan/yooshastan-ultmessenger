@@ -177,39 +177,80 @@ def apply_integrations(api_id, api_hash):
     run("python3", ROOT / "scripts/apply-branding.py", SOURCE)
     for script in INTEGRATORS:
         run("python3", ROOT / "scripts" / script, SOURCE)
-    verify_jlatexmath_checkout()
+    verify_submodule_checkouts()
     STAMP.write_text(current_revision() + "\n")
     print("Pinned source prepared for Ultgram commit", current_revision()[:12])
 
 
-def verify_jlatexmath_checkout():
-    """Repair a missing pinned Android library in a script-owned source tree.
+def verify_submodule_checkouts():
+    """Verify pinned trees on disk, even when Git status misses absent files."""
+    checked = restored = 0
 
-    An interrupted nested git-lfs checkout may leave the jlatexmath project
-    directory present but without its Android build.gradle. Gradle then
-    reports 'No matching variant ... No variants exist'.
-    """
-    build_script = SOURCE / "TMessagesProj/lib/jlatexmath/jlatexmath/build.gradle"
-    if build_script.is_file():
-        return
-    print("Repairing incomplete pinned jlatexmath Android submodule checkout.")
-    run("git", "-C", SOURCE, "submodule", "sync", "--recursive")
-    run("git", "-C", SOURCE, "submodule", "update", "--init", "--recursive",
-        "--", "TMessagesProj/lib/jlatexmath")
-    if not build_script.is_file():
-        module_dir = SOURCE / "TMessagesProj/lib/jlatexmath"
-        if not (module_dir / ".git").exists():
-            die("jlatexmath submodule is not checked out after submodule update.")
-        # A submodule can be registered at the pinned commit but still have a
-        # sparse or interrupted worktree. Restore ONLY the missing tracked
-        # Gradle file, including when skip-worktree was set. Do not wipe
-        # caches, remove local configuration, or reset the whole source tree.
-        run("git", "-C", module_dir, "restore", "--source=HEAD",
-            "--worktree", "--ignore-skip-worktree-bits",
-            "--", "jlatexmath/build.gradle")
-    if not build_script.is_file():
-        die("Pinned jlatexmath still lacks its Android build.gradle. "
-            "Inspect submodule checkout and sparse-checkout settings.")
+    def scan(repo, pin, is_root=False):
+        nonlocal checked, restored
+        if not is_root:
+            if not (repo / ".git").exists():
+                die("Uninitialized submodule: " + str(repo))
+            if output("git", "rev-parse", "HEAD", cwd=repo) != pin:
+                die("Submodule revision mismatch: " + str(repo))
+            checked += 1
+        tree = subprocess.check_output(
+            ["git", "ls-tree", "-r", "-z", pin], cwd=repo)
+        missing = []
+        children = []
+        for entry in tree.split(b"\0"):
+            if not entry:
+                continue
+            metadata, path = entry.split(b"\t", 1)
+            mode, kind, oid = metadata.split()
+            target = repo / os.fsdecode(path)
+            if kind == b"commit":
+                children.append((target, oid.decode("ascii")))
+            elif kind == b"blob" and not is_root and not os.path.lexists(target):
+                missing.append(path)
+        if missing:
+            print(f"Restoring {len(missing)} missing tracked files in "
+                  f"{repo.relative_to(SOURCE)}", flush=True)
+            subprocess.run(
+                ["git", "--literal-pathspecs", "restore", "--source=" + pin,
+                 "--worktree", "--ignore-skip-worktree-bits",
+                 "--pathspec-from-file=-", "--pathspec-file-nul"],
+                cwd=repo, input=b"\0".join(missing) + b"\0", check=True)
+            if any(not os.path.lexists(repo / os.fsdecode(p)) for p in missing):
+                die("Submodule still incomplete: " + str(repo))
+            restored += len(missing)
+        for child, child_pin in children:
+            scan(child, child_pin)
+
+    scan(SOURCE, pinned_revision(), True)
+    latex = SOURCE / "TMessagesProj/lib/jlatexmath"
+    wallet = SOURCE / "TMessagesProj/jni/wallet-engine"
+    for required in (latex / "jlatexmath/build.gradle", wallet / "Cargo.toml",
+                     wallet / "src/lib.rs", wallet / "vendor/ton/Cargo.toml"):
+        if not required.is_file():
+            die("Required dependency missing: " + str(required))
+    for name in ("JLatexMathAndroid.java", "JLatexMathDrawable.java"):
+        if not any(p.is_file() for p in latex.rglob(name)):
+            die("Required LaTeX Java source missing: " + name)
+    print(f"Submodule preflight: {checked} checked, {restored} files restored")
+
+
+def run_gradle_logged(*args):
+    """Keep the latest compiler output and propagate Gradle's actual exit code."""
+    log_path = WORK / "ultgram-build-latest.log"
+    command = [str(x) for x in args]
+    print("Gradle log:", log_path, flush=True)
+    with log_path.open("w", encoding="utf-8") as log:
+        with subprocess.Popen(command, cwd=SOURCE, stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT, text=True,
+                              encoding="utf-8", errors="replace") as process:
+            for line in process.stdout:
+                log.write(line)
+                log.flush()
+                print(line, end="", flush=True)
+            code = process.wait()
+        if code:
+            die(f"Gradle exited with {code}; see {log_path}")
 
 
 def prepare(refresh=False):
@@ -240,7 +281,7 @@ def prepare(refresh=False):
                 die("Ultgram source has changed since local preparation.\n"
                     "Run: python3 scripts/build-ultgram-local.py refresh\n"
                     "Note: refresh resets ONLY the script-owned .work/mercurygram-upstream.")
-            verify_jlatexmath_checkout()
+            verify_submodule_checkouts()
             return
         print("REFRESH: resetting script-owned disposable Mercurygram source.")
         print("WARNING: tracked edits and untracked files IN THAT SOURCE TREE are discarded.")
@@ -272,10 +313,9 @@ def build():
         "test_link_sanitizer_integration.py")
     tag, code, name = workflow_version()
     print("Compiling", name, "versionCode", code, "on", current_revision()[:12])
-    run(SOURCE / "gradlew", BUILD_TASK, "-PMG_BUILD_TAG=" + tag,
+    run_gradle_logged(SOURCE / "gradlew", BUILD_TASK, "-PMG_BUILD_TAG=" + tag,
         "-PMG_BETA_VERSION_CODE=" + code,
-        "-PMG_BETA_VERSION_NAME=" + name, "--build-cache", "--console=plain",
-        cwd=SOURCE)
+        "-PMG_BETA_VERSION_NAME=" + name, "--daemon", "--build-cache", "--console=plain")
     outputs = list((SOURCE / "TMessagesProj_App/build/outputs/apk").rglob("*.apk"))
     outputs = [p for p in outputs if "afatFdArm64" in p.as_posix()
                and "debug" in p.as_posix().lower()]
