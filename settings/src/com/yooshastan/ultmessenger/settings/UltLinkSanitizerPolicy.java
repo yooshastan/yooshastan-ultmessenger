@@ -56,7 +56,7 @@ public final class UltLinkSanitizerPolicy {
                 String rawKey = param.split("=", 2)[0];
                 String key = rawKey.toLowerCase(Locale.US);
                 if (looksSensitive(key)) return raw;  // Fail closed for any signed URL.
-                if (isTrackingKey(host, key)) removed++;
+                if (isTrackingKey(host, uri.getRawPath(), key)) removed++;
                 else kept.add(param);
             }
             if (removed == 0) return raw;
@@ -90,7 +90,7 @@ public final class UltLinkSanitizerPolicy {
         return host.equals(domain) || host.endsWith("." + domain);
     }
 
-    private static boolean isTrackingKey(String host, String key) {
+    private static boolean isTrackingKey(String host, String path, String key) {
         if (key.startsWith("utm_")) return true;
         if (key.equals("fbclid") || key.equals("gclid") || key.equals("dclid")
                 || key.equals("msclkid") || key.equals("mc_cid") || key.equals("mc_eid")
@@ -112,6 +112,12 @@ public final class UltLinkSanitizerPolicy {
                     || key.equals("obrf") || key.equals("psln")
                     || key.equals("rpxt") || key.equals("srtk")
                     || key.equals("vrfl") || key.equals("xtok"))) return true;
+        // X share URLs commonly append s (share source) and t (share token).
+        // Restrict these short keys to canonical public status paths on X/Twitter.
+        if ((host.equals("x.com") || host.equals("www.x.com") || host.equals("mobile.x.com")
+                || host.equals("twitter.com") || host.equals("www.twitter.com") || host.equals("mobile.twitter.com"))
+                && path != null && path.matches("/(?:[A-Za-z0-9_]+/status|i/web/status)/[0-9]+/?")
+                && (key.equals("s") || key.equals("t"))) return true;
         if ((isHost(host, "youtu.be") || isHost(host, "youtube.com"))
                 && key.equals("si")) return true;
         return false;
