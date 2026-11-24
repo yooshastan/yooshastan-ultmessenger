@@ -108,6 +108,28 @@ public final class UltVideoLinkRules {
         return "bv*[ext=mp4]" + h + "+ba[ext=m4a]/b[ext=mp4]" + h + "/b" + h;
     }
 
+    /** Remove only known Instagram share-tracking fields on public media paths. */
+    public static String extractionUrl(String url) {
+        if (!isSiteUrl(url)) return url;
+        try {
+            URI uri = new URI(url);
+            String host = uri.getHost().toLowerCase(Locale.US);
+            if (!host.equals("instagram.com") && !host.equals("www.instagram.com")) return url;
+            String path = uri.getRawPath();
+            if (path == null || !path.matches("/(?:reel|p|tv)/[A-Za-z0-9_-]+/?")) return url;
+            String query = uri.getRawQuery();
+            if (query == null) return url;
+            List<String> kept = new ArrayList<>();
+            for (String field : query.split("&", -1)) {
+                String key = field.split("=", 2)[0];
+                if (!key.equals("igsh") && !key.equals("igshid") && !key.equals("utm_source")
+                        && !key.equals("utm_medium") && !key.equals("utm_campaign")) kept.add(field);
+            }
+            return "https://" + uri.getRawAuthority() + path
+                    + (kept.isEmpty() ? "" : "?" + String.join("&", kept));
+        } catch (Exception ignored) { return url; }
+    }
+
     public static boolean hasVideoExtension(String url) {
         try {
             String path = new URI(url).getPath();
