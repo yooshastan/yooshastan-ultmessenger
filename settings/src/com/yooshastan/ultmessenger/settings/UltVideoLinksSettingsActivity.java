@@ -160,11 +160,56 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
         });
         addButton(content, context, "Refresh status", this::refresh);
 
+        addHeading(content, context, "Saved site videos");
+        addButton(content, context, "Download history", () -> showHistory(context));
+        addButton(content, context, "Clear history (keep files)", () ->
+                new UltSecureDialogBuilder(context)
+                        .setTitle("Clear site download history?")
+                        .setMessage("This removes local history entries only. Downloaded files stay on your device.")
+                        .setNegativeButton("Cancel", null)
+                        .setPositiveButton("Clear", (dialog, which) -> {
+                            UltVideoAutoSave.clearSiteHistory(currentAccount);
+                            refresh();
+                        }).show());
+
         addHeading(content, context, "Privacy and limits");
         limitation = addText(content, context, "", 14);
         fragmentView = scroll;
         refresh();
         return fragmentView;
+    }
+
+    private void showHistory(Context context) {
+        org.json.JSONArray history = UltVideoAutoSave.siteHistory(currentAccount);
+        if (history.length() == 0) {
+            new UltSecureDialogBuilder(context).setTitle("Download history")
+                    .setMessage("No site saves recorded since this feature was added. Older files remain in Downloads/Ultgram.")
+                    .setPositiveButton("OK", null).show();
+            return;
+        }
+        String[] rows = new String[history.length()];
+        for (int i = 0; i < rows.length; i++) {
+            org.json.JSONObject item = history.optJSONObject(i);
+            if (item == null) { rows[i] = "Unavailable entry"; continue; }
+            rows[i] = item.optString("source", "Site") + " · "
+                    + android.text.format.Formatter.formatFileSize(context, item.optLong("bytes"))
+                    + "\n" + item.optString("name", "Video");
+        }
+        new UltSecureDialogBuilder(context).setTitle("Saved site videos")
+                .setItems(rows, (dialog, which) -> {
+                    org.json.JSONObject item = history.optJSONObject(which);
+                    if (item == null) return;
+                    android.net.Uri uri = android.net.Uri.parse(item.optString("uri"));
+                    if (!"content".equals(uri.getScheme()) || !"media".equals(uri.getAuthority())) return;
+                    try {
+                        android.content.Intent view = new android.content.Intent(android.content.Intent.ACTION_VIEW);
+                        view.setDataAndType(uri, "video/*");
+                        view.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        context.startActivity(view);
+                    } catch (Exception ignored) {
+                        android.widget.Toast.makeText(context, "File unavailable or no video player installed", android.widget.Toast.LENGTH_SHORT).show();
+                    }
+                }).setNegativeButton("Close", null).show();
     }
 
     private void refresh() {
