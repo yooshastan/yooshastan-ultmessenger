@@ -86,6 +86,8 @@ class IntegrationTest(unittest.TestCase):
         self.assertIn("stopReason.compareAndSet(null, reason)", site)
         self.assertIn("destroyProcessById(processId)", site)
         self.assertIn("lastProgress.set(SystemClock.elapsedRealtime())", site)
+        self.assertIn("progress.longValue() / 10L", site)
+        self.assertNotIn("(long) progress", site)
         self.assertIn('Extractor stalled for 90 seconds; no media progress', site)
         self.assertIn('Extractor timed out after 4 minutes; video not saved', site)
         self.assertNotIn('UltVideoAutoSave.noteResult(account, line)', site)

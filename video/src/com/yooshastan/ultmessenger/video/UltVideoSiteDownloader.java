@@ -161,7 +161,7 @@ public final class UltVideoSiteDownloader {
                         }
                         if (!stopped.get() && progress >= 1.0f && progress <= 100.0f) {
                             lastProgress.set(SystemClock.elapsedRealtime());
-                            final long bucket = Math.min(100L, ((long) progress / 10L) * 10L);
+                            final long bucket = Math.min(100L, (progress.longValue() / 10L) * 10L);
                             if (bucket >= 10 && bucket > lastProgressDisplayed.get()) {
                                 lastProgressDisplayed.set(bucket);
                                 UltVideoAutoSave.noteResult(account,
