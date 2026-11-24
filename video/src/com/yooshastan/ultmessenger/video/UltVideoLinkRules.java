@@ -68,7 +68,7 @@ public final class UltVideoLinkRules {
             String host = new URI(value).getHost().toLowerCase(Locale.US);
             String[] allowed = {"youtube.com", "youtu.be", "youtube-nocookie.com",
                     "instagram.com", "vimeo.com", "tiktok.com", "twitter.com", "x.com",
-                    "facebook.com", "fb.watch", "threads.net", "reddit.com", "redd.it"};
+                    "facebook.com", "fb.watch", "threads.net", "threads.com", "reddit.com", "redd.it"};
             for (String domain : allowed) {
                 if (host.equals(domain) || host.endsWith("." + domain)) return true;
             }
@@ -88,7 +88,7 @@ public final class UltVideoLinkRules {
             if (isDomain(host, "vimeo.com")) return "Vimeo";
             if (isDomain(host, "facebook.com") || isDomain(host, "fb.watch")) return "Facebook";
             if (isDomain(host, "twitter.com") || isDomain(host, "x.com")) return "X/Twitter";
-            if (isDomain(host, "threads.net")) return "Threads";
+            if (isDomain(host, "threads.net") || isDomain(host, "threads.com")) return "Threads";
             if (isDomain(host, "reddit.com") || isDomain(host, "redd.it")) return "Reddit";
             if (hasVideoExtension(url)) return "Direct video file";
             return "Other HTTPS webpage (metadata only)";
@@ -108,26 +108,10 @@ public final class UltVideoLinkRules {
         return "bv*[ext=mp4]" + h + "+ba[ext=m4a]/b[ext=mp4]" + h + "/b" + h;
     }
 
-    /** Remove only known Instagram share-tracking fields on public media paths. */
+    /** One offline sanitizer for all supported public site downloads. */
     public static String extractionUrl(String url) {
         if (!isSiteUrl(url)) return url;
-        try {
-            URI uri = new URI(url);
-            String host = uri.getHost().toLowerCase(Locale.US);
-            if (!host.equals("instagram.com") && !host.equals("www.instagram.com")) return url;
-            String path = uri.getRawPath();
-            if (path == null || !path.matches("/(?:reel|p|tv)/[A-Za-z0-9_-]+/?")) return url;
-            String query = uri.getRawQuery();
-            if (query == null) return url;
-            List<String> kept = new ArrayList<>();
-            for (String field : query.split("&", -1)) {
-                String key = field.split("=", 2)[0];
-                if (!key.equals("igsh") && !key.equals("igshid") && !key.equals("utm_source")
-                        && !key.equals("utm_medium") && !key.equals("utm_campaign")) kept.add(field);
-            }
-            return "https://" + uri.getRawAuthority() + path
-                    + (kept.isEmpty() ? "" : "?" + String.join("&", kept));
-        } catch (Exception ignored) { return url; }
+        return com.yooshastan.ultmessenger.settings.UltLinkSanitizerPolicy.cleanUrl(url);
     }
 
     public static boolean hasVideoExtension(String url) {
