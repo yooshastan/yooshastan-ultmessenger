@@ -95,6 +95,16 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
         preferences().edit().putBoolean(setting("wifi_only", account), enabled).apply();
     }
 
+    public static int maxVideoHeight(int account) {
+        int value = preferences().getInt(setting("site_max_height", account), 0);
+        return value == 480 || value == 720 || value == 1080 ? value : 0;
+    }
+
+    public static void setMaxVideoHeight(int account, int height) {
+        int value = height == 480 || height == 720 || height == 1080 ? height : 0;
+        preferences().edit().putInt(setting("site_max_height", account), value).apply();
+    }
+
     public static String lastResult(int account) {
         return preferences().getString(setting("last_result", account), "No video attempt yet");
     }
