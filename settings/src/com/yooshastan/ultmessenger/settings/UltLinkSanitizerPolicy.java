@@ -55,8 +55,8 @@ public final class UltLinkSanitizerPolicy {
             for (String param : params) {
                 String rawKey = param.split("=", 2)[0];
                 String key = rawKey.toLowerCase(Locale.US);
-                if (looksSensitive(key)) return raw;  // Fail closed for any signed URL.
-                if (isTrackingKey(host, uri.getRawPath(), key)) removed++;
+                if (looksSensitive(key) || (isHost(host, "vimeo.com") && key.equals("h"))) return raw;  // Preserve signed/challenge/private links.
+                if (isTrackingKey(host, uri.getRawPath(), key, param)) removed++;
                 else kept.add(param);
             }
             if (removed == 0) return raw;
@@ -90,11 +90,13 @@ public final class UltLinkSanitizerPolicy {
         return host.equals(domain) || host.endsWith("." + domain);
     }
 
-    private static boolean isTrackingKey(String host, String path, String key) {
+    private static boolean isTrackingKey(String host, String path, String key, String param) {
         if (key.startsWith("utm_")) return true;
         if (key.equals("fbclid") || key.equals("gclid") || key.equals("dclid")
                 || key.equals("msclkid") || key.equals("mc_cid") || key.equals("mc_eid")
-                || key.equals("_hsenc") || key.equals("_hsmi")) return true;
+                || key.equals("_hsenc") || key.equals("_hsmi")
+                || key.equals("ttclid") || key.equals("twclid") || key.equals("rdt_cid")
+                || key.equals("gbraid") || key.equals("wbraid")) return true;
         // Instagram rotates its share-attribution token names. Keep this
         // exact, site-scoped allowlist rather than stripping all four-letter
         // query keys: e.g. img_index and story_media_id are functional.
@@ -118,15 +120,55 @@ public final class UltLinkSanitizerPolicy {
                 || host.equals("twitter.com") || host.equals("www.twitter.com") || host.equals("mobile.twitter.com"))
                 && path != null && path.matches("/(?:[A-Za-z0-9_]+/status|i/web/status)/[0-9]+/?")
                 && (key.equals("s") || key.equals("t"))) return true;
-        if ((isHost(host, "youtu.be") || isHost(host, "youtube.com"))
+        if ((isHost(host, "youtu.be") || isHost(host, "youtube.com")
+                || isHost(host, "youtube-nocookie.com"))
                 && key.equals("si")) return true;
+
+        // Do not expand opaque short links or remove their destination path.
+        if (isHost(host, "tiktok.com") && path != null
+                && (path.matches("/@[A-Za-z0-9._-]+/(?:video|photo)/[0-9]+/?")
+                    || path.matches("/(?:t|v)/[A-Za-z0-9._-]+/?")
+                    || ((host.equals("vm.tiktok.com") || host.equals("vt.tiktok.com"))
+                        && path.matches("/[A-Za-z0-9_-]+/?")))) {
+            return oneOf(key, "_r", "_t", "tt_medium", "tt_from", "is_from_webapp",
+                    "sender_device", "sender_web_id", "is_copy_url", "share_link_id",
+                    "share_app_id", "share_item_id", "share_iid", "u_code");
+        }
+        if ((isHost(host, "facebook.com") || host.equals("fb.watch") || host.equals("fb.com"))
+                && path != null && (path.matches("/(?:reel|videos|posts|share|watch|story.php|permalink.php)(?:/.*)?")
+                    || path.matches("/[A-Za-z0-9._-]+/(?:videos|posts|reels)/[^/]+/?")
+                    || (host.equals("fb.watch") && path.matches("/[A-Za-z0-9_-]+/?")))) {
+            return oneOf(key, "mibextid", "rdid", "shbid", "shbv", "sfnsn",
+                    "__cft__", "__tn__", "comment_tracking", "referral_code");
+        }
+        if ((isHost(host, "reddit.com") || host.equals("redd.it"))
+                && path != null && (path.matches("/(?:r/[A-Za-z0-9_]+/)?comments/[A-Za-z0-9]+(?:/.*)?")
+                    || path.matches("/r/[A-Za-z0-9_]+/s/[A-Za-z0-9_-]+/?")
+                    || (host.equals("redd.it") && path.matches("/[A-Za-z0-9]+/?")))) {
+            return oneOf(key, "share_id", "rdt");
+        }
+        if ((isHost(host, "threads.net") || isHost(host, "threads.com"))
+                && path != null && path.matches("/@[A-Za-z0-9._-]+/post/[A-Za-z0-9_-]+/?")) {
+            return oneOf(key, "xmt", "igsh", "igshid");
+        }
+        // Only remove Vimeo's explicit copy attribution, never unlisted IDs or
+        // playback settings. The h parameter is protected in the caller.
+        if (isHost(host, "vimeo.com") && path != null
+                && path.matches("/(?:video/)?[0-9]+/?")) {
+            return key.equals("share") && param.equalsIgnoreCase("share=copy");
+        }
+        return false;
+    }
+
+    private static boolean oneOf(String key, String... values) {
+        for (String value : values) if (value.equals(key)) return true;
         return false;
     }
 
     private static boolean looksSensitive(String key) {
         // When any parameter suggests a signed, auth or short-lived request,
         // preserve the entire URL, not just that one parameter.
-        return key.contains("%") || key.startsWith("x-amz-")
+        return key.contains("%") || key.contains(";") || key.startsWith("x-amz-")
                 || key.startsWith("x-goog-") || key.startsWith("x-oss-")
                 || key.startsWith("x-ms-") || key.startsWith("policy")
                 || key.startsWith("signature") || key.equals("sig")
@@ -139,6 +181,10 @@ public final class UltLinkSanitizerPolicy {
                 || key.equals("code") || key.equals("state")
                 || key.equals("session") || key.equals("sessionid")
                 || key.equals("awsaccesskeyid") || key.equals("credential")
-                || key.equals("download_token") || key.equals("hash");
+                || key.equals("download_token") || key.equals("hash")
+                || key.equals("key-pair-id") || key.equals("hdnea") || key.equals("hdnts")
+                || key.equals("solution") || key.equals("js_challenge") || key.startsWith("jsc_")
+                || key.equals("cf_clearance") || key.startsWith("__cf_chl")
+                || key.equals("access_key") || key.equals("accesskey") || key.equals("authkey");
     }
 }
