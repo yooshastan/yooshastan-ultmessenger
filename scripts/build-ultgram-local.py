@@ -311,6 +311,13 @@ def build():
         "test_integration.py")
     run("python3", "-m", "unittest", "discover", "-s", "settings/tests", "-p",
         "test_link_sanitizer_integration.py")
+    test_classes = WORK / "video-test-classes"
+    test_classes.mkdir(parents=True, exist_ok=True)
+    video_src = ROOT / "video/src/com/yooshastan/ultmessenger/video"
+    for model in ("UltVideoLinkRules", "UltVideoFailure"):
+        run("javac", "-d", test_classes, video_src / (model + ".java"),
+            ROOT / "video/tests" / (model + "Test.java"))
+        run("java", "-cp", test_classes, model + "Test")
     tag, code, name = workflow_version()
     print("Compiling", name, "versionCode", code, "on", current_revision()[:12])
     run_gradle_logged(SOURCE / "gradlew", BUILD_TASK, "-PMG_BUILD_TAG=" + tag,
