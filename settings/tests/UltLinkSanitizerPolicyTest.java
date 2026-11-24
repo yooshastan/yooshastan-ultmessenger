@@ -81,6 +81,36 @@ public class UltLinkSanitizerPolicyTest {
                 "https://evil.x.com.example.org/u/status/123?s=46&t=x");
         equal(UltLinkSanitizerPolicy.cleanText("watch (https://x.com/u/status/123?s=46&t=share)."),
                 "watch (https://x.com/u/status/123).");
+        String[][] platformCases = {
+            {"https://www.tiktok.com/@user/video/123?_r=1&_t=abc&lang=en&sender_device=pc", "https://www.tiktok.com/@user/video/123?lang=en"},
+            {"https://vm.tiktok.com/Zabc/?_t=share&_r=1", "https://vm.tiktok.com/Zabc/"},
+            {"https://vt.tiktok.com/Zabc/?_r=1&unknown=x", "https://vt.tiktok.com/Zabc/?unknown=x"},
+            {"https://www.facebook.com/reel/123?mibextid=abc&fbclid=abc", "https://www.facebook.com/reel/123"},
+            {"https://www.facebook.com/watch/?v=123&mibextid=abc&t=20", "https://www.facebook.com/watch/?v=123&t=20"},
+            {"https://www.facebook.com/story.php?story_fbid=123&id=456&mibextid=abc", "https://www.facebook.com/story.php?story_fbid=123&id=456"},
+            {"https://www.facebook.com/share/r/Abc/?mibextid=abc", "https://www.facebook.com/share/r/Abc/"},
+            {"https://fb.watch/Abc/?mibextid=abc", "https://fb.watch/Abc/"},
+            {"https://www.reddit.com/r/videos/comments/abc/title/?share_id=abc&utm_medium=android&context=3", "https://www.reddit.com/r/videos/comments/abc/title/?context=3"},
+            {"https://www.reddit.com/r/videos/s/Abc?share_id=abc", "https://www.reddit.com/r/videos/s/Abc"},
+            {"https://redd.it/abc?rdt=123", "https://redd.it/abc"},
+            {"https://www.threads.net/@user/post/ABC?xmt=abc&lang=en", "https://www.threads.net/@user/post/ABC?lang=en"},
+            {"https://www.threads.com/@user/post/ABC?xmt=abc", "https://www.threads.com/@user/post/ABC"},
+            {"https://vimeo.com/123?share=copy&utm_source=app#t=15s", "https://vimeo.com/123#t=15s"},
+            {"https://vimeo.com/123?share=copy&h=private", "https://vimeo.com/123?share=copy&h=private"},
+            {"https://player.vimeo.com/video/123?share=embed&autoplay=1", "https://player.vimeo.com/video/123?share=embed&autoplay=1"},
+            {"https://www.youtube-nocookie.com/embed/abc?si=share&start=12", "https://www.youtube-nocookie.com/embed/abc?start=12"},
+            {"https://x.com/u/status/123?a=share&s=46&ref_src=app", "https://x.com/u/status/123"},
+            {"https://www.reddit.com/r/videos/comments/abc/?solution=test&js_challenge=1&jsc_token=secret&utm_source=app", "https://www.reddit.com/r/videos/comments/abc/?solution=test&js_challenge=1&jsc_token=secret&utm_source=app"},
+            {"https://cdn.example.org/video.mp4?utm_source=app&Key-Pair-Id=abc", "https://cdn.example.org/video.mp4?utm_source=app&Key-Pair-Id=abc"},
+            {"https://cdn.example.org/video.mp4?ttclid=abc&quality=720", "https://cdn.example.org/video.mp4?quality=720"},
+            {"https://tiktok.com.example.org/@user/video/123?_t=abc", "https://tiktok.com.example.org/@user/video/123?_t=abc"},
+            {"https://www.tiktok.com/search?_t=abc&q=test", "https://www.tiktok.com/search?_t=abc&q=test"},
+            {"https://www.facebook.com/l.php?u=https%3A%2F%2Fexample.org&mibextid=abc", "https://www.facebook.com/l.php?u=https%3A%2F%2Fexample.org&mibextid=abc"}
+        };
+        for (String[] test : platformCases) {
+            equal(UltLinkSanitizerPolicy.cleanUrl(test[0]), test[1]);
+            equal(UltLinkSanitizerPolicy.cleanUrl(test[1]), test[1]);
+        }
         System.out.println("UltLinkSanitizerPolicyTest OK");
     }
 }
