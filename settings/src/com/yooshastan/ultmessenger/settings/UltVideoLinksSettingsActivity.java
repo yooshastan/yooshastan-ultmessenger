@@ -24,6 +24,7 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
     private Button autoSaveButton;
     private Button postToChatButton;
     private Button unmeteredButton;
+    private Button qualityButton;
     private TextView status;
     private TextView limitation;
 
@@ -116,8 +117,22 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
             refresh();
         });
 
+        addHeading(content, context, "Video quality");
+        qualityButton = addButton(content, context, "", () -> {
+            final int[] choices = {0, 480, 720, 1080};
+            new UltSecureDialogBuilder(context)
+                    .setTitle("Maximum site video resolution")
+                    .setItems(new String[]{"Automatic (original behavior)", "480p", "720p", "1080p"},
+                            (dialog, which) -> {
+                                UltVideoAutoSave.setMaxVideoHeight(currentAccount, choices[which]);
+                                refresh();
+                            })
+                    .show();
+        });
+        addText(content, context, "Applies to new site downloads only. The 100 MiB limit remains.", 13);
+
         addHeading(content, context, "Download status");
-        status = addText(content, context, "", 15);
+        status = addText(content, context, "", 14);
         addButton(content, context, "Refresh status", this::refresh);
 
         addHeading(content, context, "Privacy and limits");
@@ -138,6 +153,8 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
         postToChatButton.setEnabled(enabled || post);
         unmeteredButton.setText("Wi-Fi / unmetered only: "
                 + (UltVideoAutoSave.isWifiOnly(currentAccount) ? "ON" : "OFF"));
+        int height = UltVideoAutoSave.maxVideoHeight(currentAccount);
+        qualityButton.setText("Video quality: " + (height == 0 ? "Automatic" : "Up to " + height + "p"));
         final long attemptedAt = UltVideoAutoSave.lastAttemptMillis(currentAccount);
         final String attemptTime = attemptedAt > 0
                 ? java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT)
@@ -146,9 +163,9 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
         status.setText("Last inspected: " + UltVideoAutoSave.lastSourceCategory(currentAccount)
                 + " (" + attemptTime + ")"
                 + "\nResult: " + UltVideoAutoSave.lastResult(currentAccount)
-                + "\nConfirmed site files saved (new counter): "
+                + "\nConfirmed site saves: "
                 + UltVideoAutoSave.completedSiteSaves(currentAccount)
-                + "\nHistorical queued/saved total (NOT verified delivered): "
+                + "\nHistorical queued/saved (unverified): "
                 + UltVideoAutoSave.queuedCount(currentAccount)
                 + "\nNative strict proxy: " + (strict ? "ON - downloader PAUSED" : "OFF"));
         limitation.setText("Automatic chat posting supports one-to-one chats, "
@@ -157,7 +174,7 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
                 + "has not changed). Forum topics and broadcast channels are paused. "
                 + "New outgoing text links only; other members' links never auto-post. "
                 + "Site extraction is experimental; "
-                + "YouTube/Instagram may fail. Videos are also saved under Downloads/Ultgram. "
+                + "Site access and available formats vary. Videos are saved under Downloads/Ultgram. "
                 + "No cookies or authentication bypass. An active Android VPN may have "
                 + "different routing rules; MTProxy does not cover this extractor.");
     }
