@@ -1,4 +1,4 @@
-name: Ultgram Beta 3.4.6 Bounded Instagram Extraction FOSS ARM64
+name: Ultgram Beta 3.4.7 Download Reliability FOSS ARM64
 
 # One batched native APK for the combined beta 0.1–0.3 internal candidate.
 # Preflight: broad owned-settings and native proxy source contracts passed. Ordinary source commits run fast checks only.
@@ -243,7 +243,7 @@ jobs:
           set -euo pipefail
           if [[ "${{ matrix.variant }}" == 'foss' ]]; then
             cd .work/mercurygram-upstream
-            ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug -PMG_BUILD_TAG=16.0.0.0.10 -PMG_BETA_VERSION_CODE=7183022 -PMG_BETA_VERSION_NAME=16.0.0-beta03.4.6 --no-daemon --console=plain
+            ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug -PMG_BUILD_TAG=16.0.0.0.10 -PMG_BETA_VERSION_CODE=7183023 -PMG_BETA_VERSION_NAME=16.0.0-beta03.4.7 --no-daemon --console=plain
           else
             cd .work/telegram-upstream
             ./gradlew :TMessagesProj_App:assembleAfatDebug --no-daemon --console=plain
@@ -265,7 +265,7 @@ jobs:
             sha256sum ult-beta03-combined-foss-arm64-debug.apk > SHA256SUMS
           )
           {
-            printf '%s\n' "Candidate: Ultgram Beta 3.4.6: bounded extractor timeout and stall diagnostics; Instagram still requires on-device verification (INTERNAL debug APK; NOT public beta)"
+            printf '%s\n' "Candidate: Ultgram Beta 3.4.7: resolution limits, Reddit recognition, clearer site failures; site compatibility requires on-device verification (INTERNAL debug APK; NOT public beta)"
             printf 'Repo: yooshastan/yooshastan-ultmessenger\n'
             printf 'Repo commit: %s\n' "$GITHUB_SHA"
             printf 'Pinned Mercurygram source: %s\n' "$(tr -d '\r\n ' < upstream/mercurygram.sha)"
