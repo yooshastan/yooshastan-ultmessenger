@@ -14,6 +14,8 @@ public final class UltVideoFailureTest {
        "Video site rate-limited the download");
     check(UltVideoFailure.publicReason(new RuntimeException("HTTP Error 403: Forbidden https://example.com/private?token=secret"),"download"),
        "Site denied access (403 or forbidden); public extraction may be unavailable");
+    check(UltVideoFailure.publicReason(new RuntimeException("Account authentication is required."), "download"),
+       "Site requires login; no cookies or account credentials are used");
     System.out.println("UltVideoFailureTest OK");
   }
 }
