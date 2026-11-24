@@ -1189,8 +1189,11 @@ public final class UltSettingsActivity extends BaseFragment {
                 .setMessage("When enabled, Ultgram removes known tracking-only URL "
                         + "parameters before sending ordinary text messages. "
                         + "The link is cleaned on your phone; no external service is contacted. "
-                        + "YouTube video IDs, timestamps, product choices and signed/authenticated "
-                        + "URLs are preserved. Richly formatted text and captions may be skipped "
+                        + "Recognized share tracking is removed for YouTube, Instagram, X, TikTok, "
+                        + "Reddit, Facebook, Vimeo and Threads. Video IDs, timestamps, product choices "
+                        + "and recognized signed/authentication/challenge URLs are preserved. "
+                        + "Site downloads independently use the same offline cleanup; incoming messages are not changed. "
+                        + "Direct media download requests are left intact. Richly formatted text and captions may be skipped "
                         + "to avoid breaking Telegram entities. Link previews for altered "
                         + "messages are disabled to prevent attaching the original URL. "
                         + "Incoming messages are not altered.")
