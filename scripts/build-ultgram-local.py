@@ -318,6 +318,10 @@ def build():
         run("javac", "-d", test_classes, video_src / (model + ".java"),
             ROOT / "video/tests" / (model + "Test.java"))
         run("java", "-cp", test_classes, model + "Test")
+    run("javac", "-d", test_classes,
+        ROOT / "settings/src/com/yooshastan/ultmessenger/settings/UltLinkSanitizerPolicy.java",
+        ROOT / "settings/tests/UltLinkSanitizerPolicyTest.java")
+    run("java", "-cp", test_classes, "UltLinkSanitizerPolicyTest")
     tag, code, name = workflow_version()
     print("Compiling", name, "versionCode", code, "on", current_revision()[:12])
     run_gradle_logged(SOURCE / "gradlew", BUILD_TASK, "-PMG_BUILD_TAG=" + tag,
