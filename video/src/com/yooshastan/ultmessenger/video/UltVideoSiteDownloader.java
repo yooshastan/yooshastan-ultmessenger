@@ -116,15 +116,11 @@ public final class UltVideoSiteDownloader {
             // Initialization is deliberately lazy; this code runs on a worker thread.
             YoutubeDL.getInstance().init(context);
             FFmpeg.getInstance().init(context);
-            try {
-                String version = YoutubeDL.getInstance().versionName(context);
-                extractorVersion = version != null && version.matches("[0-9A-Za-z._+-]{1,80}")
-                        ? version : "Unknown";
-            } catch (Exception ignored) { extractorVersion = "Unknown"; }
             if (!allowed(account) || stopped.get()) return false;
             stage = "download";
 
             YoutubeDLRequest request = new YoutubeDLRequest(UltVideoLinkRules.extractionUrl(url));
+            request.addOption("--ignore-config");
             request.addOption("--no-playlist");
             request.addOption("--no-overwrites");
             request.addOption("--no-mtime");
@@ -173,6 +169,22 @@ public final class UltVideoSiteDownloader {
             }, 0, 500, TimeUnit.MILLISECONDS);
 
             if (!allowed(account) || stopped.get()) return false;
+            // Query the executable, not the updater's optional SharedPreferences metadata.
+            if (!allowed(account) || stopped.get()) return false;
+            try {
+                YoutubeDLRequest versionRequest = new YoutubeDLRequest(
+                        java.util.Collections.<String>emptyList());
+                versionRequest.addOption("--ignore-config");
+                versionRequest.addOption("--version");
+                String version = YoutubeDL.getInstance()
+                        .execute(versionRequest, processId, null).getOut().trim();
+                extractorVersion = version.matches("[0-9]{4}\\.[0-9]{1,2}\\.[0-9]{1,2}[A-Za-z0-9._+-]{0,60}")
+                        ? version : "Unknown (invalid version output)";
+            } catch (Exception ignored) {
+                extractorVersion = "Unknown (version query failed)";
+            }
+            if (!allowed(account) || stopped.get()) return false;
+            lastProgress.set(SystemClock.elapsedRealtime());
             UltVideoAutoSave.noteResult(account, "Extracting video; 90-second inactivity limit");
             // Never display 'line': extractor output can expose URL paths,
             // authorization tokens, cookies, or personal information.
