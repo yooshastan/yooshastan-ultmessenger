@@ -315,7 +315,9 @@ def build():
     test_classes.mkdir(parents=True, exist_ok=True)
     video_src = ROOT / "video/src/com/yooshastan/ultmessenger/video"
     for model in ("UltVideoLinkRules", "UltVideoFailure"):
-        run("javac", "-d", test_classes, video_src / (model + ".java"),
+        run("javac", "-d", test_classes,
+            ROOT / "settings/src/com/yooshastan/ultmessenger/settings/UltLinkSanitizerPolicy.java",
+            video_src / (model + ".java"),
             ROOT / "video/tests" / (model + "Test.java"))
         run("java", "-cp", test_classes, model + "Test")
     run("javac", "-d", test_classes,
