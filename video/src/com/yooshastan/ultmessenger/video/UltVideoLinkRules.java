@@ -99,6 +99,15 @@ public final class UltVideoLinkRules {
         return host.equals(domain) || host.endsWith("." + domain);
     }
 
+    /** Explicit quality limits apply to site downloads only; default is unchanged. */
+    public static String videoFormat(int maxHeight) {
+        if (maxHeight != 480 && maxHeight != 720 && maxHeight != 1080) {
+            return "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b";
+        }
+        String h = "[height<=" + maxHeight + "]";
+        return "bv*[ext=mp4]" + h + "+ba[ext=m4a]/b[ext=mp4]" + h + "/b" + h;
+    }
+
     public static boolean hasVideoExtension(String url) {
         try {
             String path = new URI(url).getPath();
