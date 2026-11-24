@@ -68,6 +68,19 @@ class IntegrationTest(unittest.TestCase):
         self.assertIn("clearSiteHistory(currentAccount)", ui)
         self.assertIn("statusHandler.removeCallbacks(statusTick)", ui)
 
+    def test_network_cancellation_reasons(self):
+        base = ROOT / "video/src/com/yooshastan/ultmessenger/video"
+        worker = (base / "UltVideoAutoSave.java").read_text()
+        site = (base / "UltVideoSiteDownloader.java").read_text()
+        for reason in ("Network disconnected", "Network metered; unmetered-only enabled",
+                       "Native strict proxy enabled", "Automatic downloads disabled"):
+            self.assertIn(reason, worker)
+        self.assertIn("return networkBlockReason(account) == null", worker)
+        self.assertIn("return UltVideoAutoSave.siteBlockReason(account) == null", site)
+        self.assertIn("Download stopped: cancelled by user", site)
+        self.assertIn("STOP_REASONS.remove(processId)", site)
+        self.assertNotIn("network or strict-proxy protection changed", site)
+
     def test_outgoing_is_distinct_and_strict_mode_blocks(self):
         worker = (ROOT / "video/src/com/yooshastan/ultmessenger/video/UltVideoAutoSave.java").read_text()
         site = (ROOT / "video/src/com/yooshastan/ultmessenger/video/UltVideoSiteDownloader.java").read_text()
