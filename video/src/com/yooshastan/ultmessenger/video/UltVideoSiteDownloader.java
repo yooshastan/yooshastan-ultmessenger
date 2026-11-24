@@ -112,7 +112,7 @@ public final class UltVideoSiteDownloader {
             request.addOption("--retries", 2);
             request.addOption("--fragment-retries", 2);
             request.addOption("--extractor-retries", 2);
-            request.addOption("-f", "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b");
+            request.addOption("-f", UltVideoLinkRules.videoFormat(UltVideoAutoSave.maxVideoHeight(account)));
             request.addOption("--merge-output-format", "mp4");
             request.addOption("-o", new File(work, "ult_video.%(ext)s").getAbsolutePath());
 
