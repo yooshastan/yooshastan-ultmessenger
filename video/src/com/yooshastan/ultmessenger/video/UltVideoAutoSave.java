@@ -254,8 +254,9 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
                         noteResult(account, "Paused by native strict proxy");
                         return;
                     }
-                    if (!networkAllowed(account)) {
-                        noteResult(account, "Skipped: unmetered network unavailable");
+                    String networkReason = networkBlockReason(account);
+                    if (networkReason != null) {
+                        noteResult(account, "Skipped: " + networkReason);
                         return;
                     }
                     if (UltVideoLinkRules.isSiteUrl(url)) {
@@ -285,13 +286,25 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
         }
     }
 
-    public static boolean networkAllowed(int account) {
+    /** Null means the existing network policy permits work. No addresses or identifiers. */
+    public static String networkBlockReason(int account) {
         ConnectivityManager cm = (ConnectivityManager) ApplicationLoader.applicationContext
                 .getSystemService(Context.CONNECTIVITY_SERVICE);
-        if (cm == null) return false;
+        if (cm == null) return "Network service unavailable";
         NetworkInfo network = cm.getActiveNetworkInfo();
-        return network != null && network.isConnected()
-                && (!isWifiOnly(account) || !cm.isActiveNetworkMetered());
+        if (network == null || !network.isConnected()) return "Network disconnected";
+        if (isWifiOnly(account) && cm.isActiveNetworkMetered()) return "Network metered; unmetered-only enabled";
+        return null;
+    }
+
+    public static boolean networkAllowed(int account) {
+        return networkBlockReason(account) == null;
+    }
+
+    public static String siteBlockReason(int account) {
+        if (strictModeRequested()) return "Native strict proxy enabled";
+        if (!isEnabled(account)) return "Automatic downloads disabled";
+        return networkBlockReason(account);
     }
 
     private static boolean publicHost(String address) {
