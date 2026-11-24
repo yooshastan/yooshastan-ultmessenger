@@ -42,6 +42,9 @@ under `scripts/` apply Ultgram modifications to a **disposable** checkout.
 See [the ARM64 internal build workflow](.github/workflows/android-beta.yml)
 for the exact dependency, toolchain and integration steps.
 
+For faster Fedora development iterations, see
+[build Ultgram locally on Fedora 44](docs/LOCAL_FEDORA_BUILD.md).
+
 Before distributing any APK, verify its package ID, version code and signing
 certificate and complete device testing:
 [Beta 0.3 QA](docs/BETA03_COMBINED_QA.md).
