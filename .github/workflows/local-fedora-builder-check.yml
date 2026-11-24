@@ -38,4 +38,27 @@ jobs:
           tag, code, version = mod.workflow_version()
           assert tag and code.isdecimal() and version, (tag, code, version)
           print("Pinned local builder metadata:", version, code)
+          # Simulate a partially checked-out submodule without touching a checkout.
+          import tempfile
+          from unittest import mock
+          with tempfile.TemporaryDirectory() as tmp:
+              mod.SOURCE = Path(tmp)
+              marker = mod.SOURCE / "TMessagesProj/lib/jlatexmath/jlatexmath/build.gradle"
+              calls = []
+              module_dir = mod.SOURCE / "TMessagesProj/lib/jlatexmath"
+              module_dir.mkdir(parents=True)
+              (module_dir / ".git").write_text("gitdir: simulated")
+              def fake_run(*args, **kwargs):
+                  calls.append(args)
+                  if "restore" in args:
+                      marker.parent.mkdir(parents=True, exist_ok=True)
+                      marker.write_text("apply plugin: 'com.android.library'")
+              with mock.patch.object(mod, "run", fake_run):
+                  mod.verify_jlatexmath_checkout()
+                  assert marker.is_file(), "Missing tracked build.gradle not restored"
+                  assert any(args[:3] == ("git", "-C", mod.SOURCE) for args in calls)
+                  assert any("restore" in args for args in calls)
+                  calls.clear()
+                  mod.verify_jlatexmath_checkout()
+                  assert calls == [], "An existing module must not be rechecked out"
           PY

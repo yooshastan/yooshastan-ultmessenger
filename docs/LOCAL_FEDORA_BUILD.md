@@ -111,6 +111,13 @@ procedure and perform routing/privacy/device QA.
   existing downloads. If the checkout has locally edited files or a partial
   `API_KEYS` file, it refuses a destructive retry; inspect that state first.
 
+- **`No matching variant of project :jlatexmath` / `No variants exist`:**
+  A prior interrupted submodule checkout may have left
+  `TMessagesProj/lib/jlatexmath/jlatexmath/build.gradle` missing.
+  From `~/Ultgram-local/.work/mercurygram-upstream` run
+  `git submodule update --init --recursive -- TMessagesProj/lib/jlatexmath`,
+  then check the file exists. The updated local helper now performs this
+  focused check before Gradle runs, without clearing caches.
 - **JDK version error:** Install Temurin 17; the helper searches for an installed
   JDK 17 instead of using Fedora's default Java version.
 - **sdkmanager missing:** Install the Android SDK Command-line Tools in Android

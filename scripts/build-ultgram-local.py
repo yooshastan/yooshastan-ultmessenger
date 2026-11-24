@@ -177,8 +177,39 @@ def apply_integrations(api_id, api_hash):
     run("python3", ROOT / "scripts/apply-branding.py", SOURCE)
     for script in INTEGRATORS:
         run("python3", ROOT / "scripts" / script, SOURCE)
+    verify_jlatexmath_checkout()
     STAMP.write_text(current_revision() + "\n")
     print("Pinned source prepared for Ultgram commit", current_revision()[:12])
+
+
+def verify_jlatexmath_checkout():
+    """Repair a missing pinned Android library in a script-owned source tree.
+
+    An interrupted nested git-lfs checkout may leave the jlatexmath project
+    directory present but without its Android build.gradle. Gradle then
+    reports 'No matching variant ... No variants exist'.
+    """
+    build_script = SOURCE / "TMessagesProj/lib/jlatexmath/jlatexmath/build.gradle"
+    if build_script.is_file():
+        return
+    print("Repairing incomplete pinned jlatexmath Android submodule checkout.")
+    run("git", "-C", SOURCE, "submodule", "sync", "--recursive")
+    run("git", "-C", SOURCE, "submodule", "update", "--init", "--recursive",
+        "--", "TMessagesProj/lib/jlatexmath")
+    if not build_script.is_file():
+        module_dir = SOURCE / "TMessagesProj/lib/jlatexmath"
+        if not (module_dir / ".git").exists():
+            die("jlatexmath submodule is not checked out after submodule update.")
+        # A submodule can be registered at the pinned commit but still have a
+        # sparse or interrupted worktree. Restore ONLY the missing tracked
+        # Gradle file, including when skip-worktree was set. Do not wipe
+        # caches, remove local configuration, or reset the whole source tree.
+        run("git", "-C", module_dir, "restore", "--source=HEAD",
+            "--worktree", "--ignore-skip-worktree-bits",
+            "--", "jlatexmath/build.gradle")
+    if not build_script.is_file():
+        die("Pinned jlatexmath still lacks its Android build.gradle. "
+            "Inspect submodule checkout and sparse-checkout settings.")
 
 
 def prepare(refresh=False):
@@ -209,6 +240,7 @@ def prepare(refresh=False):
                 die("Ultgram source has changed since local preparation.\n"
                     "Run: python3 scripts/build-ultgram-local.py refresh\n"
                     "Note: refresh resets ONLY the script-owned .work/mercurygram-upstream.")
+            verify_jlatexmath_checkout()
             return
         print("REFRESH: resetting script-owned disposable Mercurygram source.")
         print("WARNING: tracked edits and untracked files IN THAT SOURCE TREE are discarded.")
