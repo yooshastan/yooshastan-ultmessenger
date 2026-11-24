@@ -15,8 +15,12 @@ public final class UltVideoFailure {
         }
         if (message.contains("sign in") || message.contains("login")
                 || message.contains("cookies") || message.contains("private video")
-                || message.contains("http error 403") || message.contains("forbidden")) {
-            return "Site requires login or denied access (no cookies are used)";
+                || message.contains("http error 401") || message.contains("authentication required")) {
+            return "Site requires login; no cookies or account credentials are used";
+        }
+        if (message.contains("http error 403") || message.contains("forbidden")
+                || message.contains("access denied")) {
+            return "Site denied access (403 or forbidden); public extraction may be unavailable";
         }
         if (message.contains("http error 429") || message.contains("rate limit")
                 || message.contains("too many requests")) {
