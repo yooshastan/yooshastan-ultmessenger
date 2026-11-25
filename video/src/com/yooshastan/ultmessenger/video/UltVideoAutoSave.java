@@ -172,7 +172,7 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
     public static void retryLastSite(int account) {
         RetryTicket ticket = retryTicket(account);
         if (ticket == null || !canRetry(account)) return;
-        scheduleSite(account, ticket.url, ticket.key, 0L, null, false, ticket.options, ticket.ownerId);
+        scheduleSite(account, ticket.url, ticket.key, 0L, null, false, ticket.options, ticket.ownerId, null);
     }
 
     public static String siteQueueSummary(int account) {
@@ -212,10 +212,11 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
 
     /** A bounded common queue for manual and automatic website jobs. */
     private static synchronized String scheduleSite(int account, String url, String key, long dialogId,
-            TLRPC.Message original, boolean outgoingLink, UltMediaOptions options, long ownerId) {
+            TLRPC.Message original, boolean outgoingLink, UltMediaOptions options, long ownerId, UltChatMediaDraft.Target target) {
         String blocked = requestBlockReason(account, options.manual, ownerId, null);
         if (blocked != null) return "Not queued: " + blocked;
-        if (isQueued(key)) return "Already saved for this message and format";
+        if (options.toChat && (target == null || UltChatMediaDraft.blockReason(target, options) != null)) return "Chat attachment blocked";
+        if (!options.toChat && isQueued(key)) return "Already saved for this message and format";
         if (SITE_JOBS.size() >= MAX_SITE_JOBS) return "Site queue is full";
         if (!IN_FLIGHT.add(key)) return "Already queued";
         SiteJob job = new SiteJob(account, key, UltVideoLinkRules.sourceCategory(url), options);
@@ -229,9 +230,9 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
                 RETRIES.remove(account);
                 noteResult(account, "Starting on-device site extractor");
                 if (UltVideoSiteDownloader.download(ApplicationLoader.applicationContext, account,
-                        url, dialogId, original, outgoingLink, options, ownerId, job.cancelled)) {
-                    markSiteCompleted(account, key);
-                } else if (!job.cancelled.get() && ownerId == UserConfig.getInstance(account).getClientUserId()
+                        url, dialogId, original, outgoingLink, options, ownerId, job.cancelled, target)) {
+                    if (!options.toChat) markSiteCompleted(account, key);
+                } else if (!options.toChat && !job.cancelled.get() && ownerId == UserConfig.getInstance(account).getClientUserId()
                         && (options.manual || isEnabled(account))) {
                     RETRIES.put(account, new RetryTicket(url, key, options, ownerId));
                 }
@@ -245,7 +246,16 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
         if (!options.manual || messageId <= 0 || DialogObject.isEncryptedDialog(dialogId)
                 || !UltVideoLinkRules.isManualMediaUrl(url)) return "Unsupported or protected message";
         return scheduleSite(account, url, siteKey(account, dialogId, messageId, url, options),
-                0L, null, false, options, ownerId);
+                0L, null, false, options, ownerId, null);
+    }
+
+    public static String queueManualChat(UltChatMediaDraft.Target target, String url, UltMediaOptions options) {
+        if (target == null || !options.toChat || !UltVideoLinkRules.isManualMediaUrl(url))
+            return "Unsupported chat attachment";
+        String block = UltChatMediaDraft.blockReason(target, options);
+        if (block != null) return "Not queued: " + block;
+        return scheduleSite(target.account, url, siteKey(target.account, target.dialog, target.original.id, url, options),
+                target.dialog, target.original, false, options, target.owner, target);
     }
 
     public static int maxVideoHeight(int account) {
@@ -402,7 +412,7 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
             final long ownerId = UserConfig.getInstance(account).getClientUserId();
             if (UltVideoLinkRules.isSiteUrl(url)) {
                 UltMediaOptions options = new UltMediaOptions(false, audio, maxVideoHeight(account), defaultAudioFormat(account));
-                scheduleSite(account, url, siteKey(account, dialogId, owner.id, url, options), dialogId, owner, outgoingLink, options, ownerId);
+                scheduleSite(account, url, siteKey(account, dialogId, owner.id, url, options), dialogId, owner, outgoingLink, options, ownerId, null);
                 continue;
             }
             String key = account + ":" + dialogId + ":" + owner.id + ":" + url;

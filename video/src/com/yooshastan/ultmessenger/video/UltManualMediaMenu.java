@@ -1,6 +1,7 @@
 package com.yooshastan.ultmessenger.video;
 
 import android.app.Activity;
+import org.telegram.ui.ActionBar.BaseFragment;
 import android.app.AlertDialog;
 import android.widget.Toast;
 import android.view.WindowManager;
@@ -16,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-/** Explicit long-press actions. Never sends media or changes automatic download preferences. */
+/** Explicit long-press actions. Chat media requires a separate preview Send action. */
 public final class UltManualMediaMenu {
     private UltManualMediaMenu() {}
     public static List<String> links(MessageObject message, boolean protectedChat) {
@@ -63,10 +64,12 @@ public final class UltManualMediaMenu {
         show(a, new AlertDialog.Builder(a).setTitle(title).setItems(items, (d, i) -> selected.accept(i))
                 .setNegativeButton("Cancel", null));
     }
-    public static void open(Activity a, int account, MessageObject message, boolean protectedChat, int action) {
+    public static void open(BaseFragment fragment, int account, MessageObject message, boolean protectedChat, int action) {
+        Activity a = fragment == null ? null : fragment.getParentActivity();
         if (a == null || a.isFinishing()) return;
         List<String> urls = links(message, protectedNow(account, message, protectedChat));
         if (urls.isEmpty()) return;
+        if (action == 5) { UltChatMediaDraft.reviewReady(fragment, account, message); return; }
         final long owner = UserConfig.getInstance(account).getClientUserId();
         Consumer<Integer> chooseLink = index -> {
             if (owner == 0 || owner != UserConfig.getInstance(account).getClientUserId()
@@ -79,13 +82,22 @@ public final class UltManualMediaMenu {
             }
             String block = UltVideoAutoSave.requestBlockReason(account, true, owner, null);
             if (block != null) { toast(a, "Download blocked: " + block); return; }
-            Consumer<UltMediaOptions> submit = options -> {
+            final boolean toChat = action != 4;
+            final UltChatMediaDraft.Target target = toChat ? UltChatMediaDraft.capture(fragment, account, message) : null;
+            Consumer<UltMediaOptions> submit = chosen -> {
+                UltMediaOptions options = new UltMediaOptions(true, chosen.audio, chosen.height, chosen.audioFormat, toChat);
                 if (!links(message, protectedNow(account, message, protectedChat)).contains(url)) return;
-                show(a, new AlertDialog.Builder(a).setTitle("Save media locally?")
-                        .setMessage("Contacts the selected website outside Telegram MTProxy. Only download media you may save. No chat message will be sent.")
+                if (toChat) {
+                    String blocked = UltChatMediaDraft.blockReason(target, options);
+                    if (blocked != null) { toast(a, blocked); return; }
+                }
+                show(a, new AlertDialog.Builder(a).setTitle(toChat ? "Prepare media for this chat?" : "Save media locally?")
+                        .setMessage("Contacts the selected website outside Telegram MTProxy. Only download media you may save. "
+                                + (toChat ? "Review the private attachment and press Send separately. Up to 100 MiB." : "No chat message will be sent."))
                         .setNegativeButton("Cancel", null).setPositiveButton("Download", (d, w) -> {
                             if (!links(message, protectedNow(account, message, protectedChat)).contains(url)) return;
-                            toast(a, UltVideoAutoSave.queueManualSite(account, MessageObject.getDialogId(message.messageOwner),
+                            toast(a, toChat ? UltVideoAutoSave.queueManualChat(target, url, options)
+                                    : UltVideoAutoSave.queueManualSite(account, MessageObject.getDialogId(message.messageOwner),
                                     message.getId(), url, options, owner));
                         }));
             };
@@ -93,7 +105,7 @@ public final class UltManualMediaMenu {
             String format = UltVideoAutoSave.defaultAudioFormat(account);
             if (action == 0) submit.accept(new UltMediaOptions(true, false, height, format));
             else if (action == 1) submit.accept(new UltMediaOptions(true, true, height, format));
-            else choose(a, "Download with options", new String[]{"Video", "Audio only"}, kind -> {
+            else choose(a, toChat ? "Add media with options" : "Save to device", new String[]{"Video", "Audio only"}, kind -> {
                 if (kind == 0) {
                     int[] heights = {0,1080,720,480};
                     choose(a, "Maximum resolution", new String[]{"Best available","1080p","720p","480p"},

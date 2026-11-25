@@ -94,7 +94,7 @@ public final class UltVideoSiteDownloader {
     /** Called only for URLs that passed UltVideoLinkRules.isSiteUrl(). */
     public static boolean download(Context context, int account, String url,
                                    long dialogId, TLRPC.Message original, boolean outgoingLink, UltMediaOptions options,
-                                   long ownerId, AtomicBoolean requestCancelled) {
+                                   long ownerId, AtomicBoolean requestCancelled, UltChatMediaDraft.Target target) {
         final boolean audioOnly = options.audio;
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             UltVideoAutoSave.noteResult(account, "Site downloads require Android 10+");
@@ -107,6 +107,10 @@ public final class UltVideoSiteDownloader {
             return false;
         }
 
+        if (options.toChat && UltChatMediaDraft.blockReason(target, options) != null) {
+            UltVideoAutoSave.noteResult(account, "Chat attachment blocked by destination policy");
+            return false;
+        }
         final int limitMiB = UltVideoAutoSave.siteLimitMiB(account);
         final long maxBytes = limitMiB * 1024L * 1024L;
         String processId = "ultsite-" + UUID.randomUUID();
@@ -249,6 +253,11 @@ public final class UltVideoSiteDownloader {
             if (result == null || result.length() <= 0 || result.length() > maxBytes) {
                 UltVideoAutoSave.noteResult(account, "No supported " + (audioOnly ? "audio" : "video") + " file within " + limitMiB + " MiB");
                 return false;
+            }
+            if (options.toChat) {
+                stage = "attachment";
+                if (stopBeforeWork(account, stopped, stopReason, options, ownerId, requestCancelled)) return false;
+                return UltChatMediaDraft.stage(context, target, options, result, requestCancelled);
             }
             stage = "saving";
             if (!publish(context, result, account, maxBytes, stopped, options, ownerId, requestCancelled)) {

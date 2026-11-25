@@ -210,7 +210,7 @@ jobs:
           python3 -m unittest discover -s tests -p 'test_foss_release_pipeline.py' -v
 
       - name: Beta 3.4.9+ — shared sanitizer and downloader contracts
-        if: github.ref == 'refs/heads/feature/beta03-4-9-extractor-maintenance' || github.head_ref == 'feature/beta03-4-9-extractor-maintenance' || github.ref == 'refs/heads/feature/beta03-4-10-extractor-updater' || github.head_ref == 'feature/beta03-4-10-extractor-updater' || github.ref == 'refs/heads/feature/beta03-4-11-media-controls' || github.head_ref == 'feature/beta03-4-11-media-controls' || github.ref == 'refs/heads/feature/beta03-4-12-manual-media' || github.head_ref == 'feature/beta03-4-12-manual-media'
+        if: github.ref == 'refs/heads/feature/beta03-4-9-extractor-maintenance' || github.head_ref == 'feature/beta03-4-9-extractor-maintenance' || github.ref == 'refs/heads/feature/beta03-4-10-extractor-updater' || github.head_ref == 'feature/beta03-4-10-extractor-updater' || github.ref == 'refs/heads/feature/beta03-4-11-media-controls' || github.head_ref == 'feature/beta03-4-11-media-controls' || github.ref == 'refs/heads/feature/beta03-4-12-manual-media' || github.head_ref == 'feature/beta03-4-12-manual-media' || github.ref == 'refs/heads/feature/beta03-4-13-chat-attachments' || github.head_ref == 'feature/beta03-4-13-chat-attachments'
         shell: bash
         run: |
           set -euo pipefail

@@ -35,13 +35,13 @@ class IntegrationTest(unittest.TestCase):
             self.assertIn("youtubedl-android:library:0.18.1", gradle.read_text())
             self.assertIn("extractNativeLibs", manifest.read_text())
             chat = (root / module.CHAT).read_text()
-            for label in ("ULT: Download video", "ULT: Download audio", "ULT: Download with options", "ULT: Copy sanitized link"):
+            for label in ("ULT: Add video to chat", "ULT: Add audio to chat", "ULT: Add media with options", "ULT: Save to device", "ULT: Copy sanitized link"):
                 self.assertIn(label, chat)
             self.assertIn("currentChat.noforwards", chat)
             for name in ("UltVideoAutoSave.java", "UltVideoLinkRules.java",
                          "UltVideoSiteDownloader.java", "UltVideoChatPost.java",
                          "UltVideoFailure.java", "UltExtractorPolicy.java", "UltExtractorMaintenance.java",
-                         "UltMediaOptions.java", "UltManualMediaMenu.java"):
+                         "UltMediaOptions.java", "UltManualMediaMenu.java", "UltChatMediaDraft.java"):
                 self.assertTrue((root / module.DEST / name).exists(), name)
             with self.assertRaises(ValueError):
                 module.integrate(root)
@@ -139,6 +139,28 @@ class IntegrationTest(unittest.TestCase):
         self.assertIn("AndroidUtilities.addToClipboard(UltLinkSanitizerPolicy.cleanUrl(url))", menu)
         self.assertNotIn("setEnabled(", menu)
         self.assertNotIn("setMaxVideoHeight(", menu)
+
+    def test_chat_attachment_handoff_requires_review(self):
+        base = ROOT / "video/src/com/yooshastan/ultmessenger/video"
+        draft = (base / "UltChatMediaDraft.java").read_text()
+        site = (base / "UltVideoSiteDownloader.java").read_text()
+        worker = (base / "UltVideoAutoSave.java").read_text()
+        menu = (base / "UltManualMediaMenu.java").read_text()
+        self.assertIn('if (options.toChat)', site)
+        self.assertLess(site.index("UltChatMediaDraft.stage("), site.index("if (!publish("))
+        self.assertIn("queueManualChat(target, url, options)", menu)
+        self.assertIn("queueManualSite(account", menu)
+        self.assertIn("if (!options.toChat) markSiteCompleted", worker)
+        self.assertIn("!options.toChat && !job.cancelled.get()", worker)
+        self.assertIn('setPositiveButton("Send", null)', draft)
+        self.assertLess(draft.index("getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener"), draft.index("SendMessagesHelper.prepareSendingDocument("))
+        self.assertIn("SendMessagesHelper.prepareSendingVideo(", draft)
+        self.assertIn("t.sender != t.owner", draft)
+        self.assertIn("chat.noforwards || chat.forum || chat.monoforum", draft)
+        self.assertIn("getSendPaidMessagesStars(t.dialog)", draft)
+        self.assertIn("getLastFragment() == fragment", draft)
+        self.assertNotIn("MediaStore", draft)
+        self.assertIn("READY.remove(t.key, draft)", draft)
 
     def test_outgoing_is_distinct_and_strict_mode_blocks(self):
         worker = (ROOT / "video/src/com/yooshastan/ultmessenger/video/UltVideoAutoSave.java").read_text()
