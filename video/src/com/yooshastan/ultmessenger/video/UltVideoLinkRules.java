@@ -76,6 +76,39 @@ public final class UltVideoLinkRules {
         return false;
     }
 
+    /** Context-menu eligibility is narrower than the automatic extractor host list.
+     * Match known media/share routes, not profiles, search pages or homepages. */
+    public static boolean isManualMediaUrl(String value) {
+        if (!isSiteUrl(value)) return false;
+        try {
+            URI u = new URI(value);
+            String host = u.getHost().toLowerCase(Locale.US);
+            String p = u.getRawPath();
+            if (p == null) return false;
+            String q = u.getRawQuery();
+            if (isDomain(host, "youtu.be")) return p.matches("/[A-Za-z0-9_-]+/?");
+            if (isDomain(host, "youtube.com") || isDomain(host, "youtube-nocookie.com"))
+                return p.matches("/(?:shorts|live|embed)/[A-Za-z0-9_-]+/?")
+                        || (p.matches("/watch/?") && q != null && q.matches("(?:.*&)?v=[A-Za-z0-9_-]+(?:&.*)?"));
+            if (isDomain(host, "instagram.com")) return p.matches("/(?:[A-Za-z0-9._-]+/)?(?:p|reel|reels|tv)/[A-Za-z0-9_-]+/?");
+            if (isDomain(host, "x.com") || isDomain(host, "twitter.com")) return p.matches("/(?:[A-Za-z0-9_]+|i/web)/status/[0-9]+(?:/.*)?");
+            if (isDomain(host, "tiktok.com"))
+                return p.matches("/@[A-Za-z0-9._-]+/(?:video|photo)/[0-9]+/?")
+                        || p.matches("/t/[A-Za-z0-9_-]+/?")
+                        || ((host.equals("vm.tiktok.com") || host.equals("vt.tiktok.com")) && p.matches("/[A-Za-z0-9_-]+/?"));
+            if (isDomain(host, "fb.watch")) return p.matches("/[A-Za-z0-9_-]+/?");
+            if (isDomain(host, "facebook.com")) return p.matches("/(?:reel|share|videos)/[^/].*")
+                        || p.matches("/[^/]+/videos/[^/].*")
+                        || (p.matches("/(?:watch/?|video[.]php)") && q != null && q.matches("(?:.*&)?v=[0-9]+(?:&.*)?"));
+            if (isDomain(host, "vimeo.com")) return p.matches("/(?:.*?/)?[0-9]+(?:/[A-Za-z0-9]+)?/?");
+            if (isDomain(host, "threads.com") || isDomain(host, "threads.net")) return p.matches("/@[A-Za-z0-9._-]+/post/[A-Za-z0-9_-]+/?");
+            if (isDomain(host, "reddit.com")) return p.matches("/(?:r/[^/]+/)?comments/[A-Za-z0-9]+(?:/.*)?")
+                        || p.matches("/r/[^/]+/s/[A-Za-z0-9_-]+/?");
+            if (isDomain(host, "redd.it")) return p.matches("/[A-Za-z0-9_-]+/?");
+        } catch (Exception ignored) { }
+        return false;
+    }
+
     /** Only a category is stored for diagnostics; no URL/path/query is persisted. */
     public static String sourceCategory(String url) {
         if (!isAllowedUrl(url)) return "Invalid/excluded link";

@@ -243,7 +243,7 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
 
     public static String queueManualSite(int account, long dialogId, int messageId, String url, UltMediaOptions options, long ownerId) {
         if (!options.manual || messageId <= 0 || DialogObject.isEncryptedDialog(dialogId)
-                || !UltVideoLinkRules.isSiteUrl(url)) return "Unsupported or protected message";
+                || !UltVideoLinkRules.isManualMediaUrl(url)) return "Unsupported or protected message";
         return scheduleSite(account, url, siteKey(account, dialogId, messageId, url, options),
                 0L, null, false, options, ownerId);
     }

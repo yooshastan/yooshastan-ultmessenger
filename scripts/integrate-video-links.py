@@ -29,14 +29,24 @@ CHAT_MENU = """        if (com.yooshastan.ultmessenger.video.UltManualMediaMenu.
             items.add("ULT: Copy sanitized link"); options.add(OPTION_ULT_MEDIA_COPY); icons.add(R.drawable.msg_copy);
         }
 """
-CHAT_HANDLERS = """            case OPTION_ULT_MEDIA_VIDEO:
-            case OPTION_ULT_MEDIA_AUDIO:
-            case OPTION_ULT_MEDIA_OPTIONS:
+CHAT_HANDLERS = """            case OPTION_ULT_MEDIA_VIDEO: {
+                com.yooshastan.ultmessenger.video.UltManualMediaMenu.open(getParentActivity(), currentAccount,
+                        selectedObject, currentEncryptedChat != null || (currentChat != null && currentChat.noforwards), 0);
+                break;
+            }
+            case OPTION_ULT_MEDIA_AUDIO: {
+                com.yooshastan.ultmessenger.video.UltManualMediaMenu.open(getParentActivity(), currentAccount,
+                        selectedObject, currentEncryptedChat != null || (currentChat != null && currentChat.noforwards), 1);
+                break;
+            }
+            case OPTION_ULT_MEDIA_OPTIONS: {
+                com.yooshastan.ultmessenger.video.UltManualMediaMenu.open(getParentActivity(), currentAccount,
+                        selectedObject, currentEncryptedChat != null || (currentChat != null && currentChat.noforwards), 2);
+                break;
+            }
             case OPTION_ULT_MEDIA_COPY: {
                 com.yooshastan.ultmessenger.video.UltManualMediaMenu.open(getParentActivity(), currentAccount,
-                        selectedObject, currentEncryptedChat != null || (currentChat != null && currentChat.noforwards),
-                        option == OPTION_ULT_MEDIA_VIDEO ? 0 : option == OPTION_ULT_MEDIA_AUDIO ? 1
-                        : option == OPTION_ULT_MEDIA_OPTIONS ? 2 : 3);
+                        selectedObject, currentEncryptedChat != null || (currentChat != null && currentChat.noforwards), 3);
                 break;
             }
 """

@@ -72,6 +72,16 @@ public final class UltVideoLinkRulesTest {
         check("https://cdn.example.org/a.mp4?utm_source=app".equals(
                 UltVideoLinkRules.extractionUrl("https://cdn.example.org/a.mp4?utm_source=app")));
         check("bestaudio[ext=m4a]/bestaudio/best".equals(UltVideoLinkRules.audioFormat()));
+        for (String link : new String[]{
+            "https://youtube.com/watch?v=abc&list=xyz", "https://youtu.be/abc", "https://youtube.com/shorts/abc",
+            "https://instagram.com/reel/abc/", "https://x.com/u/status/123", "https://vm.tiktok.com/Zabc/",
+            "https://facebook.com/watch/?v=123", "https://facebook.com/share/r/abc/", "https://vimeo.com/123",
+            "https://www.reddit.com/r/videos/comments/abc/title/", "https://www.threads.com/@u/post/abc"
+        }) check(UltVideoLinkRules.isManualMediaUrl(link));
+        for (String link : new String[]{"https://youtube.com/", "https://youtube.com/results?search_query=abc",
+                "https://youtube.com/watch?list=abc", "https://instagram.com/u/", "https://x.com/u",
+                "https://reddit.com/r/illit/", "https://example.org/reel/abc"})
+            check(!UltVideoLinkRules.isManualMediaUrl(link));
         System.out.println("UltVideoLinkRulesTest OK");
     }
 }

@@ -7,6 +7,7 @@ import android.view.WindowManager;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.MessageObject;
+import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.TLRPC;
 import com.yooshastan.ultmessenger.settings.UltLinkSanitizerPolicy;
@@ -22,17 +23,27 @@ public final class UltManualMediaMenu {
         List<String> found = new ArrayList<>();
         if (protectedChat || message == null || message.messageOwner == null || message.getId() <= 0
                 || message.messageOwner.noforwards || message.isSponsored()
-                || DialogObject.isEncryptedDialog(message.getDialogId())) return found;
+                || DialogObject.isEncryptedDialog(MessageObject.getDialogId(message.messageOwner))) return found;
         for (String url : UltVideoLinkRules.findUrls(message.messageOwner.message))
-            if (UltVideoLinkRules.isSiteUrl(url) && !found.contains(url)) found.add(url);
+            if (UltVideoLinkRules.isManualMediaUrl(url) && !found.contains(url)) found.add(url);
         if (message.messageOwner.entities != null) for (TLRPC.MessageEntity entity : message.messageOwner.entities) {
             if (found.size() >= 3) break;
             if (entity instanceof TLRPC.TL_messageEntityTextUrl) {
                 String url = ((TLRPC.TL_messageEntityTextUrl) entity).url;
-                if (UltVideoLinkRules.isSiteUrl(url) && !found.contains(url)) found.add(url);
+                if (UltVideoLinkRules.isManualMediaUrl(url) && !found.contains(url)) found.add(url);
             }
         }
         return found;
+    }
+    private static boolean protectedNow(int account, MessageObject message, boolean protectedChat) {
+        if (protectedChat || message == null || message.messageOwner == null) return true;
+        long dialogId = MessageObject.getDialogId(message.messageOwner);
+        if (DialogObject.isEncryptedDialog(dialogId) || dialogId == 0) return true;
+        if (DialogObject.isChatDialog(dialogId)) {
+            TLRPC.Chat chat = MessagesController.getInstance(account).getChat(-dialogId);
+            return chat == null || chat.noforwards;
+        }
+        return !DialogObject.isUserDialog(dialogId);
     }
     public static boolean eligible(MessageObject message, boolean protectedChat) {
         return !links(message, protectedChat).isEmpty();
@@ -54,12 +65,12 @@ public final class UltManualMediaMenu {
     }
     public static void open(Activity a, int account, MessageObject message, boolean protectedChat, int action) {
         if (a == null || a.isFinishing()) return;
-        List<String> urls = links(message, protectedChat);
+        List<String> urls = links(message, protectedNow(account, message, protectedChat));
         if (urls.isEmpty()) return;
         final long owner = UserConfig.getInstance(account).getClientUserId();
         Consumer<Integer> chooseLink = index -> {
             if (owner == 0 || owner != UserConfig.getInstance(account).getClientUserId()
-                    || !links(message, protectedChat).contains(urls.get(index))) return;
+                    || !links(message, protectedNow(account, message, protectedChat)).contains(urls.get(index))) return;
             String url = urls.get(index);
             if (action == 3) {
                 AndroidUtilities.addToClipboard(UltLinkSanitizerPolicy.cleanUrl(url));
@@ -69,12 +80,12 @@ public final class UltManualMediaMenu {
             String block = UltVideoAutoSave.requestBlockReason(account, true, owner, null);
             if (block != null) { toast(a, "Download blocked: " + block); return; }
             Consumer<UltMediaOptions> submit = options -> {
-                if (!links(message, protectedChat).contains(url)) return;
+                if (!links(message, protectedNow(account, message, protectedChat)).contains(url)) return;
                 show(a, new AlertDialog.Builder(a).setTitle("Save media locally?")
                         .setMessage("Contacts the selected website outside Telegram MTProxy. Only download media you may save. No chat message will be sent.")
                         .setNegativeButton("Cancel", null).setPositiveButton("Download", (d, w) -> {
-                            if (!links(message, protectedChat).contains(url)) return;
-                            toast(a, UltVideoAutoSave.queueManualSite(account, message.getDialogId(),
+                            if (!links(message, protectedNow(account, message, protectedChat)).contains(url)) return;
+                            toast(a, UltVideoAutoSave.queueManualSite(account, MessageObject.getDialogId(message.messageOwner),
                                     message.getId(), url, options, owner));
                         }));
             };
