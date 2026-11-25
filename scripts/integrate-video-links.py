@@ -46,7 +46,8 @@ def integrate(root: Path) -> None:
     source = Path(__file__).resolve().parents[1] / SOURCE
     models = {name: (source / name).read_bytes()
               for name in ("UltVideoLinkRules.java", "UltVideoAutoSave.java", "UltVideoSiteDownloader.java",
-                           "UltVideoChatPost.java", "UltVideoFailure.java")}
+                           "UltVideoChatPost.java", "UltVideoFailure.java", "UltExtractorPolicy.java",
+                           "UltExtractorMaintenance.java")}
     app_file.write_text(app_new, encoding="utf-8")
     strict_file.write_text(strict_new, encoding="utf-8")
     gradle_file.write_text(gradle_new, encoding="utf-8")

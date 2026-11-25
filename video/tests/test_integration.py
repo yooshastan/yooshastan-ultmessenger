@@ -33,7 +33,7 @@ class IntegrationTest(unittest.TestCase):
             self.assertIn("extractNativeLibs", manifest.read_text())
             for name in ("UltVideoAutoSave.java", "UltVideoLinkRules.java",
                          "UltVideoSiteDownloader.java", "UltVideoChatPost.java",
-                         "UltVideoFailure.java"):
+                         "UltVideoFailure.java", "UltExtractorPolicy.java", "UltExtractorMaintenance.java"):
                 self.assertTrue((root / module.DEST / name).exists(), name)
             with self.assertRaises(ValueError):
                 module.integrate(root)
@@ -80,6 +80,21 @@ class IntegrationTest(unittest.TestCase):
         self.assertIn("Download stopped: cancelled by user", site)
         self.assertIn("STOP_REASONS.remove(processId)", site)
         self.assertNotIn("network or strict-proxy protection changed", site)
+
+    def test_maintenance_uses_shared_download_lock_and_strict_policy(self):
+        base = ROOT / "video/src/com/yooshastan/ultmessenger/video"
+        updater = (base / "UltExtractorMaintenance.java").read_text()
+        site = (base / "UltVideoSiteDownloader.java").read_text()
+        worker = (base / "UltVideoAutoSave.java").read_text()
+        self.assertIn("UltExtractorMaintenance.beginDownload()", site)
+        self.assertIn("UltExtractorMaintenance.endDownload()", site)
+        self.assertIn("UltExtractorMaintenance.cancelForStrict()", worker)
+        self.assertIn("LOCK.tryLock()", updater)
+        self.assertIn("strictModeRequested()", updater)
+        self.assertIn("UltExtractorPolicy.checksum(", updater)
+        self.assertLess(updater.index("expected.equals(UltExtractorPolicy.sha256(staging))"), updater.index("probe(c, staging, output)"))
+        self.assertLess(updater.index("probe(c, staging, output)"), updater.index("UltExtractorPolicy.replace(staging"))
+        self.assertNotIn("updateYoutubeDL(", updater)
 
     def test_outgoing_is_distinct_and_strict_mode_blocks(self):
         worker = (ROOT / "video/src/com/yooshastan/ultmessenger/video/UltVideoAutoSave.java").read_text()

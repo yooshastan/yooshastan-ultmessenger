@@ -209,8 +209,8 @@ jobs:
           python3 -m py_compile scripts/prepare-foss-unsigned-release.py scripts/verify-foss-release-apk.py
           python3 -m unittest discover -s tests -p 'test_foss_release_pipeline.py' -v
 
-      - name: Beta 3.4.9 — shared sanitizer and downloader contracts
-        if: github.ref == 'refs/heads/feature/beta03-4-9-extractor-maintenance' || github.head_ref == 'feature/beta03-4-9-extractor-maintenance'
+      - name: Beta 3.4.9+ — shared sanitizer and downloader contracts
+        if: github.ref == 'refs/heads/feature/beta03-4-9-extractor-maintenance' || github.head_ref == 'feature/beta03-4-9-extractor-maintenance' || github.ref == 'refs/heads/feature/beta03-4-10-extractor-updater' || github.head_ref == 'feature/beta03-4-10-extractor-updater'
         shell: bash
         run: |
           set -euo pipefail
@@ -223,3 +223,5 @@ jobs:
           java -cp "$classes" UltLinkSanitizerPolicyTest
           java -cp "$classes" UltVideoLinkRulesTest
           java -cp "$classes" UltVideoFailureTest
+          javac -d "$classes" video/src/com/yooshastan/ultmessenger/video/UltExtractorPolicy.java video/tests/UltExtractorPolicyTest.java
+          java -cp "$classes" UltExtractorPolicyTest

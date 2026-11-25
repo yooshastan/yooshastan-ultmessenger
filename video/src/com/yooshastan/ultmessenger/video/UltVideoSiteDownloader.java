@@ -49,7 +49,10 @@ public final class UltVideoSiteDownloader {
     private static final Map<String, AtomicReference<String>> STOP_REASONS = new ConcurrentHashMap<>();
     private static volatile String extractorVersion = "Not initialized";
 
-    public static String extractorVersion() { return extractorVersion; }
+    public static String extractorVersion() {
+        String maintained = UltExtractorMaintenance.installed();
+        return maintained.isEmpty() ? extractorVersion : maintained;
+    }
 
     public static boolean hasActive(int account) { return OWNERS.containsValue(account); }
 
@@ -111,6 +114,11 @@ public final class UltVideoSiteDownloader {
         File work = new File(cacheBase, processId);
         if (!work.mkdirs()) {
             UltVideoAutoSave.noteResult(account, "Cannot create download workspace");
+            return false;
+        }
+        if (!UltExtractorMaintenance.beginDownload()) {
+            removeTree(work);
+            UltVideoAutoSave.noteResult(account, "Extractor maintenance active; retry after it completes");
             return false;
         }
         final AtomicReference<String> stopReason = new AtomicReference<>();
@@ -266,7 +274,7 @@ public final class UltVideoSiteDownloader {
             OWNERS.remove(processId);
             ACTIVE.remove(processId);
             STOP_REASONS.remove(processId);
-            removeTree(work);
+            try { removeTree(work); } finally { UltExtractorMaintenance.endDownload(); }
         }
     }
 

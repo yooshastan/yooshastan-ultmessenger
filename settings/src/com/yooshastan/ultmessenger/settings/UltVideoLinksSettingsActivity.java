@@ -10,6 +10,7 @@ import android.widget.TextView;
 
 import com.yooshastan.ultmessenger.video.UltVideoAutoSave;
 import com.yooshastan.ultmessenger.video.UltVideoSiteDownloader;
+import com.yooshastan.ultmessenger.video.UltExtractorMaintenance;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.R;
@@ -37,6 +38,9 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
     };
     private TextView status;
     private TextView limitation;
+    private TextView maintenanceStatus;
+    private Button channelButton, autoCheckButton, updateNetworkButton, checkButton, updateButton, rollbackButton, bundledButton, verifyButton;
+    private Context maintenanceContext;
 
     @Override
     public View createView(Context context) {
@@ -160,6 +164,47 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
         });
         addButton(content, context, "Refresh status", this::refresh);
 
+        addHeading(content, context, "Extractor maintenance");
+        maintenanceContext = context.getApplicationContext();
+        maintenanceStatus = addText(content, context, "", 14);
+        addText(content, context, "Shared across accounts. Official yt-dlp releases only; checksum and local Python version test before atomic replacement. Update traffic is outside MTProxy. Checks never install automatically.", 13);
+        channelButton = addButton(content, context, "", () -> new UltSecureDialogBuilder(context)
+                .setTitle("Extractor release channel")
+                .setItems(new String[]{"Stable (recommended)", "Nightly"}, (dialog, which) -> {
+                    UltExtractorMaintenance.setNightly(maintenanceContext, which == 1); refresh();
+                }).show());
+        autoCheckButton = addButton(content, context, "", () -> {
+            UltExtractorMaintenance.setAutomatic(maintenanceContext, !UltExtractorMaintenance.automatic(maintenanceContext));
+            UltExtractorMaintenance.maybeCheck(maintenanceContext); refresh();
+        });
+        updateNetworkButton = addButton(content, context, "", () -> {
+            UltExtractorMaintenance.setUnmetered(maintenanceContext, !UltExtractorMaintenance.unmetered(maintenanceContext)); refresh();
+        });
+        checkButton = addButton(content, context, "Check for extractor updates", () -> {
+            UltExtractorMaintenance.start(maintenanceContext, "check"); refresh();
+        });
+        updateButton = addButton(content, context, "Install latest verified extractor", () -> new UltSecureDialogBuilder(context)
+                .setTitle("Install selected channel release?")
+                .setMessage("Contacts official GitHub release servers outside Telegram MTProxy. Switching channels may install an older version. No update runs with native strict proxy enabled. The current extractor will be backed up.")
+                .setNegativeButton("Cancel", null).setPositiveButton("Install", (dialog, which) -> {
+                    UltExtractorMaintenance.start(maintenanceContext, "update"); refresh();
+                }).show());
+        rollbackButton = addButton(content, context, "Restore previous extractor", () -> new UltSecureDialogBuilder(context)
+                .setTitle("Restore previous extractor?")
+                .setMessage("Offline. The current extractor becomes the next rollback backup.")
+                .setNegativeButton("Cancel", null).setPositiveButton("Restore", (dialog, which) -> {
+                    UltExtractorMaintenance.start(maintenanceContext, "rollback"); refresh();
+                }).show());
+        bundledButton = addButton(content, context, "Restore bundled extractor", () -> new UltSecureDialogBuilder(context)
+                .setTitle("Restore APK-bundled extractor?")
+                .setMessage("Offline. This may install an older extractor; your current one is backed up.")
+                .setNegativeButton("Cancel", null).setPositiveButton("Restore", (dialog, which) -> {
+                    UltExtractorMaintenance.start(maintenanceContext, "bundled"); refresh();
+                }).show());
+        verifyButton = addButton(content, context, "Verify local extractor SHA-256", () -> {
+            UltExtractorMaintenance.start(maintenanceContext, "verify"); refresh();
+        });
+
         addHeading(content, context, "Saved site videos");
         addButton(content, context, "Download history", () -> showHistory(context));
         addButton(content, context, "Clear history (keep files)", () ->
@@ -241,6 +286,19 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
                 + "\nHistorical queued/saved (unverified): "
                 + UltVideoAutoSave.queuedCount(currentAccount)
                 + "\nNative strict proxy: " + (strict ? "ON - downloader PAUSED" : "OFF"));
+        boolean busy = UltExtractorMaintenance.busy();
+        maintenanceStatus.setText("Installed: " + UltVideoSiteDownloader.extractorVersion()
+                + "\nSelected release: " + (UltExtractorMaintenance.available().isEmpty() ? "Not checked" : UltExtractorMaintenance.available())
+                + "\n" + UltExtractorMaintenance.status());
+        channelButton.setText("Channel: " + (UltExtractorMaintenance.nightly(maintenanceContext) ? "Nightly" : "Stable"));
+        autoCheckButton.setText("Daily check when opening this screen: " + (UltExtractorMaintenance.automatic(maintenanceContext) ? "ON" : "OFF"));
+        updateNetworkButton.setText("Unmetered updates only: " + (UltExtractorMaintenance.unmetered(maintenanceContext) ? "ON" : "OFF"));
+        channelButton.setEnabled(!busy);
+        checkButton.setEnabled(!busy && !strict);
+        updateButton.setEnabled(!busy && !strict);
+        rollbackButton.setEnabled(!busy && UltExtractorMaintenance.hasBackup(maintenanceContext));
+        bundledButton.setEnabled(!busy);
+        verifyButton.setEnabled(!busy);
         limitation.setText("Automatic chat posting supports one-to-one chats, "
                 + "Saved Messages, and regular groups with a verified matching "
                 + "send-as identity (including anonymous group identity when it "
@@ -256,6 +314,7 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
         super.onResume();
         statusHandler.removeCallbacks(statusTick);
         statusHandler.post(statusTick);
+        if (maintenanceContext != null) UltExtractorMaintenance.maybeCheck(maintenanceContext);
     }
 
     @Override public void onPause() {

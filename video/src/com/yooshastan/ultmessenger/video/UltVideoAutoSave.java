@@ -331,6 +331,7 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
     /** Cancel incomplete owned external transfers on strict-mode activation. */
     public static synchronized void cancelPendingForStrict() {
         if (!strictModeRequested()) return;
+        UltExtractorMaintenance.cancelForStrict();
         UltVideoSiteDownloader.cancelAll();
         Context context = ApplicationLoader.applicationContext;
         DownloadManager dm = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
