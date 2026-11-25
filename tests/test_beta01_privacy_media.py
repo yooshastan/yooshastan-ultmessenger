@@ -62,8 +62,12 @@ class Beta01QualityContract(unittest.TestCase):
         self.assertIn("scripts/integrate-translation.py", beta)
         self.assertIn("scripts/integrate-native-strict.py", alpha)
         self.assertIn("scripts/integrate-translation.py", alpha)
-        self.assertIn("7183022", beta)
-        self.assertIn("16.0.0-beta03.4.6", beta)
+        # Validate the actual build version, not a frozen historical candidate.
+        versions = re.findall(r"assembleAfatFdArm64Debug\s+-PMG_BUILD_TAG=([0-9.]+)\s+-PMG_BETA_VERSION_CODE=([0-9]+)\s+-PMG_BETA_VERSION_NAME=16\.0\.0-beta03\.4\.([0-9]+)\s", beta)
+        self.assertEqual(len(versions), 1, "Expected a single versioned ARM64 debug build")
+        _, version_code, patch = versions[0]
+        self.assertGreaterEqual(int(patch), 6)
+        self.assertEqual(int(version_code), 7183016 + int(patch))
         self.assertIn("feature/beta01-quality-trim", beta)
 
 if __name__ == "__main__":
