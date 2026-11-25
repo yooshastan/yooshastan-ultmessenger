@@ -44,6 +44,19 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
     private static final Set<String> IN_FLIGHT = Collections.synchronizedSet(new HashSet<>());
     private static final UltVideoAutoSave[] OBSERVERS = new UltVideoAutoSave[UserConfig.MAX_ACCOUNT_COUNT];
     private final int account;
+    // One retry ticket per account, memory only; never persist remote URLs.
+    private static final java.util.concurrent.ConcurrentHashMap<Integer, RetryTicket> RETRIES =
+            new java.util.concurrent.ConcurrentHashMap<>();
+    private static final long RETRY_TTL_MS = 15L * 60 * 1000;
+    private static final class RetryTicket {
+        final String url, key;
+        final boolean audio;
+        final long ownerId, createdAt;
+        RetryTicket(String url, String key, boolean audio, long ownerId) {
+            this.url = url; this.key = key; this.audio = audio; this.ownerId = ownerId;
+            createdAt = android.os.SystemClock.elapsedRealtime();
+        }
+    }
 
     private UltVideoAutoSave(int account) { this.account = account; }
 
@@ -71,6 +84,7 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
 
     public static void setEnabled(int account, boolean enabled) {
         preferences().edit().putBoolean(setting("enabled", account), enabled).apply();
+        if (!enabled) RETRIES.remove(account);
     }
 
     /** A separate, explicitly opt-in setting; never enabled by default. */
@@ -93,6 +107,63 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
 
     public static void setWifiOnly(int account, boolean enabled) {
         preferences().edit().putBoolean(setting("wifi_only", account), enabled).apply();
+    }
+
+    public static boolean audioOnly(int account) {
+        return preferences().getBoolean(setting("audio_only", account), false);
+    }
+
+    public static void setAudioOnly(int account, boolean value) {
+        preferences().edit().putBoolean(setting("audio_only", account), value)
+                .putBoolean(setting("post_to_chat", account), false).apply();
+    }
+
+    public static boolean metadataProbeEnabled(int account) {
+        return preferences().getBoolean(setting("metadata_probe", account), false);
+    }
+
+    public static void setMetadataProbeEnabled(int account, boolean value) {
+        preferences().edit().putBoolean(setting("metadata_probe", account), value).apply();
+    }
+
+    private static RetryTicket retryTicket(int account) {
+        RetryTicket ticket = RETRIES.get(account);
+        if (ticket == null) return null;
+        if (android.os.SystemClock.elapsedRealtime() - ticket.createdAt >= RETRY_TTL_MS
+                || ticket.ownerId == 0 || ticket.ownerId != UserConfig.getInstance(account).getClientUserId()
+                || isQueued(ticket.key)) {
+            RETRIES.remove(account, ticket);
+            return null;
+        }
+        return ticket;
+    }
+
+    public static boolean canRetry(int account) {
+        RetryTicket ticket = retryTicket(account);
+        return ticket != null && !IN_FLIGHT.contains(ticket.key) && siteBlockReason(account) == null
+                && !UltExtractorMaintenance.busy() && !UltVideoSiteDownloader.hasActive(account);
+    }
+
+    /** Explicit retry is local-only, never posts another message to the chat. */
+    public static void retryLastSite(int account) {
+        RetryTicket ticket = retryTicket(account);
+        if (ticket == null || !canRetry(account) || !IN_FLIGHT.add(ticket.key)) return;
+        EXECUTOR.execute(() -> {
+            try {
+                if (retryTicket(account) != ticket || siteBlockReason(account) != null) return;
+                noteAttempt(account, ticket.url);
+                noteResult(account, "Retrying last site download locally");
+                if (UltVideoSiteDownloader.download(ApplicationLoader.applicationContext, account,
+                        ticket.url, 0L, null, false, ticket.audio)) {
+                    markSiteCompleted(account, ticket.key);
+                    RETRIES.remove(account, ticket);
+                }
+            } catch (Exception ignored) {
+                noteResult(account, "Retry failed");
+            } finally {
+                IN_FLIGHT.remove(ticket.key);
+            }
+        });
     }
 
     public static int maxVideoHeight(int account) {
@@ -241,10 +312,17 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
             }
         }
         for (String url : urls) {
+            // Ordinary webpages are not contacted unless explicitly opted in.
+            if (!UltVideoLinkRules.isSiteUrl(url) && !UltVideoLinkRules.hasVideoExtension(url)
+                    && !metadataProbeEnabled(account)) continue;
+            final boolean audio = audioOnly(account);
+            if (audio && !UltVideoLinkRules.isSiteUrl(url)) continue;
+            final long ownerId = UserConfig.getInstance(account).getClientUserId();
             String key = account + ":" + dialogId + ":" + owner.id + ":" + url;
             if (isQueued(key) || !IN_FLIGHT.add(key)) continue;
             EXECUTOR.execute(() -> {
                 try {
+                    if (ownerId == 0 || ownerId != UserConfig.getInstance(account).getClientUserId()) return;
                     noteAttempt(account, url);
                     if (!isEnabled(account)) {
                         noteResult(account, "Skipped: automatic downloads OFF");
@@ -261,14 +339,19 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
                     }
                     if (UltVideoLinkRules.isSiteUrl(url)) {
                         noteResult(account, "Starting on-device site extractor");
+                        RetryTicket ticket = new RetryTicket(url, key, audio, ownerId);
+                        // Only retain the failed site attempt if the account is still active.
+                        RETRIES.remove(account);
                         if (UltVideoSiteDownloader.download(
                                 ApplicationLoader.applicationContext, account, url,
-                                dialogId, owner, outgoingLink)) {
+                                dialogId, owner, outgoingLink, audio)) {
                             markSiteCompleted(account, key);
+                        } else if (isEnabled(account) && ownerId == UserConfig.getInstance(account).getClientUserId()) {
+                            RETRIES.put(account, ticket);
                         }
                         return;
                     }
-                    Probe probe = probe(url);
+                    Probe probe = probe(url, account);
                     if (probe == null || !isEnabled(account) || strictModeRequested()
                             || !networkAllowed(account) || isQueued(key)) {
                         noteResult(account, "No public direct video or OG metadata on this webpage; site extractor was not used");
@@ -373,11 +456,11 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
         return connection.getContentLengthLong();
     }
 
-    private static Probe probe(String original) throws Exception {
+    private static Probe probe(String original, int account) throws Exception {
         String current = original;
         Set<String> visited = new HashSet<>();
         for (int step = 0; step < 5; step++) {
-            if (!publicHost(current) || !visited.add(current)) return null;
+            if (siteBlockReason(account) != null || !publicHost(current) || !visited.add(current)) return null;
             URL target = new URL(current);
             HttpURLConnection connection = (HttpURLConnection) target.openConnection();
             try {
@@ -386,6 +469,7 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
                 connection.setReadTimeout(8000);
                 connection.setRequestProperty("Range", "bytes=0-65535");
                 connection.setRequestProperty("Accept", "video/*,text/html;q=0.8,*/*;q=0.1");
+                if (siteBlockReason(account) != null) return null;
                 int code = connection.getResponseCode();
                 if (code == 301 || code == 302 || code == 303 || code == 307 || code == 308) {
                     String location = connection.getHeaderField("Location");
@@ -403,11 +487,13 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
                     return new Probe(current, type.equals("application/octet-stream")
                             ? "video/mp4" : type);
                 }
+                if (!metadataProbeEnabled(account)) return null;
                 if (!type.equals("text/html") && !type.equals("application/xhtml+xml")) return null;
                 ByteArrayOutputStream bytes = new ByteArrayOutputStream();
                 try (InputStream stream = connection.getInputStream()) {
                     byte[] buffer = new byte[4096];
                     while (bytes.size() < 65536) {
+                        if (siteBlockReason(account) != null) return null;
                         int read = stream.read(buffer, 0, Math.min(buffer.length, 65536 - bytes.size()));
                         if (read == -1) break;
                         bytes.write(buffer, 0, read);

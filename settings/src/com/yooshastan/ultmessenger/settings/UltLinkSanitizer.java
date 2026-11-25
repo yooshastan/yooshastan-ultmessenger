@@ -20,6 +20,21 @@ public final class UltLinkSanitizer {
                 .edit().putBoolean("enabled_" + account, enabled).apply();
     }
 
+    public static String statistics(Context context, int account) {
+        android.content.SharedPreferences p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        return "Links cleaned: " + p.getLong("cleaned_" + account, 0)
+                + "\nTracking parameters removed: " + p.getLong("removed_" + account, 0)
+                + "\nProtected links left intact: " + p.getLong("protected_" + account, 0);
+    }
+
+    private static synchronized void record(Context context, int account, UltLinkSanitizerPolicy.Audit audit) {
+        if (audit.cleanedLinks == 0 && audit.protectedLinks == 0) return;
+        android.content.SharedPreferences p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        p.edit().putLong("cleaned_" + account, p.getLong("cleaned_" + account, 0) + audit.cleanedLinks)
+                .putLong("removed_" + account, p.getLong("removed_" + account, 0) + audit.removedParameters)
+                .putLong("protected_" + account, p.getLong("protected_" + account, 0) + audit.protectedLinks).apply();
+    }
+
     public static CharSequence sanitizeOutgoing(Context context, int account, CharSequence text) {
         if (text == null || !isEnabled(context, account)) return text;
         // Rich text can carry mentions, formatting or text-URL entities with
@@ -39,7 +54,9 @@ public final class UltLinkSanitizer {
             }
         }
         String plain = text.toString();
-        String cleaned = UltLinkSanitizerPolicy.cleanText(plain);
+        UltLinkSanitizerPolicy.Audit audit = new UltLinkSanitizerPolicy.Audit();
+        String cleaned = UltLinkSanitizerPolicy.cleanText(plain, audit);
+        record(context, account, audit);
         return cleaned.equals(plain) ? text : cleaned;
     }
 }

@@ -99,6 +99,9 @@ public final class UltVideoLinkRules {
         return host.equals(domain) || host.endsWith("." + domain);
     }
 
+    /** Audio-only mode is opt-in and uses the original audio stream when possible. */
+    public static String audioFormat() { return "bestaudio[ext=m4a]/bestaudio/best"; }
+
     /** Explicit quality limits apply to site downloads only; default is unchanged. */
     public static String videoFormat(int maxHeight) {
         if (maxHeight != 480 && maxHeight != 720 && maxHeight != 1080) {

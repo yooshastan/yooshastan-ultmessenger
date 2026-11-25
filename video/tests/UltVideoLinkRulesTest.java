@@ -71,6 +71,7 @@ public final class UltVideoLinkRulesTest {
                 "https://www.threads.com/@u/post/abc?xmt=share")));
         check("https://cdn.example.org/a.mp4?utm_source=app".equals(
                 UltVideoLinkRules.extractionUrl("https://cdn.example.org/a.mp4?utm_source=app")));
+        check("bestaudio[ext=m4a]/bestaudio/best".equals(UltVideoLinkRules.audioFormat()));
         System.out.println("UltVideoLinkRulesTest OK");
     }
 }

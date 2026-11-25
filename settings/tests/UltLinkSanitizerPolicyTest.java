@@ -111,6 +111,10 @@ public class UltLinkSanitizerPolicyTest {
             equal(UltLinkSanitizerPolicy.cleanUrl(test[0]), test[1]);
             equal(UltLinkSanitizerPolicy.cleanUrl(test[1]), test[1]);
         }
+        UltLinkSanitizerPolicy.Audit audit = new UltLinkSanitizerPolicy.Audit();
+        equal(UltLinkSanitizerPolicy.cleanText("https://www.google.com/search?q=ultgram&utm_campaign=test https://example.org/video.mp4?token=test&utm_source=app", audit),
+                "https://www.google.com/search?q=ultgram https://example.org/video.mp4?token=test&utm_source=app");
+        check(audit.cleanedLinks == 1 && audit.removedParameters == 1 && audit.protectedLinks == 1, "Audit must count changes and protected URLs without changing policy");
         System.out.println("UltLinkSanitizerPolicyTest OK");
     }
 }

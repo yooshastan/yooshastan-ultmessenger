@@ -210,7 +210,7 @@ jobs:
           python3 -m unittest discover -s tests -p 'test_foss_release_pipeline.py' -v
 
       - name: Beta 3.4.9+ — shared sanitizer and downloader contracts
-        if: github.ref == 'refs/heads/feature/beta03-4-9-extractor-maintenance' || github.head_ref == 'feature/beta03-4-9-extractor-maintenance' || github.ref == 'refs/heads/feature/beta03-4-10-extractor-updater' || github.head_ref == 'feature/beta03-4-10-extractor-updater'
+        if: github.ref == 'refs/heads/feature/beta03-4-9-extractor-maintenance' || github.head_ref == 'feature/beta03-4-9-extractor-maintenance' || github.ref == 'refs/heads/feature/beta03-4-10-extractor-updater' || github.head_ref == 'feature/beta03-4-10-extractor-updater' || github.ref == 'refs/heads/feature/beta03-4-11-media-controls' || github.head_ref == 'feature/beta03-4-11-media-controls'
         shell: bash
         run: |
           set -euo pipefail

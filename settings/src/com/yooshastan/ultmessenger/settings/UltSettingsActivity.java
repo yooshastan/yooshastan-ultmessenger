@@ -1196,7 +1196,10 @@ public final class UltSettingsActivity extends BaseFragment {
                         + "Direct media download requests are left intact. Richly formatted text and captions may be skipped "
                         + "to avoid breaking Telegram entities. Link previews for altered "
                         + "messages are disabled to prevent attaching the original URL. "
-                        + "Incoming messages are not altered.")
+                        + "Incoming messages are not altered. Functional parameters such as Google q are kept. "
+                        + "If a token suggests signed or private access, the whole URL is preserved. "
+                        + "\n\nLocal outgoing-link counters (no URL history):\n"
+                        + UltLinkSanitizer.statistics(context, currentAccount))
                 .setNeutralButton(enabled ? "Disable" : "Enable", (dialog, which) -> {
                     UltLinkSanitizer.setEnabled(context, currentAccount, !enabled);
                     android.widget.Toast.makeText(context,

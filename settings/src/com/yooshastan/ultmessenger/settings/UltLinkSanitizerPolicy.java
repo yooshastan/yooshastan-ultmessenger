@@ -19,7 +19,13 @@ public final class UltLinkSanitizerPolicy {
 
     private UltLinkSanitizerPolicy() { }
 
-    public static String cleanText(String text) {
+    public static final class Audit {
+        public int cleanedLinks, removedParameters, protectedLinks;
+    }
+
+    public static String cleanText(String text) { return cleanText(text, null); }
+
+    public static String cleanText(String text, Audit audit) {
         if (text == null || text.length() > MAX_TEXT || text.isEmpty()) return text;
         Matcher matcher = URL.matcher(text);
         StringBuilder result = new StringBuilder(text.length());
@@ -30,14 +36,16 @@ public final class UltLinkSanitizerPolicy {
             int end = captured.length();
             while (end > 0 && ".,!;:)]}".indexOf(captured.charAt(end - 1)) >= 0) end--;
             String body = captured.substring(0, end);
-            result.append(cleanUrl(body)).append(captured.substring(end));
+            result.append(cleanUrl(body, audit)).append(captured.substring(end));
             last = matcher.end();
         }
         result.append(text, last, text.length());
         return result.toString();
     }
 
-    public static String cleanUrl(String raw) {
+    public static String cleanUrl(String raw) { return cleanUrl(raw, null); }
+
+    private static String cleanUrl(String raw, Audit audit) {
         if (raw == null || raw.length() > MAX_URL) return raw;
         try {
             URI uri = new URI(raw);
@@ -55,7 +63,10 @@ public final class UltLinkSanitizerPolicy {
             for (String param : params) {
                 String rawKey = param.split("=", 2)[0];
                 String key = rawKey.toLowerCase(Locale.US);
-                if (looksSensitive(key) || (isHost(host, "vimeo.com") && key.equals("h"))) return raw;  // Preserve signed/challenge/private links.
+                if (looksSensitive(key) || (isHost(host, "vimeo.com") && key.equals("h"))) {
+                    if (audit != null) audit.protectedLinks++;
+                    return raw;  // Preserve signed/challenge/private links.
+                }
                 if (isTrackingKey(host, uri.getRawPath(), key, param)) removed++;
                 else kept.add(param);
             }
@@ -67,6 +78,7 @@ public final class UltLinkSanitizerPolicy {
             StringBuilder cleaned = new StringBuilder(raw.substring(0, question));
             if (!kept.isEmpty()) cleaned.append('?').append(String.join("&", kept));
             cleaned.append(tail);
+            if (audit != null) { audit.cleanedLinks++; audit.removedParameters += removed; }
             return cleaned.toString();
         } catch (Exception ignored) {
             return raw;

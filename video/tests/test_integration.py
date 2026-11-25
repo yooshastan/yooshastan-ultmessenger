@@ -96,6 +96,25 @@ class IntegrationTest(unittest.TestCase):
         self.assertLess(updater.index("probe(c, staging, output)"), updater.index("UltExtractorPolicy.replace(staging"))
         self.assertNotIn("updateYoutubeDL(", updater)
 
+    def test_media_controls_and_offline_version(self):
+        base = ROOT / "video/src/com/yooshastan/ultmessenger/video"
+        updater = (base / "UltExtractorMaintenance.java").read_text()
+        site = (base / "UltVideoSiteDownloader.java").read_text()
+        worker = (base / "UltVideoAutoSave.java").read_text()
+        ui = (ROOT / "settings/src/com/yooshastan/ultmessenger/settings/UltVideoLinksSettingsActivity.java").read_text()
+        self.assertIn('start(c, "inspect")', updater)
+        self.assertIn('"inspect".equals(action)', updater)
+        self.assertIn('remote = "check".equals(action) || "update".equals(action)', updater)
+        self.assertIn('request.addOption("--audio-format", "m4a")', site)
+        self.assertIn('!audioOnly && outgoingLink', site)
+        self.assertIn('audioOnly ? "audio/mp4" : "video/mp4"', site)
+        self.assertIn('ticket.url, 0L, null, false, ticket.audio', worker)
+        self.assertIn('ticket.ownerId != UserConfig.getInstance(account).getClientUserId()', worker)
+        self.assertIn('15L * 60 * 1000', worker)
+        self.assertIn('!metadataProbeEnabled(account)) continue', worker)
+        self.assertIn('if (siteBlockReason(account) != null) return null', worker)
+        self.assertIn('String[] names = {"Downloads", "Extractor", "History"}', ui)
+
     def test_outgoing_is_distinct_and_strict_mode_blocks(self):
         worker = (ROOT / "video/src/com/yooshastan/ultmessenger/video/UltVideoAutoSave.java").read_text()
         site = (ROOT / "video/src/com/yooshastan/ultmessenger/video/UltVideoSiteDownloader.java").read_text()

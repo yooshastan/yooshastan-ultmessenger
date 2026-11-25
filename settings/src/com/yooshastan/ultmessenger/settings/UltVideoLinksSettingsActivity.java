@@ -28,7 +28,11 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
     private Button unmeteredButton;
     private Button qualityButton;
     private Button sizeButton;
-    private Button cancelButton;
+    private Button cancelButton, modeButton, metadataButton, retryButton;
+    private LinearLayout[] panels;
+    private Button[] tabs;
+    private ScrollView settingsScroll;
+    private int selectedPanel;
     private final android.os.Handler statusHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private final Runnable statusTick = new Runnable() {
         @Override public void run() {
@@ -52,6 +56,7 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
             }
         });
         ScrollView scroll = new ScrollView(context);
+        settingsScroll = scroll;
         scroll.setFillViewport(true);
         scroll.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
         LinearLayout content = new LinearLayout(context);
@@ -61,8 +66,25 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
         scroll.addView(content, new ScrollView.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        addHeading(content, context, "Automatic video downloads");
-        autoSaveButton = addButton(content, context, "", () -> {
+        LinearLayout nav = new LinearLayout(context);
+        nav.setOrientation(LinearLayout.HORIZONTAL);
+        content.addView(nav);
+        String[] names = {"Downloads", "Extractor", "History"};
+        tabs = new Button[names.length];
+        panels = new LinearLayout[names.length];
+        for (int i = 0; i < names.length; i++) {
+            final int index = i;
+            tabs[i] = addButton(nav, context, names[i], () -> showPanel(index));
+            tabs[i].setLayoutParams(new LinearLayout.LayoutParams(0,
+                    ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+            panels[i] = new LinearLayout(context);
+            panels[i].setOrientation(LinearLayout.VERTICAL);
+            content.addView(panels[i]);
+        }
+        LinearLayout downloads = panels[0], extractor = panels[1], history = panels[2];
+
+        addHeading(downloads, context, "Automatic media downloads");
+        autoSaveButton = addButton(downloads, context, "", () -> {
             final boolean next = !UltVideoAutoSave.isEnabled(currentAccount);
             if (!next) {
                 UltVideoAutoSave.setPostToChat(currentAccount, false);
@@ -84,14 +106,14 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
                     .show();
         });
 
-        addHeading(content, context, "Send downloaded videos into my chats");
-        addText(content, context,
+        addHeading(downloads, context, "Send downloaded videos into my chats");
+        addText(downloads, context,
                 "When YOU post a public video link, a successfully downloaded MP4 "
                         + "is sent as a SECOND Telegram message in an ordinary one-to-one "
                         + "chat or Saved Messages. Groups, channels and anonymous posts "
                         + "are allowed only when the sender identity is unchanged. "
                 + "Forum topics and broadcast channels remain excluded. OFF by default.", 14);
-        postToChatButton = addButton(content, context, "", () -> {
+        postToChatButton = addButton(downloads, context, "", () -> {
             if (UltVideoAutoSave.isPostToChat(currentAccount)) {
                 UltVideoAutoSave.setPostToChat(currentAccount, false);
                 refresh();
@@ -124,15 +146,33 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
                     .show();
         });
 
-        addHeading(content, context, "Network preference");
-        unmeteredButton = addButton(content, context, "", () -> {
+        addHeading(downloads, context, "Network preference");
+        unmeteredButton = addButton(downloads, context, "", () -> {
             UltVideoAutoSave.setWifiOnly(currentAccount,
                     !UltVideoAutoSave.isWifiOnly(currentAccount));
             refresh();
         });
 
-        addHeading(content, context, "Video quality");
-        qualityButton = addButton(content, context, "", () -> {
+        addHeading(downloads, context, "Media format");
+        modeButton = addButton(downloads, context, "", () -> new UltSecureDialogBuilder(context)
+                .setTitle("Download format for supported sites")
+                .setItems(new String[]{"Video (default)", "Audio only (M4A, local save)"}, (dialog, which) -> {
+                    UltVideoAutoSave.setAudioOnly(currentAccount, which == 1);
+                    refresh();
+                }).show());
+        addText(downloads, context, "Audio mode saves locally only and ignores direct video links. Changing mode turns automatic chat posting off.", 13);
+        metadataButton = addButton(downloads, context, "", () -> {
+            if (UltVideoAutoSave.metadataProbeEnabled(currentAccount)) {
+                UltVideoAutoSave.setMetadataProbeEnabled(currentAccount, false); refresh(); return;
+            }
+            new UltSecureDialogBuilder(context).setTitle("Inspect ordinary webpages?")
+                    .setMessage("When enabled, Ultgram may contact other HTTPS websites to look for video metadata. These requests are outside MTProxy. OFF is recommended for privacy.")
+                    .setNegativeButton("Cancel", null).setPositiveButton("Enable", (dialog, which) -> {
+                        UltVideoAutoSave.setMetadataProbeEnabled(currentAccount, true); refresh();
+                    }).show();
+        });
+        addHeading(downloads, context, "Video quality");
+        qualityButton = addButton(downloads, context, "", () -> {
             final int[] choices = {0, 480, 720, 1080};
             new UltSecureDialogBuilder(context)
                     .setTitle("Maximum site video resolution")
@@ -143,8 +183,8 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
                             })
                     .show();
         });
-        addText(content, context, "Applies to new site downloads only.", 13);
-        sizeButton = addButton(content, context, "", () -> {
+        addText(downloads, context, "Applies to new site downloads only.", 13);
+        sizeButton = addButton(downloads, context, "", () -> {
             final int[] sizes = {100, 250, 500, 1024};
             new UltSecureDialogBuilder(context)
                     .setTitle("Site download workspace limit")
@@ -154,60 +194,67 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
                                 refresh();
                             }).show();
         });
-        addText(content, context, "Limits total temporary files for new site downloads, including audio and merge files. Direct file downloads retain their 100 MiB limit.", 13);
+        addText(downloads, context, "Limits total temporary files for new site downloads, including audio and merge files. Direct file downloads retain their 100 MiB limit.", 13);
 
-        addHeading(content, context, "Download status");
-        status = addText(content, context, "", 14);
-        cancelButton = addButton(content, context, "Cancel active site download", () -> {
+        addHeading(downloads, context, "Download status");
+        status = addText(downloads, context, "", 14);
+        cancelButton = addButton(downloads, context, "Cancel active site download", () -> {
             UltVideoSiteDownloader.cancelAccount(currentAccount);
             refresh();
         });
-        addButton(content, context, "Refresh status", this::refresh);
+        retryButton = addButton(downloads, context, "Retry last failed site download", () -> {
+            UltVideoAutoSave.retryLastSite(currentAccount); refresh();
+        });
+        addText(downloads, context, "Retry uses the last failed supported site link in this session (up to 15 minutes), saves locally, and never sends a chat message.", 13);
+        addButton(downloads, context, "Refresh status", this::refresh);
 
-        addHeading(content, context, "Extractor maintenance");
+        addHeading(extractor, context, "Extractor maintenance");
         maintenanceContext = context.getApplicationContext();
-        maintenanceStatus = addText(content, context, "", 14);
-        addText(content, context, "Shared across accounts. Official yt-dlp releases only; checksum and local Python version test before atomic replacement. Update traffic is outside MTProxy. Checks never install automatically.", 13);
-        channelButton = addButton(content, context, "", () -> new UltSecureDialogBuilder(context)
+        maintenanceStatus = addText(extractor, context, "", 14);
+        addText(extractor, context, "Shared across accounts. Official yt-dlp releases only; checksum and local Python version test before atomic replacement. Update traffic is outside MTProxy. Checks never install automatically.", 13);
+        channelButton = addButton(extractor, context, "", () -> new UltSecureDialogBuilder(context)
                 .setTitle("Extractor release channel")
                 .setItems(new String[]{"Stable (recommended)", "Nightly"}, (dialog, which) -> {
                     UltExtractorMaintenance.setNightly(maintenanceContext, which == 1); refresh();
                 }).show());
-        autoCheckButton = addButton(content, context, "", () -> {
+        autoCheckButton = addButton(extractor, context, "", () -> {
             UltExtractorMaintenance.setAutomatic(maintenanceContext, !UltExtractorMaintenance.automatic(maintenanceContext));
             UltExtractorMaintenance.maybeCheck(maintenanceContext); refresh();
         });
-        updateNetworkButton = addButton(content, context, "", () -> {
+        updateNetworkButton = addButton(extractor, context, "", () -> {
             UltExtractorMaintenance.setUnmetered(maintenanceContext, !UltExtractorMaintenance.unmetered(maintenanceContext)); refresh();
         });
-        checkButton = addButton(content, context, "Check for extractor updates", () -> {
+        addButton(extractor, context, "Read installed version (offline)", () -> {
+            UltExtractorMaintenance.start(maintenanceContext, "inspect"); refresh();
+        });
+        checkButton = addButton(extractor, context, "Check for extractor updates", () -> {
             UltExtractorMaintenance.start(maintenanceContext, "check"); refresh();
         });
-        updateButton = addButton(content, context, "Install latest verified extractor", () -> new UltSecureDialogBuilder(context)
+        updateButton = addButton(extractor, context, "Install latest verified extractor", () -> new UltSecureDialogBuilder(context)
                 .setTitle("Install selected channel release?")
                 .setMessage("Contacts official GitHub release servers outside Telegram MTProxy. Switching channels may install an older version. No update runs with native strict proxy enabled. The current extractor will be backed up.")
                 .setNegativeButton("Cancel", null).setPositiveButton("Install", (dialog, which) -> {
                     UltExtractorMaintenance.start(maintenanceContext, "update"); refresh();
                 }).show());
-        rollbackButton = addButton(content, context, "Restore previous extractor", () -> new UltSecureDialogBuilder(context)
+        rollbackButton = addButton(extractor, context, "Restore previous extractor", () -> new UltSecureDialogBuilder(context)
                 .setTitle("Restore previous extractor?")
                 .setMessage("Offline. The current extractor becomes the next rollback backup.")
                 .setNegativeButton("Cancel", null).setPositiveButton("Restore", (dialog, which) -> {
                     UltExtractorMaintenance.start(maintenanceContext, "rollback"); refresh();
                 }).show());
-        bundledButton = addButton(content, context, "Restore bundled extractor", () -> new UltSecureDialogBuilder(context)
+        bundledButton = addButton(extractor, context, "Restore bundled extractor", () -> new UltSecureDialogBuilder(context)
                 .setTitle("Restore APK-bundled extractor?")
                 .setMessage("Offline. This may install an older extractor; your current one is backed up.")
                 .setNegativeButton("Cancel", null).setPositiveButton("Restore", (dialog, which) -> {
                     UltExtractorMaintenance.start(maintenanceContext, "bundled"); refresh();
                 }).show());
-        verifyButton = addButton(content, context, "Verify local extractor SHA-256", () -> {
+        verifyButton = addButton(extractor, context, "Verify local extractor SHA-256", () -> {
             UltExtractorMaintenance.start(maintenanceContext, "verify"); refresh();
         });
 
-        addHeading(content, context, "Saved site videos");
-        addButton(content, context, "Download history", () -> showHistory(context));
-        addButton(content, context, "Clear history (keep files)", () ->
+        addHeading(history, context, "Saved site media");
+        addButton(history, context, "Download history", () -> showHistory(context));
+        addButton(history, context, "Clear history (keep files)", () ->
                 new UltSecureDialogBuilder(context)
                         .setTitle("Clear site download history?")
                         .setMessage("This removes local history entries only. Downloaded files stay on your device.")
@@ -217,11 +264,21 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
                             refresh();
                         }).show());
 
-        addHeading(content, context, "Privacy and limits");
-        limitation = addText(content, context, "", 14);
+        addHeading(history, context, "Privacy and limits");
+        limitation = addText(history, context, "", 14);
         fragmentView = scroll;
+        showPanel(selectedPanel);
         refresh();
         return fragmentView;
+    }
+
+    private void showPanel(int index) {
+        selectedPanel = index;
+        for (int i = 0; i < panels.length; i++) {
+            panels[i].setVisibility(i == index ? View.VISIBLE : View.GONE);
+            tabs[i].setEnabled(i != index);
+        }
+        if (settingsScroll != null) settingsScroll.scrollTo(0, 0);
     }
 
     private void showHistory(Context context) {
@@ -248,7 +305,7 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
                     if (!"content".equals(uri.getScheme()) || !"media".equals(uri.getAuthority())) return;
                     try {
                         android.content.Intent view = new android.content.Intent(android.content.Intent.ACTION_VIEW);
-                        view.setDataAndType(uri, "video/*");
+                        view.setDataAndType(uri, item.optString("name").endsWith(".m4a") ? "audio/*" : "video/*");
                         view.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
                         context.startActivity(view);
                     } catch (Exception ignored) {
@@ -262,10 +319,15 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
         boolean enabled = UltVideoAutoSave.isEnabled(currentAccount);
         boolean post = UltVideoAutoSave.isPostToChat(currentAccount);
         boolean strict = UltVideoAutoSave.strictModeRequested();
-        autoSaveButton.setText("Auto-save video links: " + (enabled ? "ON" : "OFF"));
+        autoSaveButton.setText("Auto-save media links: " + (enabled ? "ON" : "OFF"));
         postToChatButton.setText("Automatically send video to chat: "
                 + (post ? "ON" : "OFF"));
-        postToChatButton.setEnabled(enabled || post);
+        boolean audio = UltVideoAutoSave.audioOnly(currentAccount);
+        postToChatButton.setEnabled(!audio && (enabled || post));
+        modeButton.setText("Download format: " + (audio ? "Audio only (M4A)" : "Video"));
+        metadataButton.setText("Inspect ordinary webpages: " + (UltVideoAutoSave.metadataProbeEnabled(currentAccount) ? "ON" : "OFF"));
+        qualityButton.setEnabled(!audio);
+        retryButton.setEnabled(UltVideoAutoSave.canRetry(currentAccount));
         unmeteredButton.setText("Wi-Fi / unmetered only: "
                 + (UltVideoAutoSave.isWifiOnly(currentAccount) ? "ON" : "OFF"));
         int height = UltVideoAutoSave.maxVideoHeight(currentAccount);
@@ -288,6 +350,7 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
                 + "\nNative strict proxy: " + (strict ? "ON - downloader PAUSED" : "OFF"));
         boolean busy = UltExtractorMaintenance.busy();
         maintenanceStatus.setText("Installed: " + UltVideoSiteDownloader.extractorVersion()
+                + "\nRuntime: " + (UltExtractorMaintenance.runtimeInitialized() ? "Initialized locally" : "Not initialized")
                 + "\nSelected release: " + (UltExtractorMaintenance.available().isEmpty() ? "Not checked" : UltExtractorMaintenance.available())
                 + "\n" + UltExtractorMaintenance.status());
         channelButton.setText("Channel: " + (UltExtractorMaintenance.nightly(maintenanceContext) ? "Nightly" : "Stable"));

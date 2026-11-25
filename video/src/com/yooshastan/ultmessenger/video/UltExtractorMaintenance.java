@@ -27,6 +27,12 @@ public final class UltExtractorMaintenance {
     private static volatile String status = "Ready; checks are optional";
     private static volatile String available = "";
     private static volatile String installed = "";
+    private static volatile boolean runtimeInitialized;
+    public static boolean runtimeInitialized() { return runtimeInitialized; }
+    public static void recordDetectedVersion(String value) {
+        installed = UltExtractorPolicy.validVersion(value) ? value : "Unknown (local version probe failed)";
+    }
+    public static void markInitialized() { runtimeInitialized = true; }
     private static final long DAY = 24L * 60 * 60 * 1000;
     private UltExtractorMaintenance() {}
     public static boolean beginDownload() { return LOCK.tryLock(); }
@@ -67,12 +73,13 @@ public final class UltExtractorMaintenance {
         long last = prefs(c).getLong("last_check", 0);
         if (automatic(c) && !busy && System.currentTimeMillis() - last >= DAY
                 && networkBlock(c) == null) start(c, "check");
+        else if (!busy && installed.isEmpty()) start(c, "inspect");
     }
     public static synchronized void start(Context context, String action) {
         if (busy) return;
         if (Build.VERSION.SDK_INT < 29) { status = "Maintenance requires Android 10+"; return; }
         if (!("check".equals(action) || "update".equals(action) || "rollback".equals(action)
-                || "bundled".equals(action) || "verify".equals(action))) return;
+                || "bundled".equals(action) || "verify".equals(action) || "inspect".equals(action))) return;
         Context c = context.getApplicationContext();
         busy = true;
         cancelled = false;
@@ -212,12 +219,23 @@ public final class UltExtractorMaintenance {
     }
     private static void run(Context c, String action, boolean nightly) throws Exception {
         YoutubeDL.getInstance().init(c);
+        markInitialized();
         File d = dir(c), live = new File(d,"yt-dlp"), previous = new File(d,"ult-previous");
         File staging = new File(d,"ult-stage"), backupTemp = new File(d,"ult-backup-stage");
         File metadata = new File(d,"ult-release-json"), sums = new File(d,"ult-sums");
         File output = new File(d,"ult-probe-output");
         try {
             String currentHash = UltExtractorPolicy.sha256(live);
+            String currentVersion;
+            try { currentVersion = probe(c, live, output); }
+            catch (Exception e) { currentVersion = "Unknown"; }
+            recordDetectedVersion(currentVersion);
+            if ("inspect".equals(action)) {
+                status = UltExtractorPolicy.validVersion(currentVersion)
+                        ? "Installed version read locally; no network contacted"
+                        : "Local version probe failed; no network contacted";
+                return;
+            }
             if ("verify".equals(action)) {
                 String expected = prefs(c).getString("installed_hash", "");
                 status = expected.isEmpty() ? "Local SHA-256 (no saved trust baseline): " + currentHash
@@ -225,10 +243,6 @@ public final class UltExtractorMaintenance {
                         : "WARNING: extractor differs from saved integrity baseline";
                 return;
             }
-            String currentVersion;
-            try { currentVersion = probe(c, live, output); }
-            catch (Exception e) { currentVersion = "Unknown"; }
-            installed = currentVersion;
             String expected, targetVersion = null;
             if ("check".equals(action) || "update".equals(action)) {
                 checkNetwork(c);

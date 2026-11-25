@@ -93,7 +93,7 @@ public final class UltVideoSiteDownloader {
 
     /** Called only for URLs that passed UltVideoLinkRules.isSiteUrl(). */
     public static boolean download(Context context, int account, String url,
-                                   long dialogId, TLRPC.Message original, boolean outgoingLink) {
+                                   long dialogId, TLRPC.Message original, boolean outgoingLink, boolean audioOnly) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             UltVideoAutoSave.noteResult(account, "Site downloads require Android 10+");
             return false;
@@ -134,6 +134,7 @@ public final class UltVideoSiteDownloader {
             // The Android library contains its own Python/yt-dlp and FFmpeg runtimes.
             // Initialization is deliberately lazy; this code runs on a worker thread.
             YoutubeDL.getInstance().init(context);
+            UltExtractorMaintenance.markInitialized();
             FFmpeg.getInstance().init(context);
             if (stopBeforeWork(account, stopped, stopReason)) return false;
             stage = "download";
@@ -150,9 +151,15 @@ public final class UltVideoSiteDownloader {
             request.addOption("--retries", 2);
             request.addOption("--fragment-retries", 2);
             request.addOption("--extractor-retries", 2);
-            request.addOption("-f", UltVideoLinkRules.videoFormat(UltVideoAutoSave.maxVideoHeight(account)));
-            request.addOption("--merge-output-format", "mp4");
-            request.addOption("-o", new File(work, "ult_video.%(ext)s").getAbsolutePath());
+            if (audioOnly) {
+                request.addOption("-f", UltVideoLinkRules.audioFormat());
+                request.addOption("-x");
+                request.addOption("--audio-format", "m4a");
+            } else {
+                request.addOption("-f", UltVideoLinkRules.videoFormat(UltVideoAutoSave.maxVideoHeight(account)));
+                request.addOption("--merge-output-format", "mp4");
+            }
+            request.addOption("-o", new File(work, "ult_media.%(ext)s").getAbsolutePath());
 
             // A finite extraction timeout is essential. Some supported sites
             // hang before they return any stdout or progress callback.
@@ -203,6 +210,7 @@ public final class UltVideoSiteDownloader {
             } catch (Exception ignored) {
                 extractorVersion = "Unknown (version query failed)";
             }
+            UltExtractorMaintenance.recordDetectedVersion(extractorVersion);
             if (stopBeforeWork(account, stopped, stopReason)) return false;
             lastProgress.set(SystemClock.elapsedRealtime());
             UltVideoAutoSave.noteResult(account, "Extracting video; 90-second inactivity limit");
@@ -235,20 +243,20 @@ public final class UltVideoSiteDownloader {
 
             if (stopBeforeWork(account, stopped, stopReason)) return false;
             stage = "verification";
-            File result = selectFinishedVideo(work);
+            File result = selectFinishedMedia(work, audioOnly);
             if (result == null || result.length() <= 0 || result.length() > maxBytes) {
-                UltVideoAutoSave.noteResult(account, "No supported video file within " + limitMiB + " MiB");
+                UltVideoAutoSave.noteResult(account, "No supported " + (audioOnly ? "audio" : "video") + " file within " + limitMiB + " MiB");
                 return false;
             }
             stage = "saving";
-            if (!publish(context, result, account, maxBytes, stopped)) {
+            if (!publish(context, result, account, maxBytes, stopped, audioOnly)) {
                 if (!stopBeforeWork(account, stopped, stopReason)) {
                     UltVideoAutoSave.noteResult(account, "Failed to save video");
                 }
                 return false;
             }
             UltVideoAutoSave.noteResult(account, "Saved to Downloads/Ultgram");
-            if (outgoingLink && UltVideoAutoSave.isPostToChat(account) && !stopped.get()) {
+            if (!audioOnly && outgoingLink && UltVideoAutoSave.isPostToChat(account) && !stopped.get()) {
                 if (!UltVideoChatPost.safeDestination(account, dialogId, original)) {
                     UltVideoAutoSave.noteResult(account,
                             "Saved locally; group identity, permissions or topic not supported");
@@ -305,13 +313,17 @@ public final class UltVideoSiteDownloader {
         return size;
     }
 
-    private static File selectFinishedVideo(File dir) {
+    private static File selectFinishedMedia(File dir, boolean audioOnly) {
         List<File> matching = new ArrayList<>();
         File[] files = dir.listFiles();
         if (files == null) return null;
         for (File file : files) {
             if (!file.isFile()) continue;
             String name = file.getName().toLowerCase(Locale.US);
+            if (audioOnly) {
+                if (name.endsWith(".m4a")) matching.add(file);
+                continue;
+            }
             if (name.endsWith(".mp4") || name.endsWith(".webm")
                     || name.endsWith(".mkv") || name.endsWith(".mov")
                     || name.endsWith(".m4v")) matching.add(file);
@@ -319,15 +331,15 @@ public final class UltVideoSiteDownloader {
         return matching.size() == 1 ? matching.get(0) : null;
     }
 
-    private static boolean publish(Context context, File file, int account, long maxBytes, AtomicBoolean stopped) {
+    private static boolean publish(Context context, File file, int account, long maxBytes, AtomicBoolean stopped, boolean audioOnly) {
         if (stopped.get() || !allowed(account)) return false;
         String originalName = file.getName().toLowerCase(Locale.US);
         String extension = originalName.substring(originalName.lastIndexOf('.') + 1);
-        String mime = "video/mp4";
+        String mime = audioOnly ? "audio/mp4" : "video/mp4";
         if ("webm".equals(extension)) mime = "video/webm";
         if ("mkv".equals(extension)) mime = "video/x-matroska";
         if ("mov".equals(extension)) mime = "video/quicktime";
-        String name = "ult_video_" + System.currentTimeMillis() + "_"
+        String name = (audioOnly ? "ult_audio_" : "ult_video_") + System.currentTimeMillis() + "_"
                 + UUID.randomUUID().toString().substring(0, 8) + "." + extension;
         ContentResolver resolver = context.getContentResolver();
         ContentValues values = new ContentValues();
