@@ -20,6 +20,9 @@ class IntegrationTest(unittest.TestCase):
         strict.write_text("before\n" + module.STRICT_ANCHOR + "after\n")
         gradle.write_text("dependencies {\n" + module.GRADLE_ANCHOR + "}\n")
         manifest.write_text("<manifest>" + module.MANIFEST_ANCHOR + "</application></manifest>")
+        chat = root / module.CHAT
+        chat.parent.mkdir(parents=True, exist_ok=True)
+        chat.write_text(module.CHAT_CONSTANT_ANCHOR + module.CHAT_MENU_ANCHOR + module.CHAT_HANDLER_ANCHOR)
         return app, strict, gradle, manifest
 
     def test_pinned_hooks_and_models(self):
@@ -31,9 +34,14 @@ class IntegrationTest(unittest.TestCase):
             self.assertIn("cancelPendingForStrict", strict.read_text())
             self.assertIn("youtubedl-android:library:0.18.1", gradle.read_text())
             self.assertIn("extractNativeLibs", manifest.read_text())
+            chat = (root / module.CHAT).read_text()
+            for label in ("ULT: Download video", "ULT: Download audio", "ULT: Download with options", "ULT: Copy sanitized link"):
+                self.assertIn(label, chat)
+            self.assertIn("currentChat.noforwards", chat)
             for name in ("UltVideoAutoSave.java", "UltVideoLinkRules.java",
                          "UltVideoSiteDownloader.java", "UltVideoChatPost.java",
-                         "UltVideoFailure.java", "UltExtractorPolicy.java", "UltExtractorMaintenance.java"):
+                         "UltVideoFailure.java", "UltExtractorPolicy.java", "UltExtractorMaintenance.java",
+                         "UltMediaOptions.java", "UltManualMediaMenu.java"):
                 self.assertTrue((root / module.DEST / name).exists(), name)
             with self.assertRaises(ValueError):
                 module.integrate(root)
@@ -55,8 +63,8 @@ class IntegrationTest(unittest.TestCase):
         ui = (ROOT / "settings/src/com/yooshastan/ultmessenger/settings/UltVideoLinksSettingsActivity.java").read_text()
         self.assertIn("siteLimitMiB(account)", site)
         self.assertIn("totalBytes(work, maxBytes) > maxBytes", site)
-        self.assertIn("stopped.get() || !allowed(account) || copied + n > maxBytes", site)
-        self.assertIn("cancelAccount(currentAccount)", ui)
+        self.assertIn("stopped.get() || !allowed(account, options, ownerId, requestCancelled) || copied + n > maxBytes", site)
+        self.assertIn("cancelSiteJobs(currentAccount)", ui)
         self.assertIn('versionRequest.addOption("--version")', site)
         self.assertIn(".getOut().trim()", site)
         self.assertNotIn("versionName(context)", site)
@@ -76,7 +84,7 @@ class IntegrationTest(unittest.TestCase):
                        "Native strict proxy enabled", "Automatic downloads disabled"):
             self.assertIn(reason, worker)
         self.assertIn("return networkBlockReason(account) == null", worker)
-        self.assertIn("return UltVideoAutoSave.siteBlockReason(account) == null", site)
+        self.assertIn("return UltVideoAutoSave.requestBlockReason(account, options.manual, ownerId, requestCancelled) == null", site)
         self.assertIn("Download stopped: cancelled by user", site)
         self.assertIn("STOP_REASONS.remove(processId)", site)
         self.assertNotIn("network or strict-proxy protection changed", site)
@@ -105,15 +113,32 @@ class IntegrationTest(unittest.TestCase):
         self.assertIn('start(c, "inspect")', updater)
         self.assertIn('"inspect".equals(action)', updater)
         self.assertIn('remote = "check".equals(action) || "update".equals(action)', updater)
-        self.assertIn('request.addOption("--audio-format", "m4a")', site)
+        self.assertIn('request.addOption("--audio-format", options.audioFormat)', site)
         self.assertIn('!audioOnly && outgoingLink', site)
-        self.assertIn('audioOnly ? "audio/mp4" : "video/mp4"', site)
-        self.assertIn('ticket.url, 0L, null, false, ticket.audio', worker)
+        self.assertIn('String mime = options.mime()', site)
+        self.assertIn('ticket.key, 0L, null, false, ticket.options, ticket.ownerId', worker)
         self.assertIn('ticket.ownerId != UserConfig.getInstance(account).getClientUserId()', worker)
         self.assertIn('15L * 60 * 1000', worker)
         self.assertIn('!metadataProbeEnabled(account)) continue', worker)
         self.assertIn('if (siteBlockReason(account) != null) return null', worker)
-        self.assertIn('String[] names = {"Downloads", "Extractor", "History"}', ui)
+        self.assertIn('String[] names = {"Manager", "Preferences", "Automation", "Extractor", "History"}', ui)
+
+    def test_manual_media_is_local_and_uses_shared_queue(self):
+        base = ROOT / "video/src/com/yooshastan/ultmessenger/video"
+        worker = (base / "UltVideoAutoSave.java").read_text()
+        site = (base / "UltVideoSiteDownloader.java").read_text()
+        menu = (base / "UltManualMediaMenu.java").read_text()
+        self.assertIn("!manual && !isEnabled(account)", worker)
+        self.assertIn("if (strictModeRequested())", worker)
+        self.assertIn("SITE_JOBS.size() >= MAX_SITE_JOBS", worker)
+        self.assertIn("IN_FLIGHT.add(key)", worker)
+        self.assertIn("0L, null, false, options, ownerId", worker)
+        self.assertIn("!options.manual && !audioOnly && outgoingLink", site)
+        self.assertIn("message.messageOwner.noforwards", menu)
+        self.assertIn("DialogObject.isEncryptedDialog", menu)
+        self.assertIn("AndroidUtilities.addToClipboard(UltLinkSanitizerPolicy.cleanUrl(url))", menu)
+        self.assertNotIn("setEnabled(", menu)
+        self.assertNotIn("setMaxVideoHeight(", menu)
 
     def test_outgoing_is_distinct_and_strict_mode_blocks(self):
         worker = (ROOT / "video/src/com/yooshastan/ultmessenger/video/UltVideoAutoSave.java").read_text()

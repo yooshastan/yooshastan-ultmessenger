@@ -93,13 +93,15 @@ public final class UltVideoSiteDownloader {
 
     /** Called only for URLs that passed UltVideoLinkRules.isSiteUrl(). */
     public static boolean download(Context context, int account, String url,
-                                   long dialogId, TLRPC.Message original, boolean outgoingLink, boolean audioOnly) {
+                                   long dialogId, TLRPC.Message original, boolean outgoingLink, UltMediaOptions options,
+                                   long ownerId, AtomicBoolean requestCancelled) {
+        final boolean audioOnly = options.audio;
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             UltVideoAutoSave.noteResult(account, "Site downloads require Android 10+");
             return false;
         }
         if (!UltVideoLinkRules.isSiteUrl(url)) return false;
-        String initialBlock = UltVideoAutoSave.siteBlockReason(account);
+        String initialBlock = UltVideoAutoSave.requestBlockReason(account, options.manual, ownerId, requestCancelled);
         if (initialBlock != null) {
             UltVideoAutoSave.noteResult(account, "Download stopped: " + initialBlock);
             return false;
@@ -130,13 +132,13 @@ public final class UltVideoSiteDownloader {
         final AtomicLong lastProgress = new AtomicLong(0L);
         final AtomicLong lastProgressDisplayed = new AtomicLong(-1L);
         try {
-            if (stopBeforeWork(account, stopped, stopReason)) return false;
+            if (stopBeforeWork(account, stopped, stopReason, options, ownerId, requestCancelled)) return false;
             // The Android library contains its own Python/yt-dlp and FFmpeg runtimes.
             // Initialization is deliberately lazy; this code runs on a worker thread.
             YoutubeDL.getInstance().init(context);
             UltExtractorMaintenance.markInitialized();
             FFmpeg.getInstance().init(context);
-            if (stopBeforeWork(account, stopped, stopReason)) return false;
+            if (stopBeforeWork(account, stopped, stopReason, options, ownerId, requestCancelled)) return false;
             stage = "download";
 
             YoutubeDLRequest request = new YoutubeDLRequest(UltVideoLinkRules.extractionUrl(url));
@@ -154,9 +156,9 @@ public final class UltVideoSiteDownloader {
             if (audioOnly) {
                 request.addOption("-f", UltVideoLinkRules.audioFormat());
                 request.addOption("-x");
-                request.addOption("--audio-format", "m4a");
+                request.addOption("--audio-format", options.audioFormat);
             } else {
-                request.addOption("-f", UltVideoLinkRules.videoFormat(UltVideoAutoSave.maxVideoHeight(account)));
+                request.addOption("-f", UltVideoLinkRules.videoFormat(options.height));
                 request.addOption("--merge-output-format", "mp4");
             }
             request.addOption("-o", new File(work, "ult_media.%(ext)s").getAbsolutePath());
@@ -169,7 +171,7 @@ public final class UltVideoSiteDownloader {
                 if (!stopped.get()) {
                     final long now = SystemClock.elapsedRealtime();
                     final String reason;
-                    final String policyBlock = UltVideoAutoSave.siteBlockReason(account);
+                    final String policyBlock = UltVideoAutoSave.requestBlockReason(account, options.manual, ownerId, requestCancelled);
                     if (policyBlock != null) {
                         reason = "Download stopped: " + policyBlock;
                     } else if (totalBytes(work, maxBytes) > maxBytes) {
@@ -195,9 +197,9 @@ public final class UltVideoSiteDownloader {
                 }
             }, 0, 500, TimeUnit.MILLISECONDS);
 
-            if (stopBeforeWork(account, stopped, stopReason)) return false;
+            if (stopBeforeWork(account, stopped, stopReason, options, ownerId, requestCancelled)) return false;
             // Query the executable, not the updater's optional SharedPreferences metadata.
-            if (stopBeforeWork(account, stopped, stopReason)) return false;
+            if (stopBeforeWork(account, stopped, stopReason, options, ownerId, requestCancelled)) return false;
             try {
                 YoutubeDLRequest versionRequest = new YoutubeDLRequest(
                         java.util.Collections.<String>emptyList());
@@ -211,14 +213,14 @@ public final class UltVideoSiteDownloader {
                 extractorVersion = "Unknown (version query failed)";
             }
             UltExtractorMaintenance.recordDetectedVersion(extractorVersion);
-            if (stopBeforeWork(account, stopped, stopReason)) return false;
+            if (stopBeforeWork(account, stopped, stopReason, options, ownerId, requestCancelled)) return false;
             lastProgress.set(SystemClock.elapsedRealtime());
-            UltVideoAutoSave.noteResult(account, "Extracting video; 90-second inactivity limit");
+            UltVideoAutoSave.noteResult(account, "Extracting " + (audioOnly ? "audio" : "video") + "; 90-second inactivity limit");
             // Never display 'line': extractor output can expose URL paths,
             // authorization tokens, cookies, or personal information.
             YoutubeDL.getInstance().execute(request, processId,
                     (progress, eta, line) -> {
-                        String policyBlock = UltVideoAutoSave.siteBlockReason(account);
+                        String policyBlock = UltVideoAutoSave.requestBlockReason(account, options.manual, ownerId, requestCancelled);
                         if (policyBlock != null && stopReason.compareAndSet(null,
                                 "Download stopped: " + policyBlock)) {
                             stopped.set(true);
@@ -241,22 +243,22 @@ public final class UltVideoSiteDownloader {
                         return Unit.INSTANCE;
                     });
 
-            if (stopBeforeWork(account, stopped, stopReason)) return false;
+            if (stopBeforeWork(account, stopped, stopReason, options, ownerId, requestCancelled)) return false;
             stage = "verification";
-            File result = selectFinishedMedia(work, audioOnly);
+            File result = selectFinishedMedia(work, options);
             if (result == null || result.length() <= 0 || result.length() > maxBytes) {
                 UltVideoAutoSave.noteResult(account, "No supported " + (audioOnly ? "audio" : "video") + " file within " + limitMiB + " MiB");
                 return false;
             }
             stage = "saving";
-            if (!publish(context, result, account, maxBytes, stopped, audioOnly)) {
-                if (!stopBeforeWork(account, stopped, stopReason)) {
+            if (!publish(context, result, account, maxBytes, stopped, options, ownerId, requestCancelled)) {
+                if (!stopBeforeWork(account, stopped, stopReason, options, ownerId, requestCancelled)) {
                     UltVideoAutoSave.noteResult(account, "Failed to save video");
                 }
                 return false;
             }
             UltVideoAutoSave.noteResult(account, "Saved to Downloads/Ultgram");
-            if (!audioOnly && outgoingLink && UltVideoAutoSave.isPostToChat(account) && !stopped.get()) {
+            if (!options.manual && !audioOnly && outgoingLink && UltVideoAutoSave.isPostToChat(account) && !stopped.get()) {
                 if (!UltVideoChatPost.safeDestination(account, dialogId, original)) {
                     UltVideoAutoSave.noteResult(account,
                             "Saved locally; group identity, permissions or topic not supported");
@@ -269,7 +271,7 @@ public final class UltVideoSiteDownloader {
             return true;
         } catch (Exception failure) {
             // Exceptions can contain private URLs or query tokens; never show raw text.
-            if (!stopBeforeWork(account, stopped, stopReason)) {
+            if (!stopBeforeWork(account, stopped, stopReason, options, ownerId, requestCancelled)) {
                 UltVideoAutoSave.noteResult(account, UltVideoFailure.publicReason(failure, stage));
             }
             return false;
@@ -286,13 +288,14 @@ public final class UltVideoSiteDownloader {
         }
     }
 
-    private static boolean allowed(int account) {
-        return UltVideoAutoSave.siteBlockReason(account) == null;
+    private static boolean allowed(int account, UltMediaOptions options, long ownerId, AtomicBoolean requestCancelled) {
+        return UltVideoAutoSave.requestBlockReason(account, options.manual, ownerId, requestCancelled) == null;
     }
 
     private static boolean stopBeforeWork(int account, AtomicBoolean stopped,
-                                          AtomicReference<String> stopReason) {
-        String block = UltVideoAutoSave.siteBlockReason(account);
+                                          AtomicReference<String> stopReason, UltMediaOptions options,
+                                          long ownerId, AtomicBoolean requestCancelled) {
+        String block = UltVideoAutoSave.requestBlockReason(account, options.manual, ownerId, requestCancelled);
         if (block != null) stopReason.compareAndSet(null, "Download stopped: " + block);
         if (block == null && !stopped.get() && stopReason.get() == null) return false;
         stopped.set(true);
@@ -313,15 +316,15 @@ public final class UltVideoSiteDownloader {
         return size;
     }
 
-    private static File selectFinishedMedia(File dir, boolean audioOnly) {
+    private static File selectFinishedMedia(File dir, UltMediaOptions options) {
         List<File> matching = new ArrayList<>();
         File[] files = dir.listFiles();
         if (files == null) return null;
         for (File file : files) {
             if (!file.isFile()) continue;
             String name = file.getName().toLowerCase(Locale.US);
-            if (audioOnly) {
-                if (name.endsWith(".m4a")) matching.add(file);
+            if (options.audio) {
+                if (name.endsWith("." + options.audioFormat)) matching.add(file);
                 continue;
             }
             if (name.endsWith(".mp4") || name.endsWith(".webm")
@@ -331,15 +334,15 @@ public final class UltVideoSiteDownloader {
         return matching.size() == 1 ? matching.get(0) : null;
     }
 
-    private static boolean publish(Context context, File file, int account, long maxBytes, AtomicBoolean stopped, boolean audioOnly) {
-        if (stopped.get() || !allowed(account)) return false;
+    private static boolean publish(Context context, File file, int account, long maxBytes, AtomicBoolean stopped, UltMediaOptions options, long ownerId, AtomicBoolean requestCancelled) {
+        if (stopped.get() || !allowed(account, options, ownerId, requestCancelled)) return false;
         String originalName = file.getName().toLowerCase(Locale.US);
         String extension = originalName.substring(originalName.lastIndexOf('.') + 1);
-        String mime = audioOnly ? "audio/mp4" : "video/mp4";
+        String mime = options.mime();
         if ("webm".equals(extension)) mime = "video/webm";
         if ("mkv".equals(extension)) mime = "video/x-matroska";
         if ("mov".equals(extension)) mime = "video/quicktime";
-        String name = (audioOnly ? "ult_audio_" : "ult_video_") + System.currentTimeMillis() + "_"
+        String name = (options.audio ? "ult_audio_" : "ult_video_") + System.currentTimeMillis() + "_"
                 + UUID.randomUUID().toString().substring(0, 8) + "." + extension;
         ContentResolver resolver = context.getContentResolver();
         ContentValues values = new ContentValues();
@@ -359,12 +362,12 @@ public final class UltVideoSiteDownloader {
                 byte[] buffer = new byte[65536];
                 long copied = 0;
                 for (int n; (n = input.read(buffer)) != -1; ) {
-                    if (stopped.get() || !allowed(account) || copied + n > maxBytes) return false;
+                    if (stopped.get() || !allowed(account, options, ownerId, requestCancelled) || copied + n > maxBytes) return false;
                     output.write(buffer, 0, n);
                     copied += n;
                 }
             }
-            if (stopped.get() || !allowed(account)) return false;
+            if (stopped.get() || !allowed(account, options, ownerId, requestCancelled)) return false;
             ContentValues visible = new ContentValues();
             visible.put(MediaStore.MediaColumns.IS_PENDING, 0);
             if (resolver.update(dest, visible, null, null) != 1) return false;

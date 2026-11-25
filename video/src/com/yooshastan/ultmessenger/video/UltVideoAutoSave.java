@@ -44,16 +44,28 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
     private static final Set<String> IN_FLIGHT = Collections.synchronizedSet(new HashSet<>());
     private static final UltVideoAutoSave[] OBSERVERS = new UltVideoAutoSave[UserConfig.MAX_ACCOUNT_COUNT];
     private final int account;
+    private static final java.util.concurrent.ConcurrentHashMap<String, SiteJob> SITE_JOBS = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final int MAX_SITE_JOBS = 24;
+    private static final class SiteJob {
+        final int account;
+        final String key, source;
+        final UltMediaOptions options;
+        final java.util.concurrent.atomic.AtomicBoolean cancelled = new java.util.concurrent.atomic.AtomicBoolean();
+        volatile boolean running;
+        SiteJob(int account, String key, String source, UltMediaOptions options) {
+            this.account = account; this.key = key; this.source = source; this.options = options;
+        }
+    }
     // One retry ticket per account, memory only; never persist remote URLs.
     private static final java.util.concurrent.ConcurrentHashMap<Integer, RetryTicket> RETRIES =
             new java.util.concurrent.ConcurrentHashMap<>();
     private static final long RETRY_TTL_MS = 15L * 60 * 1000;
     private static final class RetryTicket {
         final String url, key;
-        final boolean audio;
+        final UltMediaOptions options;
         final long ownerId, createdAt;
-        RetryTicket(String url, String key, boolean audio, long ownerId) {
-            this.url = url; this.key = key; this.audio = audio; this.ownerId = ownerId;
+        RetryTicket(String url, String key, UltMediaOptions options, long ownerId) {
+            this.url = url; this.key = key; this.options = options; this.ownerId = ownerId;
             createdAt = android.os.SystemClock.elapsedRealtime();
         }
     }
@@ -84,7 +96,11 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
 
     public static void setEnabled(int account, boolean enabled) {
         preferences().edit().putBoolean(setting("enabled", account), enabled).apply();
-        if (!enabled) RETRIES.remove(account);
+        if (!enabled) {
+            RetryTicket ticket = RETRIES.get(account);
+            if (ticket != null && !ticket.options.manual) RETRIES.remove(account, ticket);
+            for (SiteJob job : SITE_JOBS.values()) if (job.account == account && !job.options.manual) job.cancelled.set(true);
+        }
     }
 
     /** A separate, explicitly opt-in setting; never enabled by default. */
@@ -118,6 +134,14 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
                 .putBoolean(setting("post_to_chat", account), false).apply();
     }
 
+    public static String defaultAudioFormat(int account) {
+        return new UltMediaOptions(true, true, 0, preferences().getString(setting("audio_format", account), "m4a")).audioFormat;
+    }
+    public static void setDefaultAudioFormat(int account, String format) {
+        preferences().edit().putString(setting("audio_format", account),
+                new UltMediaOptions(true, true, 0, format).audioFormat).apply();
+    }
+
     public static boolean metadataProbeEnabled(int account) {
         return preferences().getBoolean(setting("metadata_probe", account), false);
     }
@@ -140,30 +164,88 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
 
     public static boolean canRetry(int account) {
         RetryTicket ticket = retryTicket(account);
-        return ticket != null && !IN_FLIGHT.contains(ticket.key) && siteBlockReason(account) == null
+        return ticket != null && !IN_FLIGHT.contains(ticket.key) && requestBlockReason(account, ticket.options.manual, ticket.ownerId, null) == null
                 && !UltExtractorMaintenance.busy() && !UltVideoSiteDownloader.hasActive(account);
     }
 
     /** Explicit retry is local-only, never posts another message to the chat. */
     public static void retryLastSite(int account) {
         RetryTicket ticket = retryTicket(account);
-        if (ticket == null || !canRetry(account) || !IN_FLIGHT.add(ticket.key)) return;
+        if (ticket == null || !canRetry(account)) return;
+        scheduleSite(account, ticket.url, ticket.key, 0L, null, false, ticket.options, ticket.ownerId);
+    }
+
+    public static String siteQueueSummary(int account) {
+        StringBuilder text = new StringBuilder();
+        for (SiteJob job : SITE_JOBS.values()) {
+            if (job.account != account) continue;
+            if (text.length() > 0) text.append('\n');
+            text.append(job.cancelled.get() ? "Cancelling" : job.running ? "Active" : "Queued")
+                    .append(" · ").append(job.source).append(" · ").append(job.options.variant())
+                    .append(job.options.manual ? " · Manual" : " · Auto");
+        }
+        return text.length() == 0 ? "No queued site downloads" : text.toString();
+    }
+
+    public static boolean hasSiteJobs(int account) {
+        for (SiteJob job : SITE_JOBS.values()) if (job.account == account && !job.cancelled.get()) return true;
+        return false;
+    }
+
+    public static void cancelSiteJobs(int account) {
+        for (SiteJob job : SITE_JOBS.values()) if (job.account == account) job.cancelled.set(true);
+        UltVideoSiteDownloader.cancelAccount(account);
+    }
+
+    public static String requestBlockReason(int account, boolean manual, long ownerId,
+                                             java.util.concurrent.atomic.AtomicBoolean cancelled) {
+        if (cancelled != null && cancelled.get()) return "Cancelled";
+        if (ownerId == 0 || ownerId != UserConfig.getInstance(account).getClientUserId()) return "Account changed";
+        if (strictModeRequested()) return "Native strict proxy enabled";
+        if (!manual && !isEnabled(account)) return "Automatic downloads disabled";
+        return networkBlockReason(account);
+    }
+
+    private static String siteKey(int account, long dialogId, int messageId, String url, UltMediaOptions options) {
+        return account + ":" + dialogId + ":" + messageId + ":" + UltVideoLinkRules.extractionUrl(url) + ":" + options.variant();
+    }
+
+    /** A bounded common queue for manual and automatic website jobs. */
+    private static synchronized String scheduleSite(int account, String url, String key, long dialogId,
+            TLRPC.Message original, boolean outgoingLink, UltMediaOptions options, long ownerId) {
+        String blocked = requestBlockReason(account, options.manual, ownerId, null);
+        if (blocked != null) return "Not queued: " + blocked;
+        if (isQueued(key)) return "Already saved for this message and format";
+        if (SITE_JOBS.size() >= MAX_SITE_JOBS) return "Site queue is full";
+        if (!IN_FLIGHT.add(key)) return "Already queued";
+        SiteJob job = new SiteJob(account, key, UltVideoLinkRules.sourceCategory(url), options);
+        SITE_JOBS.put(key, job);
         EXECUTOR.execute(() -> {
             try {
-                if (retryTicket(account) != ticket || siteBlockReason(account) != null) return;
-                noteAttempt(account, ticket.url);
-                noteResult(account, "Retrying last site download locally");
+                job.running = true;
+                String reason = requestBlockReason(account, options.manual, ownerId, job.cancelled);
+                if (reason != null) { noteResult(account, "Not started: " + reason); return; }
+                noteAttempt(account, url);
+                RETRIES.remove(account);
+                noteResult(account, "Starting on-device site extractor");
                 if (UltVideoSiteDownloader.download(ApplicationLoader.applicationContext, account,
-                        ticket.url, 0L, null, false, ticket.audio)) {
-                    markSiteCompleted(account, ticket.key);
-                    RETRIES.remove(account, ticket);
+                        url, dialogId, original, outgoingLink, options, ownerId, job.cancelled)) {
+                    markSiteCompleted(account, key);
+                } else if (!job.cancelled.get() && ownerId == UserConfig.getInstance(account).getClientUserId()
+                        && (options.manual || isEnabled(account))) {
+                    RETRIES.put(account, new RetryTicket(url, key, options, ownerId));
                 }
-            } catch (Exception ignored) {
-                noteResult(account, "Retry failed");
-            } finally {
-                IN_FLIGHT.remove(ticket.key);
-            }
+            } catch (Exception ignored) { noteResult(account, "Failed to process site media"); }
+            finally { SITE_JOBS.remove(key, job); IN_FLIGHT.remove(key); }
         });
+        return "Queued " + (options.audio ? options.audioFormat.toUpperCase(Locale.US) : "video");
+    }
+
+    public static String queueManualSite(int account, long dialogId, int messageId, String url, UltMediaOptions options, long ownerId) {
+        if (!options.manual || messageId <= 0 || DialogObject.isEncryptedDialog(dialogId)
+                || !UltVideoLinkRules.isSiteUrl(url)) return "Unsupported or protected message";
+        return scheduleSite(account, url, siteKey(account, dialogId, messageId, url, options),
+                0L, null, false, options, ownerId);
     }
 
     public static int maxVideoHeight(int account) {
@@ -318,6 +400,11 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
             final boolean audio = audioOnly(account);
             if (audio && !UltVideoLinkRules.isSiteUrl(url)) continue;
             final long ownerId = UserConfig.getInstance(account).getClientUserId();
+            if (UltVideoLinkRules.isSiteUrl(url)) {
+                UltMediaOptions options = new UltMediaOptions(false, audio, maxVideoHeight(account), defaultAudioFormat(account));
+                scheduleSite(account, url, siteKey(account, dialogId, owner.id, url, options), dialogId, owner, outgoingLink, options, ownerId);
+                continue;
+            }
             String key = account + ":" + dialogId + ":" + owner.id + ":" + url;
             if (isQueued(key) || !IN_FLIGHT.add(key)) continue;
             EXECUTOR.execute(() -> {
@@ -335,20 +422,6 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
                     String networkReason = networkBlockReason(account);
                     if (networkReason != null) {
                         noteResult(account, "Skipped: " + networkReason);
-                        return;
-                    }
-                    if (UltVideoLinkRules.isSiteUrl(url)) {
-                        noteResult(account, "Starting on-device site extractor");
-                        RetryTicket ticket = new RetryTicket(url, key, audio, ownerId);
-                        // Only retain the failed site attempt if the account is still active.
-                        RETRIES.remove(account);
-                        if (UltVideoSiteDownloader.download(
-                                ApplicationLoader.applicationContext, account, url,
-                                dialogId, owner, outgoingLink, audio)) {
-                            markSiteCompleted(account, key);
-                        } else if (isEnabled(account) && ownerId == UserConfig.getInstance(account).getClientUserId()) {
-                            RETRIES.put(account, ticket);
-                        }
                         return;
                     }
                     Probe probe = probe(url, account);
@@ -414,6 +487,7 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
     /** Cancel incomplete owned external transfers on strict-mode activation. */
     public static synchronized void cancelPendingForStrict() {
         if (!strictModeRequested()) return;
+        for (SiteJob job : SITE_JOBS.values()) job.cancelled.set(true);
         UltExtractorMaintenance.cancelForStrict();
         UltVideoSiteDownloader.cancelAll();
         Context context = ApplicationLoader.applicationContext;

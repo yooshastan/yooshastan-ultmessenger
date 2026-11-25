@@ -7,9 +7,39 @@ APP = Path("TMessagesProj/src/main/java/org/telegram/messenger/ApplicationLoader
 STRICT = Path("TMessagesProj/src/main/java/org/telegram/tgnet/ConnectionsManager.java")
 GRADLE = Path("TMessagesProj/build.gradle")
 MANIFEST = Path("TMessagesProj_App/src/main/AndroidManifest.xml")
+CHAT = Path("TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java")
 DEST = Path("TMessagesProj/src/main/java/com/yooshastan/ultmessenger/video")
 GRADLE_ANCHOR = "    implementation 'org.nanohttpd:nanohttpd:2.3.1'\n"
 MANIFEST_ANCHOR = '<application android:name="org.telegram.messenger.ApplicationLoaderImpl" tools:replace="name">'
+CHAT_CONSTANT_ANCHOR = "    public final static int OPTION_COPY = 3;\n"
+CHAT_MENU_ANCHOR = "        if (showWelcomeMessageRevertOption(primaryMessage)) {\n"
+CHAT_HANDLER_ANCHOR = "            case OPTION_COPY: {\n"
+CHAT_CONSTANTS = """    public final static int OPTION_ULT_MEDIA_VIDEO = 0x554c70;
+    public final static int OPTION_ULT_MEDIA_AUDIO = 0x554c71;
+    public final static int OPTION_ULT_MEDIA_OPTIONS = 0x554c72;
+    public final static int OPTION_ULT_MEDIA_COPY = 0x554c73;
+"""
+CHAT_MENU = """        if (com.yooshastan.ultmessenger.video.UltManualMediaMenu.eligible(selectedObject,
+                currentEncryptedChat != null || (currentChat != null && currentChat.noforwards))) {
+            if (!com.yooshastan.ultmessenger.video.UltVideoAutoSave.strictModeRequested()) {
+                items.add("ULT: Download video"); options.add(OPTION_ULT_MEDIA_VIDEO); icons.add(R.drawable.msg_copy);
+                items.add("ULT: Download audio"); options.add(OPTION_ULT_MEDIA_AUDIO); icons.add(R.drawable.msg_copy);
+                items.add("ULT: Download with options"); options.add(OPTION_ULT_MEDIA_OPTIONS); icons.add(R.drawable.msg_copy);
+            }
+            items.add("ULT: Copy sanitized link"); options.add(OPTION_ULT_MEDIA_COPY); icons.add(R.drawable.msg_copy);
+        }
+"""
+CHAT_HANDLERS = """            case OPTION_ULT_MEDIA_VIDEO:
+            case OPTION_ULT_MEDIA_AUDIO:
+            case OPTION_ULT_MEDIA_OPTIONS:
+            case OPTION_ULT_MEDIA_COPY: {
+                com.yooshastan.ultmessenger.video.UltManualMediaMenu.open(getParentActivity(), currentAccount,
+                        selectedObject, currentEncryptedChat != null || (currentChat != null && currentChat.noforwards),
+                        option == OPTION_ULT_MEDIA_VIDEO ? 0 : option == OPTION_ULT_MEDIA_AUDIO ? 1
+                        : option == OPTION_ULT_MEDIA_OPTIONS ? 2 : 3);
+                break;
+            }
+"""
 SOURCE = Path("video/src/com/yooshastan/ultmessenger/video")
 APP_ANCHOR = "        it.belloworld.mercurygram.folders.MgFolderSync.startAll(); // Mercurygram: folder sync via Saved Messages\n"
 STRICT_ANCHOR = '                .putBoolean(ULT_STRICT_NATIVE_PROXY_KEY, enabled).apply();\n'
@@ -24,6 +54,13 @@ def replace_once(source: str, anchor: str, replacement: str) -> str:
 
 def integrate(root: Path) -> None:
     app_file, strict_file = root / APP, root / STRICT
+    chat_file = root / CHAT
+    chat = chat_file.read_text(encoding="utf-8")
+    if "OPTION_ULT_MEDIA_VIDEO" in chat:
+        raise ValueError("Manual media already integrated")
+    chat_new = replace_once(chat, CHAT_CONSTANT_ANCHOR, CHAT_CONSTANTS + CHAT_CONSTANT_ANCHOR)
+    chat_new = replace_once(chat_new, CHAT_MENU_ANCHOR, CHAT_MENU + CHAT_MENU_ANCHOR)
+    chat_new = replace_once(chat_new, CHAT_HANDLER_ANCHOR, CHAT_HANDLERS + CHAT_HANDLER_ANCHOR)
     app = app_file.read_text(encoding="utf-8")
     strict = strict_file.read_text(encoding="utf-8")
     gradle_file, manifest_file = root / GRADLE, root / MANIFEST
@@ -47,7 +84,8 @@ def integrate(root: Path) -> None:
     models = {name: (source / name).read_bytes()
               for name in ("UltVideoLinkRules.java", "UltVideoAutoSave.java", "UltVideoSiteDownloader.java",
                            "UltVideoChatPost.java", "UltVideoFailure.java", "UltExtractorPolicy.java",
-                           "UltExtractorMaintenance.java")}
+                           "UltExtractorMaintenance.java", "UltMediaOptions.java", "UltManualMediaMenu.java")}
+    chat_file.write_text(chat_new, encoding="utf-8")
     app_file.write_text(app_new, encoding="utf-8")
     strict_file.write_text(strict_new, encoding="utf-8")
     gradle_file.write_text(gradle_new, encoding="utf-8")
