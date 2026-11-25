@@ -208,3 +208,18 @@ jobs:
           set -euo pipefail
           python3 -m py_compile scripts/prepare-foss-unsigned-release.py scripts/verify-foss-release-apk.py
           python3 -m unittest discover -s tests -p 'test_foss_release_pipeline.py' -v
+
+      - name: Beta 3.4.9 — shared sanitizer and downloader contracts
+        if: github.ref == 'refs/heads/feature/beta03-4-9-extractor-maintenance' || github.head_ref == 'feature/beta03-4-9-extractor-maintenance'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/build-ultgram-local.py
+          python3 -m unittest discover -s video/tests -p 'test_integration.py' -v
+          python3 -m unittest discover -s settings/tests -p 'test_link_sanitizer_integration.py' -v
+          classes="$(mktemp -d)"
+          trap 'rm -rf "$classes"' EXIT
+          javac -d "$classes" settings/src/com/yooshastan/ultmessenger/settings/UltLinkSanitizerPolicy.java video/src/com/yooshastan/ultmessenger/video/UltVideoLinkRules.java video/src/com/yooshastan/ultmessenger/video/UltVideoFailure.java settings/tests/UltLinkSanitizerPolicyTest.java video/tests/UltVideoLinkRulesTest.java video/tests/UltVideoFailureTest.java
+          java -cp "$classes" UltLinkSanitizerPolicyTest
+          java -cp "$classes" UltVideoLinkRulesTest
+          java -cp "$classes" UltVideoFailureTest
