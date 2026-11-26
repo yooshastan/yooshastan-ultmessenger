@@ -19,18 +19,14 @@ CHAT_CONSTANTS = """    public final static int OPTION_ULT_MEDIA_VIDEO = 0x554c7
     public final static int OPTION_ULT_MEDIA_OPTIONS = 0x554c72;
     public final static int OPTION_ULT_MEDIA_COPY = 0x554c73;
     public final static int OPTION_ULT_MEDIA_SAVE = 0x554c74;
-    public final static int OPTION_ULT_MEDIA_REVIEW = 0x554c75;
 """
 CHAT_MENU = """        if (com.yooshastan.ultmessenger.video.UltManualMediaMenu.eligible(selectedObject,
                 currentEncryptedChat != null || (currentChat != null && currentChat.noforwards))) {
             if (!com.yooshastan.ultmessenger.video.UltVideoAutoSave.strictModeRequested()) {
                 items.add("ULT: Download video to chat"); options.add(OPTION_ULT_MEDIA_VIDEO); icons.add(R.drawable.ult_media_video);
-                items.add("ULT: Add audio to chat"); options.add(OPTION_ULT_MEDIA_AUDIO); icons.add(R.drawable.ult_media_audio);
+                items.add("ULT: Download audio to chat"); options.add(OPTION_ULT_MEDIA_AUDIO); icons.add(R.drawable.ult_media_audio);
                 items.add("ULT: Add media with options"); options.add(OPTION_ULT_MEDIA_OPTIONS); icons.add(R.drawable.ult_media_options);
                 items.add("ULT: Save to device"); options.add(OPTION_ULT_MEDIA_SAVE); icons.add(R.drawable.ult_media_save);
-                if (com.yooshastan.ultmessenger.video.UltChatMediaDraft.hasReady(currentAccount, selectedObject)) {
-                    items.add("ULT: Review ready attachment"); options.add(OPTION_ULT_MEDIA_REVIEW); icons.add(R.drawable.ult_media_review);
-                }
             }
             items.add("ULT: Copy sanitized link"); options.add(OPTION_ULT_MEDIA_COPY); icons.add(R.drawable.ult_media_link);
         }
@@ -53,11 +49,6 @@ CHAT_HANDLERS = """            case OPTION_ULT_MEDIA_VIDEO: {
             case OPTION_ULT_MEDIA_SAVE: {
                 com.yooshastan.ultmessenger.video.UltManualMediaMenu.open(this, currentAccount,
                         selectedObject, currentEncryptedChat != null || (currentChat != null && currentChat.noforwards), 4);
-                break;
-            }
-            case OPTION_ULT_MEDIA_REVIEW: {
-                com.yooshastan.ultmessenger.video.UltManualMediaMenu.open(this, currentAccount,
-                        selectedObject, currentEncryptedChat != null || (currentChat != null && currentChat.noforwards), 5);
                 break;
             }
             case OPTION_ULT_MEDIA_COPY: {

@@ -11,6 +11,14 @@ public final class UltMediaOptionsTest {
         check(new UltMediaOptions(true, false, 720, "m4a", true).directVideoPost());
         check(!new UltMediaOptions(true, true, 0, "m4a", true).directVideoPost());
         check(!new UltMediaOptions(false, false, 720, "m4a", true).toChat);
+        for (String format : new String[]{"m4a","mp3","opus"}) {
+            UltMediaOptions chat = new UltMediaOptions(true, true, 0, format, true);
+            check(chat.directChatPost() && chat.extension().equals(format));
+            check(chat.handoffVariant().equals(format));
+            check(chat.variant().equals(format + "-chat"));
+            check(!new UltMediaOptions(true, true, 0, format).directChatPost());
+        }
+        check(video.handoffVariant().equals("video"));
         System.out.println("UltMediaOptionsTest OK");
     }
 }

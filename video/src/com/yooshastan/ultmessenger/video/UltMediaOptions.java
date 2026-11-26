@@ -16,6 +16,9 @@ public final class UltMediaOptions {
         this.audioFormat = "mp3".equals(audioFormat) || "opus".equals(audioFormat) ? audioFormat : "m4a";
     }
     public boolean directVideoPost() { return toChat && !audio; }
+    public boolean directChatPost() { return toChat; }
+    public String extension() { return audio ? audioFormat : "mp4"; }
+    public String handoffVariant() { return audio ? audioFormat : "video"; }
     public String variant() { return (audio ? audioFormat : "video-" + height) + (toChat && audio ? "-chat" : ""); }
     public String mime() {
         if (!audio) return "video/mp4";

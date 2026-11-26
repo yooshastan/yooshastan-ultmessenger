@@ -216,8 +216,8 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
         String blocked = requestBlockReason(account, options.manual, ownerId, null);
         if (blocked != null) return "Not queued: " + blocked;
         if (options.toChat && (target == null || UltChatMediaDraft.blockReason(target, options) != null)) return "Chat attachment blocked";
-        if (options.directVideoPost() && UltVideoChatPost.alreadyRequested(UltVideoChatPost.handoffKey(account, ownerId, dialogId, original.id, url)))
-            return "Video already queued for this link; check chat delivery";
+        if (options.directChatPost() && UltVideoChatPost.alreadyRequested(UltVideoChatPost.handoffKey(account, ownerId, dialogId, original.id, url, options)))
+            return "Media already queued for this link and format; check chat delivery";
         if (!options.toChat && isQueued(key)) return "Already saved for this message and format";
         if (SITE_JOBS.size() >= MAX_SITE_JOBS) return "Site queue is full";
         if (!IN_FLIGHT.add(key)) return "Already queued";
@@ -233,7 +233,7 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
                 noteResult(account, "Starting on-device site extractor");
                 if (UltVideoSiteDownloader.download(ApplicationLoader.applicationContext, account,
                         url, dialogId, original, outgoingLink, options, ownerId, job.cancelled, target)) {
-                    if (!options.toChat || options.directVideoPost()) markSiteCompleted(account, key);
+                    markSiteCompleted(account, key); // local save confirmed, not Telegram delivery
                 } else if (!options.toChat && !job.cancelled.get() && ownerId == UserConfig.getInstance(account).getClientUserId()
                         && (options.manual || isEnabled(account))) {
                     RETRIES.put(account, new RetryTicket(url, key, options, ownerId));

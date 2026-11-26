@@ -205,7 +205,7 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
         addText(downloads, context, "Limits total temporary files for new site downloads, including audio and merge files. Direct file downloads retain their 100 MiB limit.", 13);
 
         addHeading(manager, context, "Download manager");
-        addText(manager, context, "Long-press a supported media link to download and send a video using the same chat-posting path as automation. Audio can be reviewed before sending. Save to device never sends media. Automation is optional.", 14);
+        addText(manager, context, "Long-press a supported media link to download and send video or audio to its chat. Save to device never sends media. Manual actions do not require automation.", 14);
         status = addText(manager, context, "", 14);
         cancelButton = addButton(manager, context, "Cancel active and queued site downloads", () -> {
             UltVideoAutoSave.cancelSiteJobs(currentAccount);
@@ -349,8 +349,7 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
                 ? java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT)
                     .format(new java.util.Date(attemptedAt))
                 : "Not yet recorded";
-        status.setText(UltVideoAutoSave.siteQueueSummary(currentAccount) + "\nReady chat attachments: " + com.yooshastan.ultmessenger.video.UltChatMediaDraft.readyCount(currentAccount)
-                + "\nReview ready attachments by long-pressing the original link.\n\nyt-dlp: " + UltVideoSiteDownloader.extractorVersion()
+        status.setText(UltVideoAutoSave.siteQueueSummary(currentAccount) + "\n\nyt-dlp: " + UltVideoSiteDownloader.extractorVersion()
                 + "\nLast inspected: " + UltVideoAutoSave.lastSourceCategory(currentAccount)
                 + " (" + attemptTime + ")"
                 + "\nResult: " + UltVideoAutoSave.lastResult(currentAccount)

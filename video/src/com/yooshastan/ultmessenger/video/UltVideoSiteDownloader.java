@@ -254,24 +254,18 @@ public final class UltVideoSiteDownloader {
                 UltVideoAutoSave.noteResult(account, "No supported " + (audioOnly ? "audio" : "video") + " file within " + limitMiB + " MiB");
                 return false;
             }
-            if (options.toChat && !options.directVideoPost()) {
-                stage = "attachment";
-                if (stopBeforeWork(account, stopped, stopReason, options, ownerId, requestCancelled)) return false;
-                return UltChatMediaDraft.stage(context, target, options, result, requestCancelled);
-            }
             stage = "saving";
             if (!publish(context, result, account, maxBytes, stopped, options, ownerId, requestCancelled)) {
                 if (!stopBeforeWork(account, stopped, stopReason, options, ownerId, requestCancelled)) {
-                    UltVideoAutoSave.noteResult(account, "Failed to save video");
+                    UltVideoAutoSave.noteResult(account, "Failed to save " + (audioOnly ? "audio" : "video"));
                 }
                 return false;
             }
             UltVideoAutoSave.noteResult(account, "Saved to Downloads/Ultgram");
-            if (options.directVideoPost() && !stopped.get()) {
-                if (!UltVideoChatPost.enqueue(context, account, dialogId, original, result, false,
-                        ownerId, url, target, options, requestCancelled)) {
-                    UltVideoAutoSave.noteResult(account, "Saved locally; video chat post not queued (check size, rights or existing send)");
-                }
+            if (options.directChatPost() && !stopped.get()) {
+                // The handoff reports its own exact failure or acceptance reason.
+                UltVideoChatPost.enqueue(context, account, dialogId, original, result, false,
+                        ownerId, url, target, options, requestCancelled);
             } else if (!options.manual && !audioOnly && outgoingLink && UltVideoAutoSave.isPostToChat(account) && !stopped.get()) {
                 if (!UltVideoChatPost.safeDestination(account, dialogId, original)) {
                     UltVideoAutoSave.noteResult(account,

@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-/** Explicit long-press actions. Video download-and-send shares automatic posting; audio retains preview. */
+/** Explicit long-press download-and-send for video and audio; local save stays separate. */
 public final class UltManualMediaMenu {
     private UltManualMediaMenu() {}
     public static List<String> links(MessageObject message, boolean protectedChat) {
@@ -69,7 +69,6 @@ public final class UltManualMediaMenu {
         if (a == null || a.isFinishing()) return;
         List<String> urls = links(message, protectedNow(account, message, protectedChat));
         if (urls.isEmpty()) return;
-        if (action == 5) { UltChatMediaDraft.reviewReady(fragment, account, message); return; }
         final long owner = UserConfig.getInstance(account).getClientUserId();
         Consumer<Integer> chooseLink = index -> {
             if (owner == 0 || owner != UserConfig.getInstance(account).getClientUserId()
@@ -91,10 +90,10 @@ public final class UltManualMediaMenu {
                     String blocked = UltChatMediaDraft.blockReason(target, options);
                     if (blocked != null) { toast(a, blocked); return; }
                 }
-                show(a, new AlertDialog.Builder(a).setTitle(options.directVideoPost() ? "Download and send video to this chat?" : toChat ? "Prepare audio for this chat?" : "Save media locally?")
+                show(a, new AlertDialog.Builder(a).setTitle(toChat ? (options.audio ? "Download and send audio to this chat?" : "Download and send video to this chat?") : "Save media locally?")
                         .setMessage("Contacts the selected website outside Telegram MTProxy. Only download media you may save. "
-                                + (options.directVideoPost() ? "Saves the video and sends it as a new message in this conversation once downloaded (up to 100 MiB for chat upload). No separate preview." : toChat ? "Review the private audio attachment and press Send separately. Up to 100 MiB." : "No chat message will be sent."))
-                        .setNegativeButton("Cancel", null).setPositiveButton(options.directVideoPost() ? "Download & send" : "Download", (d, w) -> {
+                                + (toChat ? "Saves the media and sends it as a new message in this conversation once downloaded (up to 100 MiB for chat upload). No separate preview." : "No chat message will be sent."))
+                        .setNegativeButton("Cancel", null).setPositiveButton(toChat ? "Download & send" : "Download", (d, w) -> {
                             if (!links(message, protectedNow(account, message, protectedChat)).contains(url)) return;
                             toast(a, toChat ? UltVideoAutoSave.queueManualChat(target, url, options)
                                     : UltVideoAutoSave.queueManualSite(account, MessageObject.getDialogId(message.messageOwner),

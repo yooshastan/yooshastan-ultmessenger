@@ -51,8 +51,8 @@ public final class UltVideoChatPost {
             if (HANDED_OFF.size() > 1000) HANDED_OFF.remove(HANDED_OFF.iterator().next());
         }
     }
-    public static String handoffKey(int account, long ownerId, long dialogId, int messageId, String url) {
-        String input = account + ":" + ownerId + ":" + dialogId + ":" + messageId + ":" + UltVideoLinkRules.extractionUrl(url);
+    public static String handoffKey(int account, long ownerId, long dialogId, int messageId, String url, UltMediaOptions options) {
+        String input = account + ":" + ownerId + ":" + dialogId + ":" + messageId + ":" + UltVideoLinkRules.extractionUrl(url) + ":" + options.handoffVariant();
         try {
             byte[] digest = java.security.MessageDigest.getInstance("SHA-256")
                     .digest(input.getBytes(java.nio.charset.StandardCharsets.UTF_8));
@@ -66,12 +66,12 @@ public final class UltVideoChatPost {
             UltMediaOptions options, java.util.concurrent.atomic.AtomicBoolean cancelled) {
         if (cancelled.get() || ownerId != org.telegram.messenger.UserConfig.getInstance(account).getClientUserId()) return false;
         if (manualTarget != null) {
-            return options.directVideoPost() && manualTarget.account == account
+            return options.directChatPost() && manualTarget.account == account
                     && manualTarget.owner == ownerId && manualTarget.dialog == dialogId
                     && manualTarget.original == original
                     && UltChatMediaDraft.blockReason(manualTarget, options) == null;
         }
-        return outgoingLink && UltVideoAutoSave.canAutoPost(account)
+        return !options.audio && outgoingLink && UltVideoAutoSave.canAutoPost(account)
                 && safeDestination(account, dialogId, original);
     }
 
@@ -114,21 +114,29 @@ public final class UltVideoChatPost {
                                   boolean outgoingLink, long ownerId, String url,
                                   UltChatMediaDraft.Target manualTarget, UltMediaOptions options,
                                   java.util.concurrent.atomic.AtomicBoolean cancelled) {
-        if (!permitted(account, dialogId, original, outgoingLink, ownerId, manualTarget, options, cancelled)
-                || completedVideo == null || !completedVideo.isFile()
-                || !completedVideo.getName().toLowerCase(Locale.US).endsWith(".mp4")
-                || completedVideo.length() <= 0 || completedVideo.length() > MAX_BYTES) {
+        if (!permitted(account, dialogId, original, outgoingLink, ownerId, manualTarget, options, cancelled)) {
+            UltVideoAutoSave.noteResult(account, "Saved locally; chat posting policy blocked the send");
             return false;
         }
-        String key = handoffKey(account, ownerId, dialogId, original.id, url);
+        if (completedVideo == null || !completedVideo.isFile()
+                || !completedVideo.getName().toLowerCase(Locale.US).endsWith("." + options.extension())
+                || completedVideo.length() <= 0 || completedVideo.length() > MAX_BYTES) {
+            UltVideoAutoSave.noteResult(account, "Saved locally; unsupported attachment or over 100 MiB");
+            return false;
+        }
+        String key = handoffKey(account, ownerId, dialogId, original.id, url, options);
         if (!reserve(key)) {
-            UltVideoAutoSave.noteResult(account, "Video already queued for this link; check chat delivery");
+            UltVideoAutoSave.noteResult(account, "Media already queued for this link and format; check chat delivery");
             return false;
         }
         File folder = new File(context.getFilesDir(), SUBDIR);
-        if (!folder.isDirectory() && !folder.mkdirs()) { release(key, false); return false; }
+        if (!folder.isDirectory() && !folder.mkdirs()) {
+            release(key, false);
+            UltVideoAutoSave.noteResult(account, "Saved locally; unable to open private upload directory");
+            return false;
+        }
         cleanupOldFiles(folder);
-        File staged = new File(folder, "ult_" + UUID.randomUUID() + ".mp4");
+        File staged = new File(folder, "ult_" + UUID.randomUUID() + "." + options.extension());
         boolean stagedOk = false;
         try (FileInputStream in = new FileInputStream(completedVideo);
              FileOutputStream out = new FileOutputStream(staged)) {
@@ -149,6 +157,7 @@ public final class UltVideoChatPost {
         if (!stagedOk) {
             staged.delete();
             release(key, false);
+            UltVideoAutoSave.noteResult(account, "Saved locally; private upload staging failed or was cancelled");
             return false;
         }
 
@@ -167,20 +176,30 @@ public final class UltVideoChatPost {
                 // Telegram's own upload queue uses the current send-as peer,
                 // validated above. Replying to the original link anchors this
                 // second message to the right conversation.
-                SendMessagesHelper.prepareSendingVideo(
+                if (options.audio) {
+                    // Same verified native document/audio entry point as the former preview.
+                    // Telegram reads the audio duration and metadata from the staged file.
+                    String path = staged.getAbsolutePath();
+                    SendMessagesHelper.prepareSendingDocument(AccountInstance.getInstance(account),
+                            path, path, null, "", options.mime(), dialogId, replyToLink,
+                            null, null, null, null, true, 0, null, null, false);
+                } else {
+                    SendMessagesHelper.prepareSendingVideo(
                         AccountInstance.getInstance(account),
                         staged.getAbsolutePath(),
                         null, null, null, dialogId,
                         replyToLink, null, null, null, null, 0, null,
                         true, 0, 0, false, false,
                         "", null, 0, 0);
+                }
                 release(key, true);
                 UltVideoAutoSave.noteResult(account,
-                        "Video handed to Telegram in the originating chat; check delivery");
+                        (options.audio ? options.audioFormat.toUpperCase(Locale.US) + " audio" : "Video")
+                                + " handed to Telegram in the originating chat; check delivery");
             } catch (RuntimeException ignored) {
                 release(key, false);
                 UltVideoAutoSave.noteResult(account,
-                        "Video saved locally; Telegram rejected media send");
+                        "Media saved locally; Telegram rejected media send");
             }
         });
         return true;

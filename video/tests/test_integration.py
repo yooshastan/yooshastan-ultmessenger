@@ -35,7 +35,7 @@ class IntegrationTest(unittest.TestCase):
             self.assertIn("youtubedl-android:library:0.18.1", gradle.read_text())
             self.assertIn("extractNativeLibs", manifest.read_text())
             chat = (root / module.CHAT).read_text()
-            for label in ("ULT: Download video to chat", "ULT: Add audio to chat", "ULT: Add media with options", "ULT: Save to device", "ULT: Copy sanitized link"):
+            for label in ("ULT: Download video to chat", "ULT: Download audio to chat", "ULT: Add media with options", "ULT: Save to device", "ULT: Copy sanitized link"):
                 self.assertIn(label, chat)
             self.assertIn("currentChat.noforwards", chat)
             for name in ("UltVideoAutoSave.java", "UltVideoLinkRules.java",
@@ -140,27 +140,26 @@ class IntegrationTest(unittest.TestCase):
         self.assertNotIn("setEnabled(", menu)
         self.assertNotIn("setMaxVideoHeight(", menu)
 
-    def test_chat_attachment_handoff_requires_review(self):
+    def test_audio_and_video_share_confirmed_manual_handoff(self):
         base = ROOT / "video/src/com/yooshastan/ultmessenger/video"
         draft = (base / "UltChatMediaDraft.java").read_text()
         site = (base / "UltVideoSiteDownloader.java").read_text()
-        worker = (base / "UltVideoAutoSave.java").read_text()
+        chat = (base / "UltVideoChatPost.java").read_text()
         menu = (base / "UltManualMediaMenu.java").read_text()
-        self.assertIn('if (options.toChat && !options.directVideoPost())', site)
-        self.assertLess(site.index("UltChatMediaDraft.stage("), site.index("if (!publish("))
+        self.assertNotIn("UltChatMediaDraft.stage(", site)
+        self.assertLess(site.index("if (!publish("), site.index("UltVideoChatPost.enqueue("))
         self.assertIn("queueManualChat(target, url, options)", menu)
         self.assertIn("queueManualSite(account", menu)
-        self.assertIn("if (!options.toChat || options.directVideoPost()) markSiteCompleted", worker)
-        self.assertIn("!options.toChat && !job.cancelled.get()", worker)
-        self.assertIn('setPositiveButton("Send", null)', draft)
-        self.assertLess(draft.index("getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener"), draft.index("SendMessagesHelper.prepareSendingDocument("))
-        self.assertIn("SendMessagesHelper.prepareSendingVideo(", draft)
+        self.assertIn('toChat ? "Download & send" : "Download"', menu)
+        self.assertIn("SendMessagesHelper.prepareSendingDocument(", chat)
+        self.assertIn("SendMessagesHelper.prepareSendingVideo(", chat)
+        self.assertIn("options.handoffVariant()", chat)
+        self.assertIn("options.extension()", chat)
         self.assertIn("t.sender != t.owner", draft)
         self.assertIn("chat.noforwards || chat.forum || chat.monoforum", draft)
         self.assertIn("getSendPaidMessagesStars(t.dialog)", draft)
-        self.assertIn("getLastFragment() == fragment", draft)
-        self.assertNotIn("MediaStore", draft)
-        self.assertIn("READY.remove(t.key, draft)", draft)
+        self.assertNotIn("VideoView", draft)
+        self.assertNotIn("READY", draft)
 
     def test_manual_video_uses_same_posting_path_as_automation(self):
         base = ROOT / "video/src/com/yooshastan/ultmessenger/video"
@@ -168,11 +167,11 @@ class IntegrationTest(unittest.TestCase):
         worker = (base / "UltVideoAutoSave.java").read_text()
         chat = (base / "UltVideoChatPost.java").read_text()
         menu = (base / "UltManualMediaMenu.java").read_text()
-        self.assertIn("options.directVideoPost() && !stopped.get()", site)
+        self.assertIn("options.directChatPost() && !stopped.get()", site)
         self.assertIn("ownerId, url, target, options, requestCancelled", site)
         self.assertIn("ownerId, url, null, options, requestCancelled", site)
         self.assertIn("UltChatMediaDraft.blockReason(manualTarget, options) == null", chat)
-        self.assertIn("outgoingLink && UltVideoAutoSave.canAutoPost(account)", chat)
+        self.assertIn("!options.audio && outgoingLink && UltVideoAutoSave.canAutoPost(account)", chat)
         self.assertIn("if (!reserve(key))", chat)
         self.assertIn("release(key, true)", chat)
         self.assertIn("UltVideoChatPost.alreadyRequested", worker)
@@ -199,7 +198,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertIn("outgoingLink && UltVideoAutoSave.isPostToChat(account)", site)
         self.assertIn("UltVideoChatPost.enqueue(", site)
         self.assertIn("SendMessagesHelper.prepareSendingVideo(", chat)
-        self.assertIn("outgoingLink && UltVideoAutoSave.canAutoPost(account)", chat)
+        self.assertIn("!options.audio && outgoingLink && UltVideoAutoSave.canAutoPost(account)", chat)
         self.assertIn("if (!permitted(account, dialogId, original", chat)
         self.assertIn("DialogObject.isChatDialog(dialogId)", chat)
         self.assertIn("ChatObject.getSendAsPeerId(", chat)
