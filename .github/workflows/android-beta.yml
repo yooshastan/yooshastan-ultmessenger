@@ -247,7 +247,7 @@ jobs:
           set -euo pipefail
           if [[ "${{ matrix.variant }}" == 'foss' ]]; then
             cd .work/mercurygram-upstream
-            ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug -PMG_BUILD_TAG=16.0.0.0.10 -PMG_BETA_VERSION_CODE=7183029 -PMG_BETA_VERSION_NAME=16.0.0-beta03.4.13 --no-daemon --console=plain
+            ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug -PMG_BUILD_TAG=16.0.0.0.10 -PMG_BETA_VERSION_CODE=7183030 -PMG_BETA_VERSION_NAME=16.0.0-beta03.4.14 --no-daemon --console=plain
           else
             cd .work/telegram-upstream
             ./gradlew :TMessagesProj_App:assembleAfatDebug --no-daemon --console=plain

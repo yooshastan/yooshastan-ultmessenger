@@ -205,7 +205,7 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
         addText(downloads, context, "Limits total temporary files for new site downloads, including audio and merge files. Direct file downloads retain their 100 MiB limit.", 13);
 
         addHeading(manager, context, "Download manager");
-        addText(manager, context, "Long-press a supported media link to add video or audio to its chat. Review before sending, or select Save to device. Automatic downloads are optional.", 14);
+        addText(manager, context, "Long-press a supported media link to download and send a video using the same chat-posting path as automation. Audio can be reviewed before sending. Save to device never sends media. Automation is optional.", 14);
         status = addText(manager, context, "", 14);
         cancelButton = addButton(manager, context, "Cancel active and queued site downloads", () -> {
             UltVideoAutoSave.cancelSiteJobs(currentAccount);

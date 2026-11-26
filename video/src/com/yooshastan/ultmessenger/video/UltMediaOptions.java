@@ -15,7 +15,8 @@ public final class UltMediaOptions {
         this.height = height == 480 || height == 720 || height == 1080 ? height : 0;
         this.audioFormat = "mp3".equals(audioFormat) || "opus".equals(audioFormat) ? audioFormat : "m4a";
     }
-    public String variant() { return (audio ? audioFormat : "video-" + height) + (toChat ? "-chat" : ""); }
+    public boolean directVideoPost() { return toChat && !audio; }
+    public String variant() { return (audio ? audioFormat : "video-" + height) + (toChat && audio ? "-chat" : ""); }
     public String mime() {
         if (!audio) return "video/mp4";
         return "mp3".equals(audioFormat) ? "audio/mpeg" : "opus".equals(audioFormat) ? "audio/ogg" : "audio/mp4";

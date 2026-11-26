@@ -34,6 +34,47 @@ public final class UltVideoChatPost {
 
     private UltVideoChatPost() { }
 
+    // Same reservation for automatic and explicit video posting. Do not store URLs.
+    private static final java.util.Set<String> PENDING = new java.util.HashSet<>();
+    private static final java.util.LinkedHashSet<String> HANDED_OFF = new java.util.LinkedHashSet<>();
+    public static synchronized boolean alreadyRequested(String key) {
+        return PENDING.contains(key) || HANDED_OFF.contains(key);
+    }
+    private static synchronized boolean reserve(String key) {
+        if (alreadyRequested(key)) return false;
+        return PENDING.add(key);
+    }
+    private static synchronized void release(String key, boolean handedOff) {
+        PENDING.remove(key);
+        if (handedOff) {
+            HANDED_OFF.add(key);
+            if (HANDED_OFF.size() > 1000) HANDED_OFF.remove(HANDED_OFF.iterator().next());
+        }
+    }
+    public static String handoffKey(int account, long ownerId, long dialogId, int messageId, String url) {
+        String input = account + ":" + ownerId + ":" + dialogId + ":" + messageId + ":" + UltVideoLinkRules.extractionUrl(url);
+        try {
+            byte[] digest = java.security.MessageDigest.getInstance("SHA-256")
+                    .digest(input.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            return android.util.Base64.encodeToString(digest, android.util.Base64.NO_WRAP);
+        } catch (java.security.NoSuchAlgorithmException impossible) {
+            throw new IllegalStateException("SHA-256 unavailable", impossible);
+        }
+    }
+    private static boolean permitted(int account, long dialogId, TLRPC.Message original,
+            boolean outgoingLink, long ownerId, UltChatMediaDraft.Target manualTarget,
+            UltMediaOptions options, java.util.concurrent.atomic.AtomicBoolean cancelled) {
+        if (cancelled.get() || ownerId != org.telegram.messenger.UserConfig.getInstance(account).getClientUserId()) return false;
+        if (manualTarget != null) {
+            return options.directVideoPost() && manualTarget.account == account
+                    && manualTarget.owner == ownerId && manualTarget.dialog == dialogId
+                    && manualTarget.original == original
+                    && UltChatMediaDraft.blockReason(manualTarget, options) == null;
+        }
+        return outgoingLink && UltVideoAutoSave.canAutoPost(account)
+                && safeDestination(account, dialogId, original);
+    }
+
     /**
      * Validate the destination on the UI thread again immediately before
      * creating Telegram's send request, not only before downloading.
@@ -45,12 +86,13 @@ public final class UltVideoChatPost {
                 || MessageObject.getDialogId(original) != dialogId) {
             return false;
         }
+        if (MessagesController.getInstance(account).getSendPaidMessagesStars(dialogId) > 0) return false;
         if (DialogObject.isUserDialog(dialogId)) return true;
         if (!DialogObject.isChatDialog(dialogId)) return false;
 
         MessagesController mc = MessagesController.getInstance(account);
         TLRPC.Chat chat = mc.getChat(-dialogId);
-        if (chat == null || chat.forum || chat.monoforum
+        if (chat == null || chat.noforwards || chat.forum || chat.monoforum
                 || ChatObject.isChannelAndNotMegaGroup(chat)
                 || !ChatObject.canSendVideo(chat)
                 || mc.getSendPaidMessagesStars(dialogId) > 0) {
@@ -69,16 +111,22 @@ public final class UltVideoChatPost {
 
     public static boolean enqueue(Context context, int account, long dialogId,
                                   TLRPC.Message original, File completedVideo,
-                                  boolean outgoingLink) {
-        if (!outgoingLink || !UltVideoAutoSave.canAutoPost(account)
-                || !safeDestination(account, dialogId, original)
+                                  boolean outgoingLink, long ownerId, String url,
+                                  UltChatMediaDraft.Target manualTarget, UltMediaOptions options,
+                                  java.util.concurrent.atomic.AtomicBoolean cancelled) {
+        if (!permitted(account, dialogId, original, outgoingLink, ownerId, manualTarget, options, cancelled)
                 || completedVideo == null || !completedVideo.isFile()
                 || !completedVideo.getName().toLowerCase(Locale.US).endsWith(".mp4")
                 || completedVideo.length() <= 0 || completedVideo.length() > MAX_BYTES) {
             return false;
         }
+        String key = handoffKey(account, ownerId, dialogId, original.id, url);
+        if (!reserve(key)) {
+            UltVideoAutoSave.noteResult(account, "Video already queued for this link; check chat delivery");
+            return false;
+        }
         File folder = new File(context.getFilesDir(), SUBDIR);
-        if (!folder.isDirectory() && !folder.mkdirs()) return false;
+        if (!folder.isDirectory() && !folder.mkdirs()) { release(key, false); return false; }
         cleanupOldFiles(folder);
         File staged = new File(folder, "ult_" + UUID.randomUUID() + ".mp4");
         boolean stagedOk = false;
@@ -88,7 +136,7 @@ public final class UltVideoChatPost {
             long copied = 0;
             int n;
             while ((n = in.read(buffer)) != -1) {
-                if (!UltVideoAutoSave.canAutoPost(account)
+                if (!permitted(account, dialogId, original, outgoingLink, ownerId, manualTarget, options, cancelled)
                         || copied + n > MAX_BYTES) throw new IOException("Cancelled or oversized");
                 out.write(buffer, 0, n);
                 copied += n;
@@ -100,13 +148,14 @@ public final class UltVideoChatPost {
         }
         if (!stagedOk) {
             staged.delete();
+            release(key, false);
             return false;
         }
 
         AndroidUtilities.runOnUIThread(() -> {
-            if (!UltVideoAutoSave.canAutoPost(account)
-                    || !safeDestination(account, dialogId, original)) {
+            if (!permitted(account, dialogId, original, outgoingLink, ownerId, manualTarget, options, cancelled)) {
                 staged.delete();
+                release(key, false);
                 UltVideoAutoSave.noteResult(account,
                         "Saved locally; group sender, rights or network policy changed");
                 return;
@@ -125,9 +174,11 @@ public final class UltVideoChatPost {
                         replyToLink, null, null, null, null, 0, null,
                         true, 0, 0, false, false,
                         "", null, 0, 0);
+                release(key, true);
                 UltVideoAutoSave.noteResult(account,
-                        "Video queued as a reply in the originating chat; check delivery");
+                        "Video handed to Telegram in the originating chat; check delivery");
             } catch (RuntimeException ignored) {
+                release(key, false);
                 UltVideoAutoSave.noteResult(account,
                         "Video saved locally; Telegram rejected media send");
             }

@@ -24,7 +24,7 @@ CHAT_CONSTANTS = """    public final static int OPTION_ULT_MEDIA_VIDEO = 0x554c7
 CHAT_MENU = """        if (com.yooshastan.ultmessenger.video.UltManualMediaMenu.eligible(selectedObject,
                 currentEncryptedChat != null || (currentChat != null && currentChat.noforwards))) {
             if (!com.yooshastan.ultmessenger.video.UltVideoAutoSave.strictModeRequested()) {
-                items.add("ULT: Add video to chat"); options.add(OPTION_ULT_MEDIA_VIDEO); icons.add(R.drawable.msg_copy);
+                items.add("ULT: Download video to chat"); options.add(OPTION_ULT_MEDIA_VIDEO); icons.add(R.drawable.msg_copy);
                 items.add("ULT: Add audio to chat"); options.add(OPTION_ULT_MEDIA_AUDIO); icons.add(R.drawable.msg_copy);
                 items.add("ULT: Add media with options"); options.add(OPTION_ULT_MEDIA_OPTIONS); icons.add(R.drawable.msg_copy);
                 items.add("ULT: Save to device"); options.add(OPTION_ULT_MEDIA_SAVE); icons.add(R.drawable.msg_copy);

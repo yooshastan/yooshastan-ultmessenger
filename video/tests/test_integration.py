@@ -35,7 +35,7 @@ class IntegrationTest(unittest.TestCase):
             self.assertIn("youtubedl-android:library:0.18.1", gradle.read_text())
             self.assertIn("extractNativeLibs", manifest.read_text())
             chat = (root / module.CHAT).read_text()
-            for label in ("ULT: Add video to chat", "ULT: Add audio to chat", "ULT: Add media with options", "ULT: Save to device", "ULT: Copy sanitized link"):
+            for label in ("ULT: Download video to chat", "ULT: Add audio to chat", "ULT: Add media with options", "ULT: Save to device", "ULT: Copy sanitized link"):
                 self.assertIn(label, chat)
             self.assertIn("currentChat.noforwards", chat)
             for name in ("UltVideoAutoSave.java", "UltVideoLinkRules.java",
@@ -146,11 +146,11 @@ class IntegrationTest(unittest.TestCase):
         site = (base / "UltVideoSiteDownloader.java").read_text()
         worker = (base / "UltVideoAutoSave.java").read_text()
         menu = (base / "UltManualMediaMenu.java").read_text()
-        self.assertIn('if (options.toChat)', site)
+        self.assertIn('if (options.toChat && !options.directVideoPost())', site)
         self.assertLess(site.index("UltChatMediaDraft.stage("), site.index("if (!publish("))
         self.assertIn("queueManualChat(target, url, options)", menu)
         self.assertIn("queueManualSite(account", menu)
-        self.assertIn("if (!options.toChat) markSiteCompleted", worker)
+        self.assertIn("if (!options.toChat || options.directVideoPost()) markSiteCompleted", worker)
         self.assertIn("!options.toChat && !job.cancelled.get()", worker)
         self.assertIn('setPositiveButton("Send", null)', draft)
         self.assertLess(draft.index("getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener"), draft.index("SendMessagesHelper.prepareSendingDocument("))
@@ -161,6 +161,23 @@ class IntegrationTest(unittest.TestCase):
         self.assertIn("getLastFragment() == fragment", draft)
         self.assertNotIn("MediaStore", draft)
         self.assertIn("READY.remove(t.key, draft)", draft)
+
+    def test_manual_video_uses_same_posting_path_as_automation(self):
+        base = ROOT / "video/src/com/yooshastan/ultmessenger/video"
+        site = (base / "UltVideoSiteDownloader.java").read_text()
+        worker = (base / "UltVideoAutoSave.java").read_text()
+        chat = (base / "UltVideoChatPost.java").read_text()
+        menu = (base / "UltManualMediaMenu.java").read_text()
+        self.assertIn("options.directVideoPost() && !stopped.get()", site)
+        self.assertIn("ownerId, url, target, options, requestCancelled", site)
+        self.assertIn("ownerId, url, null, options, requestCancelled", site)
+        self.assertIn("UltChatMediaDraft.blockReason(manualTarget, options) == null", chat)
+        self.assertIn("outgoingLink && UltVideoAutoSave.canAutoPost(account)", chat)
+        self.assertIn("if (!reserve(key))", chat)
+        self.assertIn("release(key, true)", chat)
+        self.assertIn("UltVideoChatPost.alreadyRequested", worker)
+        self.assertIn("Download & send", menu)
+        self.assertEqual(chat.count("SendMessagesHelper.prepareSendingVideo("), 1)
 
     def test_outgoing_is_distinct_and_strict_mode_blocks(self):
         worker = (ROOT / "video/src/com/yooshastan/ultmessenger/video/UltVideoAutoSave.java").read_text()

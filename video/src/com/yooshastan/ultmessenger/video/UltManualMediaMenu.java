@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-/** Explicit long-press actions. Chat media requires a separate preview Send action. */
+/** Explicit long-press actions. Video download-and-send shares automatic posting; audio retains preview. */
 public final class UltManualMediaMenu {
     private UltManualMediaMenu() {}
     public static List<String> links(MessageObject message, boolean protectedChat) {
@@ -91,10 +91,10 @@ public final class UltManualMediaMenu {
                     String blocked = UltChatMediaDraft.blockReason(target, options);
                     if (blocked != null) { toast(a, blocked); return; }
                 }
-                show(a, new AlertDialog.Builder(a).setTitle(toChat ? "Prepare media for this chat?" : "Save media locally?")
+                show(a, new AlertDialog.Builder(a).setTitle(options.directVideoPost() ? "Download and send video to this chat?" : toChat ? "Prepare audio for this chat?" : "Save media locally?")
                         .setMessage("Contacts the selected website outside Telegram MTProxy. Only download media you may save. "
-                                + (toChat ? "Review the private attachment and press Send separately. Up to 100 MiB." : "No chat message will be sent."))
-                        .setNegativeButton("Cancel", null).setPositiveButton("Download", (d, w) -> {
+                                + (options.directVideoPost() ? "Saves the video and sends it as a new message in this conversation once downloaded (up to 100 MiB for chat upload). No separate preview." : toChat ? "Review the private audio attachment and press Send separately. Up to 100 MiB." : "No chat message will be sent."))
+                        .setNegativeButton("Cancel", null).setPositiveButton(options.directVideoPost() ? "Download & send" : "Download", (d, w) -> {
                             if (!links(message, protectedNow(account, message, protectedChat)).contains(url)) return;
                             toast(a, toChat ? UltVideoAutoSave.queueManualChat(target, url, options)
                                     : UltVideoAutoSave.queueManualSite(account, MessageObject.getDialogId(message.messageOwner),
