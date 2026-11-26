@@ -27,8 +27,10 @@ jobs:
           python3 scripts/build-ultgram-local.py status
           python3 - <<'PY'
           import importlib.util
+          import sys
           from pathlib import Path
           root = Path.cwd()
+          sys.path.insert(0, str(root / 'scripts'))
           spec = importlib.util.spec_from_file_location(
               "local_builder", root / "scripts/build-ultgram-local.py")
           mod = importlib.util.module_from_spec(spec)
