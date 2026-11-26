@@ -24,15 +24,15 @@ CHAT_CONSTANTS = """    public final static int OPTION_ULT_MEDIA_VIDEO = 0x554c7
 CHAT_MENU = """        if (com.yooshastan.ultmessenger.video.UltManualMediaMenu.eligible(selectedObject,
                 currentEncryptedChat != null || (currentChat != null && currentChat.noforwards))) {
             if (!com.yooshastan.ultmessenger.video.UltVideoAutoSave.strictModeRequested()) {
-                items.add("ULT: Download video to chat"); options.add(OPTION_ULT_MEDIA_VIDEO); icons.add(R.drawable.msg_copy);
-                items.add("ULT: Add audio to chat"); options.add(OPTION_ULT_MEDIA_AUDIO); icons.add(R.drawable.msg_copy);
-                items.add("ULT: Add media with options"); options.add(OPTION_ULT_MEDIA_OPTIONS); icons.add(R.drawable.msg_copy);
-                items.add("ULT: Save to device"); options.add(OPTION_ULT_MEDIA_SAVE); icons.add(R.drawable.msg_copy);
+                items.add("ULT: Download video to chat"); options.add(OPTION_ULT_MEDIA_VIDEO); icons.add(R.drawable.ult_media_video);
+                items.add("ULT: Add audio to chat"); options.add(OPTION_ULT_MEDIA_AUDIO); icons.add(R.drawable.ult_media_audio);
+                items.add("ULT: Add media with options"); options.add(OPTION_ULT_MEDIA_OPTIONS); icons.add(R.drawable.ult_media_options);
+                items.add("ULT: Save to device"); options.add(OPTION_ULT_MEDIA_SAVE); icons.add(R.drawable.ult_media_save);
                 if (com.yooshastan.ultmessenger.video.UltChatMediaDraft.hasReady(currentAccount, selectedObject)) {
-                    items.add("ULT: Review ready attachment"); options.add(OPTION_ULT_MEDIA_REVIEW); icons.add(R.drawable.msg_copy);
+                    items.add("ULT: Review ready attachment"); options.add(OPTION_ULT_MEDIA_REVIEW); icons.add(R.drawable.ult_media_review);
                 }
             }
-            items.add("ULT: Copy sanitized link"); options.add(OPTION_ULT_MEDIA_COPY); icons.add(R.drawable.msg_copy);
+            items.add("ULT: Copy sanitized link"); options.add(OPTION_ULT_MEDIA_COPY); icons.add(R.drawable.ult_media_link);
         }
 """
 CHAT_HANDLERS = """            case OPTION_ULT_MEDIA_VIDEO: {
@@ -67,6 +67,26 @@ CHAT_HANDLERS = """            case OPTION_ULT_MEDIA_VIDEO: {
             }
 """
 SOURCE = Path("video/src/com/yooshastan/ultmessenger/video")
+# Owned vector drawables avoid depending on unverified upstream icon names.
+ICON_PATHS = {
+    "ult_media_video": "M4,5 H15 Q17,5 17,7 V9 L22,6 V18 L17,15 V17 Q17,19 15,19 H4 Q2,19 2,17 V7 Q2,5 4,5 Z",
+    "ult_media_audio": "M9,3 V15 A4,4 0,1 0,11 18 V7 L20,5 V3 Z",
+    "ult_media_options": "M3,5 H21 V7 H3 Z M3,11 H21 V13 H3 Z M3,17 H21 V19 H3 Z M7,3 H10 V9 H7 Z M14,9 H17 V15 H14 Z M8,15 H11 V21 H8 Z",
+    "ult_media_save": "M11,2 H13 V13 L17,9 L19,11 L12,18 L5,11 L7,9 L11,13 Z M3,17 H5 V20 H19 V17 H21 V22 H3 Z",
+    "ult_media_review": "M4,3 H20 V21 H4 Z M9,7 V17 L17,12 Z",
+    "ult_media_link": "M10,7 L13,4 Q17,0 21,4 Q25,8 21,12 L18,15 L16,13 L19,10 Q21,8 19,6 Q17,4 15,6 L12,9 Z M14,17 L11,20 Q7,24 3,20 Q-1,16 3,12 L6,9 L8,11 L5,14 Q3,16 5,18 Q7,20 9,18 L12,15 Z M8,14 L14,8 L16,10 L10,16 Z",
+}
+
+def install_icons(root):
+    dest = root / "TMessagesProj/src/main/res/drawable"
+    dest.mkdir(parents=True, exist_ok=True)
+    for name, path in ICON_PATHS.items():
+        (dest / (name + ".xml")).write_text(
+            '<vector xmlns:android="http://schemas.android.com/apk/res/android" '
+            'android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">'
+            '<path android:fillColor="#FFFFFFFF" android:fillType="evenOdd" android:pathData="' + path + '"/>'
+            '</vector>\n', encoding="utf-8")
+
 APP_ANCHOR = "        it.belloworld.mercurygram.folders.MgFolderSync.startAll(); // Mercurygram: folder sync via Saved Messages\n"
 STRICT_ANCHOR = '                .putBoolean(ULT_STRICT_NATIVE_PROXY_KEY, enabled).apply();\n'
 
@@ -111,6 +131,7 @@ def integrate(root: Path) -> None:
               for name in ("UltVideoLinkRules.java", "UltVideoAutoSave.java", "UltVideoSiteDownloader.java",
                            "UltVideoChatPost.java", "UltVideoFailure.java", "UltExtractorPolicy.java",
                            "UltExtractorMaintenance.java", "UltMediaOptions.java", "UltManualMediaMenu.java", "UltChatMediaDraft.java")}
+    install_icons(root)
     chat_file.write_text(chat_new, encoding="utf-8")
     app_file.write_text(app_new, encoding="utf-8")
     strict_file.write_text(strict_new, encoding="utf-8")

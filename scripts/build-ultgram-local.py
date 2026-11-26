@@ -14,6 +14,8 @@ sources and removes its untracked files (but preserves ignored Gradle outputs).
 import argparse
 import getpass
 import hashlib
+import json
+import apk_release_gate as apk_gate
 import os
 from pathlib import Path
 import re
@@ -28,6 +30,7 @@ STAMP = WORK / "ultgram-local-source.sha"
 OWNER = WORK / "ultgram-local-managed.marker"
 ARTIFACTS = WORK / "ultgram-local-artifacts"
 BUILD_TASK = ":TMessagesProj_App:assembleAfatFdArm64Debug"
+BETA_PACKAGE = "com.yooshastan.ultmessenger.foss.beta"
 INTEGRATORS = (
     "integrate-appearance.py",
     "patch_locale_background.py",
@@ -303,7 +306,53 @@ def prepare(refresh=False):
     apply_integrations(api_id, api_hash)
 
 
+def expected_artifact(name):
+    return ARTIFACTS / ("ultgram-" + name + "-local-debug.apk")
+
+
+def receipt_path(artifact):
+    return artifact.with_suffix(".build.json")
+
+
+def sha256_file(path):
+    with path.open("rb") as stream:
+        return hashlib.file_digest(stream, "sha256").hexdigest()
+
+
+def check_apk_identity(artifact, code, name):
+    try:
+        package, actual_code, actual_name, signer = apk_gate.inspect(artifact)
+    except (ValueError, OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+        die("APK identity/signature verification failed: " + str(exc))
+    if (package, actual_code, actual_name) != (BETA_PACKAGE, int(code), name):
+        die("Wrong APK identity: " + str((package, actual_code, actual_name))
+            + "; expected " + str((BETA_PACKAGE, int(code), name)))
+    return signer
+
+
+def verified_artifact(code, name):
+    artifact = expected_artifact(name)
+    receipt = receipt_path(artifact)
+    if not artifact.is_file() or not receipt.is_file():
+        die("No verified APK for " + name + ". Build successfully first; no older APK will be installed.")
+    try:
+        record = json.loads(receipt.read_text())
+    except (OSError, ValueError):
+        die("Invalid build receipt; rebuild before installing.")
+    if not isinstance(record, dict) or record != {
+        "commit": current_revision(), "version_code": int(code), "version_name": name,
+        "package": BETA_PACKAGE, "sha256": sha256_file(artifact),
+    }:
+        die("Build receipt does not match current source, APK hash or version; rebuild first.")
+    check_apk_identity(artifact, code, name)
+    return artifact
+
+
 def build():
+    tag, code, name = workflow_version()
+    artifact = expected_artifact(name)
+    # A failed build must never leave an older same-version receipt installable.
+    receipt_path(artifact).unlink(missing_ok=True)
     prerequisites()
     sdk_setup()
     prepare()
@@ -324,11 +373,10 @@ def build():
         ROOT / "settings/src/com/yooshastan/ultmessenger/settings/UltLinkSanitizerPolicy.java",
         ROOT / "settings/tests/UltLinkSanitizerPolicyTest.java")
     run("java", "-cp", test_classes, "UltLinkSanitizerPolicyTest")
-    tag, code, name = workflow_version()
     print("Compiling", name, "versionCode", code, "on", current_revision()[:12])
     run_gradle_logged(SOURCE / "gradlew", BUILD_TASK, "-PMG_BUILD_TAG=" + tag,
         "-PMG_BETA_VERSION_CODE=" + code,
-        "-PMG_BETA_VERSION_NAME=" + name, "--daemon", "--build-cache", "--console=plain")
+        "-PMG_BETA_VERSION_NAME=" + name, "--no-daemon", "--build-cache", "--console=plain", "--stacktrace")
     outputs = list((SOURCE / "TMessagesProj_App/build/outputs/apk").rglob("*.apk"))
     outputs = [p for p in outputs if "afatFdArm64" in p.as_posix()
                and "debug" in p.as_posix().lower()]
@@ -336,12 +384,21 @@ def build():
         die("Expected one ARM64 debug APK, found " + str(len(outputs)) +
             ". Inspect " + str(SOURCE / "TMessagesProj_App/build/outputs/apk"))
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
-    artifact = ARTIFACTS / ("ultgram-" + name + "-local-debug.apk")
-    shutil.copy2(outputs[0], artifact)
-    digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
+    check_apk_identity(outputs[0], code, name)
+    temporary = artifact.with_suffix(".apk.tmp")
+    shutil.copy2(outputs[0], temporary)
+    temporary.replace(artifact)
+    digest = sha256_file(artifact)
     (ARTIFACTS / "SHA256SUMS").write_text(digest + "  " + artifact.name + "\n")
     run("python3", ROOT / "scripts/apk_release_gate.py", "--apk", artifact,
         "--report", ARTIFACTS / "SIGNING_INFO.txt")
+    receipt = receipt_path(artifact)
+    temporary_receipt = receipt.with_suffix(".json.tmp")
+    temporary_receipt.write_text(json.dumps({
+        "commit": current_revision(), "version_code": int(code), "version_name": name,
+        "package": BETA_PACKAGE, "sha256": digest,
+    }, sort_keys=True) + "\n")
+    temporary_receipt.replace(receipt)
     print("\nAPK READY:", artifact)
     print("SHA-256:", digest)
     print("This is a DEBUG-signed internal test APK, not a public release.")
@@ -349,19 +406,38 @@ def build():
     print("  python3 scripts/build-ultgram-local.py install")
 
 
+def installed_identity():
+    info = output("adb", "shell", "dumpsys", "package", BETA_PACKAGE)
+    code = re.search(r"(?m)^\s*versionCode=(\d+)\b", info)
+    name = re.search(r"(?m)^\s*versionName=(\S+)\s*$", info)
+    if not code and not name and ("Unable to find package" in info or not info.strip()):
+        return None
+    if not code or not name:
+        die("Unable to determine installed APK identity; refusing install.")
+    return int(code.group(1)), name.group(1)
+
+
 def install():
-    if not ARTIFACTS.exists():
-        die("No local artifact; build first.")
-    apks = sorted(ARTIFACTS.glob("ultgram-*-local-debug.apk"),
-                  key=lambda path: path.stat().st_mtime, reverse=True)
-    if not apks:
-        die("No local test APK; build first.")
+    _, code, name = workflow_version()
+    # Set the SDK location without installing or modifying SDK packages.
+    home = Path(os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT")
+                or (Path.home() / "Android/Sdk")).expanduser()
+    os.environ["ANDROID_HOME"] = str(home)
+    os.environ["ANDROID_SDK_ROOT"] = str(home)
+    artifact = verified_artifact(code, name)
     if not shutil.which("adb"):
         die("Install android-tools on Fedora for adb.")
+    if output("adb", "get-state") != "device":
+        die("Connect and authorize exactly one Android target.")
+    before = installed_identity()
+    if before and before[0] > int(code):
+        die("Installed version is newer; refusing downgrade.")
+    print("Installing verified:", artifact, "versionCode", code, "versionName", name)
     print("Android will refuse incompatible signatures. Never uninstall to force an update.")
-    run("adb", "devices", "-l")
-    run("python3", ROOT / "scripts/apk_release_gate.py", "--apk", apks[0])
-    run("adb", "install", "-r", apks[0])
+    run("adb", "install", "-r", artifact)
+    if installed_identity() != (int(code), name):
+        die("Post-install version verification failed. Do not report this build as tested.")
+    print("INSTALL VERIFIED:", BETA_PACKAGE, code, name)
 
 
 def main():
