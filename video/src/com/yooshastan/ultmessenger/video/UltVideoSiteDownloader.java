@@ -255,7 +255,8 @@ public final class UltVideoSiteDownloader {
                 return false;
             }
             stage = "saving";
-            if (!publish(context, result, account, maxBytes, stopped, options, ownerId, requestCancelled)) {
+            Uri published = publish(context, result, account, maxBytes, stopped, options, ownerId, requestCancelled);
+            if (published == null) {
                 if (!stopBeforeWork(account, stopped, stopReason, options, ownerId, requestCancelled)) {
                     UltVideoAutoSave.noteResult(account, "Failed to save " + (audioOnly ? "audio" : "video"));
                 }
@@ -265,13 +266,13 @@ public final class UltVideoSiteDownloader {
             if (options.directChatPost() && !stopped.get()) {
                 // The handoff reports its own exact failure or acceptance reason.
                 UltVideoChatPost.enqueue(context, account, dialogId, original, result, false,
-                        ownerId, url, target, options, requestCancelled);
+                        ownerId, url, target, options, requestCancelled, published);
             } else if (!options.manual && !audioOnly && outgoingLink && UltVideoAutoSave.isPostToChat(account) && !stopped.get()) {
                 if (!UltVideoChatPost.safeDestination(account, dialogId, original)) {
                     UltVideoAutoSave.noteResult(account,
                             "Saved locally; group identity, permissions or topic not supported");
                 } else if (!UltVideoChatPost.enqueue(context, account, dialogId,
-                        original, result, true, ownerId, url, null, options, requestCancelled)) {
+                        original, result, true, ownerId, url, null, options, requestCancelled, published)) {
                     UltVideoAutoSave.noteResult(account,
                             "Saved locally; Telegram media auto-post not queued");
                 }
@@ -342,8 +343,8 @@ public final class UltVideoSiteDownloader {
         return matching.size() == 1 ? matching.get(0) : null;
     }
 
-    private static boolean publish(Context context, File file, int account, long maxBytes, AtomicBoolean stopped, UltMediaOptions options, long ownerId, AtomicBoolean requestCancelled) {
-        if (stopped.get() || !allowed(account, options, ownerId, requestCancelled)) return false;
+    private static Uri publish(Context context, File file, int account, long maxBytes, AtomicBoolean stopped, UltMediaOptions options, long ownerId, AtomicBoolean requestCancelled) {
+        if (stopped.get() || !allowed(account, options, ownerId, requestCancelled)) return null;
         String originalName = file.getName().toLowerCase(Locale.US);
         String extension = originalName.substring(originalName.lastIndexOf('.') + 1);
         String mime = options.mime();
@@ -363,27 +364,27 @@ public final class UltVideoSiteDownloader {
         boolean done = false;
         try {
             dest = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
-            if (dest == null) return false;
+            if (dest == null) return null;
             try (FileInputStream input = new FileInputStream(file);
                  OutputStream output = resolver.openOutputStream(dest, "w")) {
-                if (output == null) return false;
+                if (output == null) return null;
                 byte[] buffer = new byte[65536];
                 long copied = 0;
                 for (int n; (n = input.read(buffer)) != -1; ) {
-                    if (stopped.get() || !allowed(account, options, ownerId, requestCancelled) || copied + n > maxBytes) return false;
+                    if (stopped.get() || !allowed(account, options, ownerId, requestCancelled) || copied + n > maxBytes) return null;
                     output.write(buffer, 0, n);
                     copied += n;
                 }
             }
-            if (stopped.get() || !allowed(account, options, ownerId, requestCancelled)) return false;
+            if (stopped.get() || !allowed(account, options, ownerId, requestCancelled)) return null;
             ContentValues visible = new ContentValues();
             visible.put(MediaStore.MediaColumns.IS_PENDING, 0);
-            if (resolver.update(dest, visible, null, null) != 1) return false;
+            if (resolver.update(dest, visible, null, null) != 1) return null;
             done = true;
             UltVideoAutoSave.recordSiteSave(account, name, dest, file.length());
-            return true;
+            return dest;
         } catch (Exception ignored) {
-            return false;
+            return null;
         } finally {
             if (!done && dest != null) {
                 try { resolver.delete(dest, null, null); }

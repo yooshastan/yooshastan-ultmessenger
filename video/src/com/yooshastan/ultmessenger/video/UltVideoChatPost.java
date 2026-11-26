@@ -1,6 +1,8 @@
 package com.yooshastan.ultmessenger.video;
 
 import android.content.Context;
+import android.net.Uri;
+import android.provider.MediaStore;
 
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
@@ -113,7 +115,7 @@ public final class UltVideoChatPost {
                                   TLRPC.Message original, File completedVideo,
                                   boolean outgoingLink, long ownerId, String url,
                                   UltChatMediaDraft.Target manualTarget, UltMediaOptions options,
-                                  java.util.concurrent.atomic.AtomicBoolean cancelled) {
+                                  java.util.concurrent.atomic.AtomicBoolean cancelled, Uri published) {
         if (!permitted(account, dialogId, original, outgoingLink, ownerId, manualTarget, options, cancelled)) {
             UltVideoAutoSave.noteResult(account, "Saved locally; chat posting policy blocked the send");
             return false;
@@ -128,6 +130,41 @@ public final class UltVideoChatPost {
         if (!reserve(key)) {
             UltVideoAutoSave.noteResult(account, "Media already queued for this link and format; check chat delivery");
             return false;
+        }
+        // Telegram rejects private internal paths for document/audio sends.
+        // Only use the exact MediaStore row just published by this worker;
+        // never accept an arbitrary external URI from a message or user input.
+        if (options.audio) {
+            if (published == null || !"content".equals(published.getScheme())
+                    || !MediaStore.AUTHORITY.equals(published.getAuthority())) {
+                release(key, false);
+                UltVideoAutoSave.noteResult(account, "Saved locally; missing published audio URI");
+                return false;
+            }
+            AndroidUtilities.runOnUIThread(() -> {
+                if (!permitted(account, dialogId, original, outgoingLink, ownerId, manualTarget, options, cancelled)) {
+                    release(key, false);
+                    UltVideoAutoSave.noteResult(account, "Saved locally; audio send policy changed");
+                    return;
+                }
+                try {
+                    MessageObject replyToLink = DialogObject.isChatDialog(dialogId)
+                            ? new MessageObject(account, original, false, false) : null;
+                    // Null MIME lets native document preparation infer the exact
+                    // extension from MediaStore's display name (m4a/mp3/opus).
+                    // Passing audio/mp4 could otherwise select an mp4 extension.
+                    SendMessagesHelper.prepareSendingDocument(AccountInstance.getInstance(account),
+                            null, null, published, "", null, dialogId, replyToLink,
+                            null, null, null, null, true, 0, null, null, false);
+                    release(key, true);
+                    UltVideoAutoSave.noteResult(account, options.audioFormat.toUpperCase(Locale.US)
+                            + " audio handed to Telegram from Downloads; check delivery");
+                } catch (RuntimeException ignored) {
+                    release(key, false);
+                    UltVideoAutoSave.noteResult(account, "Saved locally; Telegram rejected audio handoff");
+                }
+            });
+            return true;
         }
         File folder = new File(context.getFilesDir(), SUBDIR);
         if (!folder.isDirectory() && !folder.mkdirs()) {
@@ -176,26 +213,16 @@ public final class UltVideoChatPost {
                 // Telegram's own upload queue uses the current send-as peer,
                 // validated above. Replying to the original link anchors this
                 // second message to the right conversation.
-                if (options.audio) {
-                    // Same verified native document/audio entry point as the former preview.
-                    // Telegram reads the audio duration and metadata from the staged file.
-                    String path = staged.getAbsolutePath();
-                    SendMessagesHelper.prepareSendingDocument(AccountInstance.getInstance(account),
-                            path, path, null, "", options.mime(), dialogId, replyToLink,
-                            null, null, null, null, true, 0, null, null, false);
-                } else {
-                    SendMessagesHelper.prepareSendingVideo(
+                SendMessagesHelper.prepareSendingVideo(
                         AccountInstance.getInstance(account),
                         staged.getAbsolutePath(),
                         null, null, null, dialogId,
                         replyToLink, null, null, null, null, 0, null,
                         true, 0, 0, false, false,
                         "", null, 0, 0);
-                }
                 release(key, true);
                 UltVideoAutoSave.noteResult(account,
-                        (options.audio ? options.audioFormat.toUpperCase(Locale.US) + " audio" : "Video")
-                                + " handed to Telegram in the originating chat; check delivery");
+                        "Video handed to Telegram in the originating chat; check delivery");
             } catch (RuntimeException ignored) {
                 release(key, false);
                 UltVideoAutoSave.noteResult(account,

@@ -1,7 +1,7 @@
 name: Verify Fedora local Ultgram builder
 on:
   push:
-    branches: [feature/auto-video-link-downloads, feature/beta03-4-15-release-candidate, feature/beta03-4-16-audio-release-candidate, main]
+    branches: [feature/auto-video-link-downloads, feature/beta03-4-15-release-candidate, feature/beta03-4-16-audio-release-candidate, feature/beta03-4-17-audio-uri-fix, main]
     paths:
       - 'scripts/build-ultgram-local.py'
       - 'tests/test_local_apk_selection.py'
