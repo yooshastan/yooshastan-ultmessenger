@@ -12,6 +12,7 @@ MODEL = Path("settings/src/com/yooshastan/ultmessenger/settings/UltSettingsActiv
 DEST = Path("TMessagesProj/src/main/java/com/yooshastan/ultmessenger/settings/UltSettingsActivity.java")
 MEDIA_MODELS = (
     Path("settings/src/com/yooshastan/ultmessenger/settings/UltDownloadsActivity.java"),
+    Path("settings/src/com/yooshastan/ultmessenger/settings/UltVideoLinksSettingsActivity.java"),
     Path("settings/src/com/yooshastan/ultmessenger/settings/UltDownloadActions.java"),
     Path("settings/src/com/yooshastan/ultmessenger/settings/UltReleaseNotes.java"),
     Path("settings/src/com/yooshastan/ultmessenger/settings/UltFileInspection.java"),
@@ -22,6 +23,8 @@ MEDIA_MODELS = (
     Path("settings/src/com/yooshastan/ultmessenger/settings/UltPrivacyLabActivity.java"),
     Path("settings/src/com/yooshastan/ultmessenger/settings/UltPrivacySession.java"),
     Path("settings/src/com/yooshastan/ultmessenger/settings/UltConnectionGuidance.java"),
+    Path("settings/src/com/yooshastan/ultmessenger/settings/UltLinkSanitizer.java"),
+    Path("settings/src/com/yooshastan/ultmessenger/settings/UltLinkSanitizerPolicy.java"),
 )
 DNS_MODELS = (
     Path("settings/src/com/yooshastan/ultmessenger/settings/UltDnsPosture.java"),

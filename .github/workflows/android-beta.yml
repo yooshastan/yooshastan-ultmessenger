@@ -1,12 +1,26 @@
-name: Ultgram Beta 0.3 Combined FOSS ARM64
+name: Ultgram Beta 3.4.17 Audio URI Fix FOSS ARM64
 
 # One batched native APK for the combined beta 0.1–0.3 internal candidate.
 # Preflight: broad owned-settings and native proxy source contracts passed. Ordinary source commits run fast checks only.
 on:
   push:
-    branches: [feature/beta01-privacy-media, feature/beta01-quality-trim, feature/beta01-navigation-message-polish]
+    branches: [feature/beta01-privacy-media, feature/beta01-quality-trim, feature/beta01-navigation-message-polish, feature/auto-video-link-downloads]
     paths:
       - '.github/workflows/android-beta.yml'
+      - 'video/**'
+      - 'scripts/integrate-video-links.py'
+      - 'scripts/integrate-link-sanitizer.py'
+      - 'settings/src/com/yooshastan/ultmessenger/settings/UltLinkSanitizer.java'
+      - 'settings/src/com/yooshastan/ultmessenger/settings/UltLinkSanitizerPolicy.java'
+      - 'settings/tests/UltLinkSanitizerPolicyTest.java'
+      - 'settings/tests/test_link_sanitizer_integration.py'
+      - 'settings/src/com/yooshastan/ultmessenger/settings/UltSettingsActivity.java'
+      - 'settings/src/com/yooshastan/ultmessenger/settings/UltVideoLinksSettingsActivity.java'
+      - 'settings/tests/test_integration.py'
+      - 'scripts/integrate-ult-settings.py'
+      - 'tests/test_beta01_privacy_media.py'
+      - 'tests/test_beta_signing_prep.py'
+      - 'tests/test_beta03_combined.py'
   workflow_dispatch:
 
 concurrency:
@@ -146,6 +160,20 @@ jobs:
           javac -d /tmp/ult-conversation-classes conversation/src/com/yooshastan/ultmessenger/conversation/UltChatView.java conversation/tests/UltChatViewTest.java
           java -cp /tmp/ult-conversation-classes UltChatViewTest
           python3 -m unittest discover -s tests -p 'test_alpha16_combined.py'
+          python3 -m unittest discover -s video/tests -p 'test_integration.py'
+          python3 -m unittest discover -s settings/tests -p 'test_link_sanitizer_integration.py'
+          mkdir -p /tmp/ult-link-sanitizer-classes
+          javac -d /tmp/ult-link-sanitizer-classes settings/src/com/yooshastan/ultmessenger/settings/UltLinkSanitizerPolicy.java settings/tests/UltLinkSanitizerPolicyTest.java
+          java -cp /tmp/ult-link-sanitizer-classes UltLinkSanitizerPolicyTest
+          mkdir -p /tmp/ult-video-link-classes
+          javac -d /tmp/ult-video-link-classes settings/src/com/yooshastan/ultmessenger/settings/UltLinkSanitizerPolicy.java video/src/com/yooshastan/ultmessenger/video/UltVideoLinkRules.java video/tests/UltVideoLinkRulesTest.java
+          java -cp /tmp/ult-video-link-classes UltVideoLinkRulesTest
+          javac -d /tmp/ult-video-link-classes video/src/com/yooshastan/ultmessenger/video/UltVideoFailure.java video/tests/UltVideoFailureTest.java
+          java -cp /tmp/ult-video-link-classes UltVideoFailureTest
+          javac -d /tmp/ult-video-link-classes video/src/com/yooshastan/ultmessenger/video/UltExtractorPolicy.java video/tests/UltExtractorPolicyTest.java
+          java -cp /tmp/ult-video-link-classes UltExtractorPolicyTest
+          javac -d /tmp/ult-video-link-classes video/src/com/yooshastan/ultmessenger/video/UltMediaOptions.java video/tests/UltMediaOptionsTest.java
+          java -cp /tmp/ult-video-link-classes UltMediaOptionsTest
           python3 -m unittest discover -s tests -p 'test_beta01_privacy_media.py'
           mkdir -p /tmp/ult-beta01-model-classes
           javac -d /tmp/ult-beta01-model-classes settings/src/com/yooshastan/ultmessenger/settings/UltPrivacySession.java settings/tests/UltPrivacySessionTest.java settings/src/com/yooshastan/ultmessenger/settings/UltMediaIndex.java settings/tests/UltMediaIndexTest.java
@@ -206,8 +234,10 @@ jobs:
             python3 scripts/integrate-chat-views.py "$source_dir"
             python3 scripts/integrate-story-save.py "$source_dir"
             python3 scripts/integrate-ult-settings.py "$source_dir"
+            python3 scripts/integrate-link-sanitizer.py "$source_dir"
             python3 scripts/integrate-cache-limit.py "$source_dir"
             python3 scripts/integrate-native-strict.py "$source_dir"
+            python3 scripts/integrate-video-links.py "$source_dir"
             python3 scripts/integrate-screen-privacy.py "$source_dir"
           fi
       - name: Compile Pixel-compatible ARM64 debug APK
@@ -217,7 +247,7 @@ jobs:
           set -euo pipefail
           if [[ "${{ matrix.variant }}" == 'foss' ]]; then
             cd .work/mercurygram-upstream
-            ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug -PMG_BUILD_TAG=16.0.0.0.3 -PMG_BETA_VERSION_CODE=7183013 -PMG_BETA_VERSION_NAME=16.0.0-beta03.1 --no-daemon --console=plain
+            ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug -PMG_BUILD_TAG=16.0.0.0.10 -PMG_BETA_VERSION_CODE=7183033 -PMG_BETA_VERSION_NAME=16.0.0-beta03.4.17 --no-daemon --console=plain
           else
             cd .work/telegram-upstream
             ./gradlew :TMessagesProj_App:assembleAfatDebug --no-daemon --console=plain
@@ -239,7 +269,7 @@ jobs:
             sha256sum ult-beta03-combined-foss-arm64-debug.apk > SHA256SUMS
           )
           {
-            printf '%s\n' "Candidate: Ultgram Beta 0.3 combined UI, native search and reconnect guidance (INTERNAL debug APK; NOT public beta)"
+            printf '%s\n' "Candidate: Ultgram Beta 3.4.12: manual context media actions and shared queue; site compatibility requires on-device verification (INTERNAL debug APK; NOT public beta)"
             printf 'Repo: yooshastan/yooshastan-ultmessenger\n'
             printf 'Repo commit: %s\n' "$GITHUB_SHA"
             printf 'Pinned Mercurygram source: %s\n' "$(tr -d '\r\n ' < upstream/mercurygram.sha)"

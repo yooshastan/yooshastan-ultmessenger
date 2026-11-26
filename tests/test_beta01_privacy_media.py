@@ -13,7 +13,7 @@ class Beta01QualityContract(unittest.TestCase):
         settings = read("settings/src/com/yooshastan/ultmessenger/settings/UltSettingsActivity.java")
         main = settings.split("addSection(context, content, \"ULTGRAM\");", 1)[1].split(
             "fragmentView = scroll;", 1)[0]
-        self.assertEqual(main.count("addLink(context, content,"), 11)
+        self.assertEqual(main.count("addLink(context, content,"), 13)
         self.assertEqual(main.count('"Downloads",'), 1)
         self.assertNotIn('new UltMediaStudioActivity()', main)
         for label in ('"Proxy manager"', '"Strict proxy (native sockets)"',
@@ -55,15 +55,19 @@ class Beta01QualityContract(unittest.TestCase):
         self.assertNotIn("proxyAddress", model + privacy)
         self.assertNotIn("setUltStrictNativeProxyEnabled(", privacy)
 
-    def test_existing_strict_translation_build_chain_unmodified(self):
+    def test_strict_translation_build_chain_preserved(self):
         beta = read(".github/workflows/android-beta.yml")
         alpha = read(".github/workflows/android-alpha.yml")
         self.assertIn("scripts/integrate-native-strict.py", beta)
         self.assertIn("scripts/integrate-translation.py", beta)
         self.assertIn("scripts/integrate-native-strict.py", alpha)
         self.assertIn("scripts/integrate-translation.py", alpha)
-        self.assertIn("7183013", beta)
-        self.assertIn("16.0.0-beta03.1", beta)
+        # Validate the actual build version, not a frozen historical candidate.
+        versions = re.findall(r"assembleAfatFdArm64Debug\s+-PMG_BUILD_TAG=([0-9.]+)\s+-PMG_BETA_VERSION_CODE=([0-9]+)\s+-PMG_BETA_VERSION_NAME=16\.0\.0-beta03\.4\.([0-9]+)\s", beta)
+        self.assertEqual(len(versions), 1, "Expected a single versioned ARM64 debug build")
+        _, version_code, patch = versions[0]
+        self.assertGreaterEqual(int(patch), 6)
+        self.assertEqual(int(version_code), 7183016 + int(patch))
         self.assertIn("feature/beta01-quality-trim", beta)
 
 if __name__ == "__main__":

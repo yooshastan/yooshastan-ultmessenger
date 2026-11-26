@@ -1,5 +1,6 @@
 """Guardrails for offline-only signing preparation. No keys or passwords used."""
 from pathlib import Path
+import re
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,10 +28,14 @@ class SigningPrepContracts(unittest.TestCase):
         self.assertIn("Never reuse an upstream source-distributed keystore", notes)
         self.assertIn("private key and passwords are not", notes)
 
-    def test_existing_debug_apk_workflow_unchanged(self):
+    def test_internal_debug_apk_workflow_preserves_signing_separation(self):
         workflow = (ROOT / ".github/workflows/android-beta.yml").read_text()
-        self.assertIn("16.0.0-beta03.1", workflow)
-        self.assertIn("7183013", workflow)
+        # Validate the actual build version, not a frozen historical candidate.
+        versions = re.findall(r"assembleAfatFdArm64Debug\s+-PMG_BUILD_TAG=([0-9.]+)\s+-PMG_BETA_VERSION_CODE=([0-9]+)\s+-PMG_BETA_VERSION_NAME=16\.0\.0-beta03\.4\.([0-9]+)\s", workflow)
+        self.assertEqual(len(versions), 1, "Expected a single versioned ARM64 debug build")
+        _, version_code, patch = versions[0]
+        self.assertGreaterEqual(int(patch), 6)
+        self.assertEqual(int(version_code), 7183016 + int(patch))
         self.assertIn("assembleAfatFdArm64Debug", workflow)
         self.assertIn("integrate-native-strict.py", workflow)
         self.assertIn("integrate-translation.py", workflow)

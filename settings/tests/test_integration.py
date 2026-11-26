@@ -31,12 +31,24 @@ class SettingsIntegrationTest(TestCase):
             self.assertIn('"Themes and display"', ui)
             self.assertIn('"Network diagnostics"', ui)
             self.assertIn('"Downloads"', ui)
+            self.assertIn('"Video links & auto-post"', ui)
+            self.assertIn("new UltVideoLinksSettingsActivity()", ui)
+            video_screen = (model.parent / "UltVideoLinksSettingsActivity.java").read_text()
+            # This class must compile independently: the same-named builder in
+            # UltSettingsActivity is private and cannot be used from this screen.
+            self.assertIn("private static final class UltSecureDialogBuilder", video_screen)
+            self.assertIn("extends android.app.AlertDialog.Builder", video_screen)
+            self.assertIn("UltScreenPrivacy.isEnabled(getContext())", video_screen)
+            self.assertIn("WindowManager.LayoutParams.FLAG_SECURE", video_screen)
+            self.assertIn("Automatically send video to chat:", video_screen)
+            self.assertIn('"Link sanitizer"', ui)
+            self.assertIn('UltLinkSanitizer.setEnabled(', ui)
             self.assertIn("UltReleaseNotes.seenKey(", ui)
             self.assertIn("ConnectionsManager.setUltStrictNativeProxyEnabled", ui)
             self.assertIn("UltAndroidDnsInspector.inspect", ui)
             self.assertIn("DoQ QUIC backend: NOT INSTALLED", ui)
             self.assertEqual(ui.split("fragmentView = scroll;", 1)[0].count(
-                "addLink(context, content,"), 11)
+                "addLink(context, content,"), 13)
             self.assertNotIn("UltMediaStudioActivity.java", str(integration.MEDIA_MODELS))
             for extra in integration.MEDIA_MODELS:
                 self.assertTrue((model.parent / extra.name).is_file())

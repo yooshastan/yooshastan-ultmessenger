@@ -102,6 +102,9 @@ public final class UltSettingsActivity extends BaseFragment {
         addLink(context, content, "Downloads",
                 "One queue, history and file tools; network rules are inside",
                 () -> presentFragment(new UltDownloadsActivity()));
+        addLink(context, content, "Video links & auto-post",
+                "Save videos and optionally send them into chats where you post links",
+                () -> presentFragment(new UltVideoLinksSettingsActivity()));
         addLink(context, content, "Storage and cache",
                 "Cache size, maintenance and Telegram's storage manager",
                 () -> showUltStorageControls(context));
@@ -119,6 +122,9 @@ public final class UltSettingsActivity extends BaseFragment {
         addLink(context, content, "External link confirmation",
                 "Ask before opening links outside the Telegram proxy",
                 () -> showExternalLinkGuard(context));
+        addLink(context, content, "Link sanitizer",
+                "Remove recognized tracking parameters from sent links (OFF by default)",
+                () -> showUltLinkSanitizer(context));
         addLink(context, content, "Local identity cover",
                 "Mask account cards in this settings screen only",
                 () -> showLocalIdentityCover(context));
@@ -1173,6 +1179,34 @@ public final class UltSettingsActivity extends BaseFragment {
                     dialog.dismiss();
                 })
                 .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    private void showUltLinkSanitizer(Context context) {
+        final boolean enabled = UltLinkSanitizer.isEnabled(context, currentAccount);
+        new UltSecureDialogBuilder(context)
+                .setTitle("Outgoing link sanitizer: " + (enabled ? "ON" : "OFF"))
+                .setMessage("When enabled, Ultgram removes known tracking-only URL "
+                        + "parameters before sending ordinary text messages. "
+                        + "The link is cleaned on your phone; no external service is contacted. "
+                        + "Recognized share tracking is removed for YouTube, Instagram, X, TikTok, "
+                        + "Reddit, Facebook, Vimeo and Threads. Video IDs, timestamps, product choices "
+                        + "and recognized signed/authentication/challenge URLs are preserved. "
+                        + "Site downloads independently use the same offline cleanup; incoming messages are not changed. "
+                        + "Direct media download requests are left intact. Richly formatted text and captions may be skipped "
+                        + "to avoid breaking Telegram entities. Link previews for altered "
+                        + "messages are disabled to prevent attaching the original URL. "
+                        + "Incoming messages are not altered. Functional parameters such as Google q are kept. "
+                        + "If a token suggests signed or private access, the whole URL is preserved. "
+                        + "\n\nLocal outgoing-link counters (no URL history):\n"
+                        + UltLinkSanitizer.statistics(context, currentAccount))
+                .setNeutralButton(enabled ? "Disable" : "Enable", (dialog, which) -> {
+                    UltLinkSanitizer.setEnabled(context, currentAccount, !enabled);
+                    android.widget.Toast.makeText(context,
+                            !enabled ? "Link sanitizer ON" : "Link sanitizer OFF",
+                            android.widget.Toast.LENGTH_SHORT).show();
+                })
+                .setPositiveButton("Done", null)
                 .show();
     }
 

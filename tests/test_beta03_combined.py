@@ -1,4 +1,5 @@
 """One beta 0.3 candidate: navigation + native search + recovery guidance."""
+import re
 import unittest
 from pathlib import Path
 
@@ -54,13 +55,19 @@ class Beta03Contracts(unittest.TestCase):
 
     def test_stable_signing_and_beta_version_are_distinct(self):
         workflow = read(".github/workflows/android-beta.yml")
-        self.assertIn("16.0.0-beta03.1", workflow)
-        self.assertIn("7183013", workflow)
+        # Validate the actual build version, not a frozen historical candidate.
+        versions = re.findall(r"assembleAfatFdArm64Debug\s+-PMG_BUILD_TAG=([0-9.]+)\s+-PMG_BETA_VERSION_CODE=([0-9]+)\s+-PMG_BETA_VERSION_NAME=16\.0\.0-beta03\.4\.([0-9]+)\s", workflow)
+        self.assertEqual(len(versions), 1, "Expected a single versioned ARM64 debug build")
+        _, version_code, patch = versions[0]
+        self.assertGreaterEqual(int(patch), 6)
+        self.assertEqual(int(version_code), 7183016 + int(patch))
         self.assertIn("ult-beta03-combined-foss-arm64-debug.apk", workflow)
         self.assertIn("scripts/integrate-native-strict.py", workflow)
         self.assertIn("scripts/integrate-translation.py", workflow)
         self.assertIn("scripts/apk_release_gate.py", workflow)
         self.assertIn("feature/beta01-navigation-message-polish", workflow)
+        self.assertIn("scripts/integrate-video-links.py", workflow)
+        self.assertIn("UltVideoLinkRulesTest", workflow)
 
 if __name__ == "__main__":
     unittest.main()
