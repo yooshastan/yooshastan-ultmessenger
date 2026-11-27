@@ -11,6 +11,12 @@ public final class UltExtractorPolicyTest {
         try { UltExtractorPolicy.checksum(h+"  yt-dlp.exe\n"); throw new AssertionError(); } catch(IOException expected) {}
         check(UltExtractorPolicy.validVersion("2026.11.24.232653"));
         check(!UltExtractorPolicy.validVersion("../bad"));
+        check(!UltExtractorPolicy.meetsBaseline("2026.10.26"));
+        check(!UltExtractorPolicy.meetsBaseline("2026.11.22.999"));
+        check(UltExtractorPolicy.meetsBaseline("2026.11.23"));
+        check(UltExtractorPolicy.meetsBaseline("2026.11.23.232705"));
+        check(UltExtractorPolicy.meetsBaseline("2027.1.1"));
+        check(!UltExtractorPolicy.meetsBaseline("Unknown"));
         check(UltExtractorPolicy.asset(false,"2026.11.23","yt-dlp").equals("https://github.com/yt-dlp/yt-dlp/releases/download/2026.11.23/yt-dlp"));
         File d=Files.createTempDirectory("ult-extractor-test").toFile();
         File live=new File(d,"live"), stage=new File(d,"stage"), backup=new File(d,"backup"), tmp=new File(d,"tmp");

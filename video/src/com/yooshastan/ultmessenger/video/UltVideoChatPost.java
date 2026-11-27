@@ -117,18 +117,18 @@ public final class UltVideoChatPost {
                                   UltChatMediaDraft.Target manualTarget, UltMediaOptions options,
                                   java.util.concurrent.atomic.AtomicBoolean cancelled, Uri published) {
         if (!permitted(account, dialogId, original, outgoingLink, ownerId, manualTarget, options, cancelled)) {
-            UltVideoAutoSave.noteResult(account, "Saved locally; chat posting policy blocked the send");
+            UltVideoAutoSave.noteChatResult(account, "Saved locally; chat posting policy blocked the send");
             return false;
         }
         if (completedVideo == null || !completedVideo.isFile()
                 || !completedVideo.getName().toLowerCase(Locale.US).endsWith("." + options.extension())
                 || completedVideo.length() <= 0 || completedVideo.length() > MAX_BYTES) {
-            UltVideoAutoSave.noteResult(account, "Saved locally; unsupported attachment or over 100 MiB");
+            UltVideoAutoSave.noteChatResult(account, "Saved locally; unsupported attachment or over 100 MiB");
             return false;
         }
         String key = handoffKey(account, ownerId, dialogId, original.id, url, options);
         if (!reserve(key)) {
-            UltVideoAutoSave.noteResult(account, "Media already queued for this link and format; check chat delivery");
+            UltVideoAutoSave.noteChatResult(account, "Media already queued for this link and format; check chat delivery");
             return false;
         }
         // Telegram rejects private internal paths for document/audio sends.
@@ -138,13 +138,13 @@ public final class UltVideoChatPost {
             if (published == null || !"content".equals(published.getScheme())
                     || !MediaStore.AUTHORITY.equals(published.getAuthority())) {
                 release(key, false);
-                UltVideoAutoSave.noteResult(account, "Saved locally; missing published audio URI");
+                UltVideoAutoSave.noteChatResult(account, "Saved locally; missing published audio URI");
                 return false;
             }
             AndroidUtilities.runOnUIThread(() -> {
                 if (!permitted(account, dialogId, original, outgoingLink, ownerId, manualTarget, options, cancelled)) {
                     release(key, false);
-                    UltVideoAutoSave.noteResult(account, "Saved locally; audio send policy changed");
+                    UltVideoAutoSave.noteChatResult(account, "Saved locally; audio send policy changed");
                     return;
                 }
                 try {
@@ -157,11 +157,11 @@ public final class UltVideoChatPost {
                             null, null, published, "", null, dialogId, replyToLink,
                             null, null, null, null, true, 0, null, null, false);
                     release(key, true);
-                    UltVideoAutoSave.noteResult(account, options.audioFormat.toUpperCase(Locale.US)
-                            + " audio handed to Telegram from Downloads; check delivery");
+                    UltVideoAutoSave.noteChatResult(account, options.audioFormat.toUpperCase(Locale.US)
+                            + " audio submitted to Telegram; delivery not yet confirmed");
                 } catch (RuntimeException ignored) {
                     release(key, false);
-                    UltVideoAutoSave.noteResult(account, "Saved locally; Telegram rejected audio handoff");
+                    UltVideoAutoSave.noteChatResult(account, "Saved locally; Telegram rejected audio handoff");
                 }
             });
             return true;
@@ -169,7 +169,7 @@ public final class UltVideoChatPost {
         File folder = new File(context.getFilesDir(), SUBDIR);
         if (!folder.isDirectory() && !folder.mkdirs()) {
             release(key, false);
-            UltVideoAutoSave.noteResult(account, "Saved locally; unable to open private upload directory");
+            UltVideoAutoSave.noteChatResult(account, "Saved locally; unable to open private upload directory");
             return false;
         }
         cleanupOldFiles(folder);
@@ -194,7 +194,7 @@ public final class UltVideoChatPost {
         if (!stagedOk) {
             staged.delete();
             release(key, false);
-            UltVideoAutoSave.noteResult(account, "Saved locally; private upload staging failed or was cancelled");
+            UltVideoAutoSave.noteChatResult(account, "Saved locally; private upload staging failed or was cancelled");
             return false;
         }
 
@@ -202,7 +202,7 @@ public final class UltVideoChatPost {
             if (!permitted(account, dialogId, original, outgoingLink, ownerId, manualTarget, options, cancelled)) {
                 staged.delete();
                 release(key, false);
-                UltVideoAutoSave.noteResult(account,
+                UltVideoAutoSave.noteChatResult(account,
                         "Saved locally; group sender, rights or network policy changed");
                 return;
             }
@@ -221,11 +221,11 @@ public final class UltVideoChatPost {
                         true, 0, 0, false, false,
                         "", null, 0, 0);
                 release(key, true);
-                UltVideoAutoSave.noteResult(account,
-                        "Video handed to Telegram in the originating chat; check delivery");
+                UltVideoAutoSave.noteChatResult(account,
+                        "Video submitted to Telegram in originating chat; delivery not yet confirmed");
             } catch (RuntimeException ignored) {
                 release(key, false);
-                UltVideoAutoSave.noteResult(account,
+                UltVideoAutoSave.noteChatResult(account,
                         "Media saved locally; Telegram rejected media send");
             }
         });

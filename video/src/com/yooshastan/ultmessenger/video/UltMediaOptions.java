@@ -19,7 +19,7 @@ public final class UltMediaOptions {
     public boolean directChatPost() { return toChat; }
     public String extension() { return audio ? audioFormat : "mp4"; }
     public String handoffVariant() { return audio ? audioFormat : "video"; }
-    public String variant() { return (audio ? audioFormat : "video-" + height) + (toChat && audio ? "-chat" : ""); }
+    public String variant() { return (audio ? audioFormat : "video-" + height) + (toChat ? "-chat" : ""); }
     public String mime() {
         if (!audio) return "video/mp4";
         return "mp3".equals(audioFormat) ? "audio/mpeg" : "opus".equals(audioFormat) ? "audio/ogg" : "audio/mp4";

@@ -163,7 +163,7 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
                     UltVideoAutoSave.setAudioOnly(currentAccount, which == 1);
                     refresh();
                 }).show());
-        addText(downloads, context, "Audio mode saves locally only and ignores direct video links. Changing mode turns automatic chat posting off.", 13);
+        addText(downloads, context, "Audio mode saves locally only and ignores direct video links. Selecting audio turns automatic chat posting off.", 13);
         metadataButton = addButton(downloads, context, "", () -> {
             if (UltVideoAutoSave.metadataProbeEnabled(currentAccount)) {
                 UltVideoAutoSave.setMetadataProbeEnabled(currentAccount, false); refresh(); return;
@@ -353,6 +353,7 @@ public final class UltVideoLinksSettingsActivity extends BaseFragment {
                 + "\nLast inspected: " + UltVideoAutoSave.lastSourceCategory(currentAccount)
                 + " (" + attemptTime + ")"
                 + "\nResult: " + UltVideoAutoSave.lastResult(currentAccount)
+                + "\nChat handoff: " + UltVideoAutoSave.lastChatResult(currentAccount)
                 + "\nConfirmed site saves: "
                 + UltVideoAutoSave.completedSiteSaves(currentAccount)
                 + "\nHistorical queued/saved (unverified): "

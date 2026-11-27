@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Install opt-in HTTP(S) video autosave without changing Telegram's own media queue."""
 import argparse
+import hashlib
+import urllib.request
 from pathlib import Path
 
 APP = Path("TMessagesProj/src/main/java/org/telegram/messenger/ApplicationLoader.java")
@@ -143,8 +145,33 @@ def integrate(root: Path) -> None:
     for name, data in models.items():
         (dest / name).write_bytes(data)
 
+# Pinned official zipimport executable, not the desktop standalone binary.
+# Tests call integrate() without downloading; all real builds use this CLI.
+PINNED_EXTRACTOR_VERSION = "2026.11.23"
+PINNED_EXTRACTOR_SHA256 = "e8665ed64d6b9172773e812f891fb707a0cb1ee8d9ef4fc1acb00cabee4c5256"
+PINNED_EXTRACTOR_RESOURCE = Path("TMessagesProj/src/main/res/raw/ult_ytdlp_baseline.zip")
+
+def install_pinned_extractor(root):
+    dest = root / PINNED_EXTRACTOR_RESOURCE
+    if dest.is_file() and hashlib.sha256(dest.read_bytes()).hexdigest() == PINNED_EXTRACTOR_SHA256:
+        return
+    url = "https://github.com/yt-dlp/yt-dlp/releases/download/" + PINNED_EXTRACTOR_VERSION + "/yt-dlp"
+    with urllib.request.urlopen(url, timeout=90) as response:
+        data = response.read(32 * 1024 * 1024 + 1)
+    if len(data) > 32 * 1024 * 1024 or hashlib.sha256(data).hexdigest() != PINNED_EXTRACTOR_SHA256:
+        raise ValueError("Pinned extractor asset failed SHA-256 or size verification")
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dest.with_suffix(".tmp")
+    try:
+        tmp.write_bytes(data)
+        tmp.replace(dest)
+    finally:
+        tmp.unlink(missing_ok=True)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("source_root", type=Path)
-    integrate(parser.parse_args().source_root)
+    root = parser.parse_args().source_root
+    install_pinned_extractor(root)
+    integrate(root)
     print("Installed opt-in video link auto-save")

@@ -10,6 +10,19 @@ import java.util.regex.*;
 public final class UltExtractorPolicy {
     private UltExtractorPolicy() {}
     public static final long MAX_BINARY = 32L * 1024 * 1024;
+    public static final String BASELINE_VERSION = "2026.11.23";
+    public static final String BASELINE_SHA256 = "e8665ed64d6b9172773e812f891fb707a0cb1ee8d9ef4fc1acb00cabee4c5256";
+
+    /** Compare calendar release components numerically, including nightly suffix. */
+    public static boolean meetsBaseline(String v) {
+        if (!validVersion(v)) return false;
+        String[] actual = v.split("\\."), baseline = BASELINE_VERSION.split("\\.");
+        for (int i = 0; i < 3; i++) {
+            int a = Integer.parseInt(actual[i]), b = Integer.parseInt(baseline[i]);
+            if (a != b) return a > b;
+        }
+        return true;
+    }
     public static boolean validVersion(String v) {
         return v != null && v.matches("[0-9]{4}\\.[0-9]{1,2}\\.[0-9]{1,2}(?:\\.[0-9]{1,12})?");
     }

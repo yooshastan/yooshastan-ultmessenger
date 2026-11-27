@@ -29,6 +29,7 @@ public final class UltExtractorMaintenance {
     private static volatile String installed = "";
     private static volatile boolean runtimeInitialized;
     private static volatile boolean runtimeLinkageFailed;
+    private static boolean baselineReady;
     public static boolean runtimeInitialized() { return runtimeInitialized; }
     public static void recordDetectedVersion(String value) {
         installed = UltExtractorPolicy.validVersion(value) ? value : "Unknown (local version probe failed)";
@@ -228,8 +229,38 @@ public final class UltExtractorMaintenance {
             return v;
         } finally { if (p.isAlive()) p.destroyForcibly(); }
     }
+    /** Called only under the shared maintenance/download lock. Offline and atomic. */
+    static void ensureBaseline(Context c) throws Exception {
+        if (baselineReady) return;
+        File d = dir(c), live = new File(d, "yt-dlp");
+        File stage = new File(d, "ult-baseline-stage"), output = new File(d, "ult-baseline-probe");
+        try {
+            String current;
+            try { current = probe(c, live, output); } catch (Exception ignored) { current = ""; }
+            if (UltExtractorPolicy.meetsBaseline(current)) {
+                recordDetectedVersion(current);
+                baselineReady = true;
+                return;
+            }
+            try (InputStream in = c.getResources().openRawResource(org.telegram.messenger.R.raw.ult_ytdlp_baseline)) {
+                UltExtractorPolicy.copy(in, stage, UltExtractorPolicy.MAX_BINARY);
+            }
+            if (!UltExtractorPolicy.BASELINE_SHA256.equals(UltExtractorPolicy.sha256(stage))
+                    || !UltExtractorPolicy.BASELINE_VERSION.equals(probe(c, stage, output)))
+                throw new IOException("APK baseline verification failed");
+            // Do not overwrite an existing user rollback backup. An old/corrupt
+            // extractor is below the supported baseline and must not be restored.
+            UltExtractorPolicy.atomicMove(stage, live);
+            prefs(c).edit().putString("installed_hash", UltExtractorPolicy.BASELINE_SHA256).apply();
+            recordDetectedVersion(UltExtractorPolicy.BASELINE_VERSION);
+            status = "Recovered pinned extractor " + UltExtractorPolicy.BASELINE_VERSION + " offline";
+            baselineReady = true;
+        } finally { stage.delete(); output.delete(); }
+    }
+
     private static void run(Context c, String action, boolean nightly) throws Exception {
         YoutubeDL.getInstance().init(c);
+        ensureBaseline(c);
         markInitialized();
         File d = dir(c), live = new File(d,"yt-dlp"), previous = new File(d,"ult-previous");
         File staging = new File(d,"ult-stage"), backupTemp = new File(d,"ult-backup-stage");
@@ -294,9 +325,7 @@ public final class UltExtractorMaintenance {
                     UltExtractorPolicy.copy(in, staging, UltExtractorPolicy.MAX_BINARY);
                 }
             } else {
-                int resource = c.getResources().getIdentifier("ytdlp", "raw", c.getPackageName());
-                if (resource == 0) { status = "Bundled extractor resource unavailable"; return; }
-                try (InputStream in = c.getResources().openRawResource(resource)) {
+                try (InputStream in = c.getResources().openRawResource(org.telegram.messenger.R.raw.ult_ytdlp_baseline)) {
                     UltExtractorPolicy.copy(in, staging, UltExtractorPolicy.MAX_BINARY);
                 }
                 expected = UltExtractorPolicy.sha256(staging);
@@ -304,6 +333,10 @@ public final class UltExtractorMaintenance {
             if (!expected.equals(UltExtractorPolicy.sha256(staging))) throw new IOException("Hash mismatch");
             status = "Testing staged extractor with embedded Python";
             String actual = probe(c, staging, output);
+            if (!UltExtractorPolicy.meetsBaseline(actual)) {
+                status = "Refused extractor older than supported baseline " + UltExtractorPolicy.BASELINE_VERSION;
+                return;
+            }
             if (targetVersion != null && !targetVersion.equals(actual)) throw new IOException("Version mismatch");
             if (remote) checkNetwork(c);
             if (!prefs(c).edit().putString("backup_hash", currentHash).commit())

@@ -130,8 +130,10 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
     }
 
     public static void setAudioOnly(int account, boolean value) {
-        preferences().edit().putBoolean(setting("audio_only", account), value)
-                .putBoolean(setting("post_to_chat", account), false).apply();
+        SharedPreferences.Editor edit = preferences().edit().putBoolean(setting("audio_only", account), value);
+        // Selecting Video again must not silently disable existing auto-post consent.
+        if (value) edit.putBoolean(setting("post_to_chat", account), false);
+        edit.apply();
     }
 
     public static String defaultAudioFormat(int account) {
@@ -316,6 +318,15 @@ public final class UltVideoAutoSave implements NotificationCenter.NotificationCe
 
     public static String lastResult(int account) {
         return preferences().getString(setting("last_result", account), "No video attempt yet");
+    }
+
+    public static String lastChatResult(int account) {
+        return preferences().getString(setting("last_chat_result", account), "No chat handoff attempted yet");
+    }
+
+    public static void noteChatResult(int account, String status) {
+        preferences().edit().putString(setting("last_chat_result", account), status).apply();
+        noteResult(account, status);
     }
 
     public static void noteResult(int account, String status) {

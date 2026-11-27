@@ -140,6 +140,7 @@ public final class UltVideoSiteDownloader {
             // The Android library contains its own Python/yt-dlp and FFmpeg runtimes.
             // Initialization is deliberately lazy; this code runs on a worker thread.
             YoutubeDL.getInstance().init(context);
+            UltExtractorMaintenance.ensureBaseline(context);
             UltExtractorMaintenance.markInitialized();
             FFmpeg.getInstance().init(context);
             if (stopBeforeWork(account, stopped, stopReason, options, ownerId, requestCancelled)) return false;
@@ -265,17 +266,24 @@ public final class UltVideoSiteDownloader {
             UltVideoAutoSave.noteResult(account, "Saved to Downloads/Ultgram");
             if (options.directChatPost() && !stopped.get()) {
                 // The handoff reports its own exact failure or acceptance reason.
+                UltVideoAutoSave.noteChatResult(account, "Explicit chat send requested; preparing Telegram attachment");
                 UltVideoChatPost.enqueue(context, account, dialogId, original, result, false,
                         ownerId, url, target, options, requestCancelled, published);
             } else if (!options.manual && !audioOnly && outgoingLink && UltVideoAutoSave.isPostToChat(account) && !stopped.get()) {
+                UltVideoAutoSave.noteChatResult(account, "Automatic chat send requested; preparing Telegram attachment");
                 if (!UltVideoChatPost.safeDestination(account, dialogId, original)) {
-                    UltVideoAutoSave.noteResult(account,
+                    UltVideoAutoSave.noteChatResult(account,
                             "Saved locally; group identity, permissions or topic not supported");
-                } else if (!UltVideoChatPost.enqueue(context, account, dialogId,
-                        original, result, true, ownerId, url, null, options, requestCancelled, published)) {
-                    UltVideoAutoSave.noteResult(account,
-                            "Saved locally; Telegram media auto-post not queued");
+                } else {
+                    UltVideoChatPost.enqueue(context, account, dialogId,
+                            original, result, true, ownerId, url, null, options, requestCancelled, published);
                 }
+            } else {
+                UltVideoAutoSave.noteChatResult(account, options.manual
+                        ? "Save to device only (explicit action)"
+                        : audioOnly ? "Automatic audio is local only"
+                        : !outgoingLink ? "Incoming link: local save only"
+                        : "Automatic chat posting OFF; local save only");
             }
             return true;
         } catch (LinkageError failure) {

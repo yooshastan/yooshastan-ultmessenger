@@ -94,8 +94,8 @@ jobs:
           cd .work/mercurygram-upstream
           ./gradlew :TMessagesProj_App:assembleAfatFdArm64Release \
             -PMG_BUILD_TAG=16.0.0.0.10 \
-            -PMG_BETA_VERSION_CODE=7183034 \
-            -PMG_BETA_VERSION_NAME=16.0.0-beta03.4.18 \
+            -PMG_BETA_VERSION_CODE=7183035 \
+            -PMG_BETA_VERSION_NAME=16.0.0-beta03.4.19 \
             --no-daemon --console=plain
       - name: Stage UNSIGNED APK and reject unexpected pre-signed output
         shell: bash
@@ -113,7 +113,7 @@ jobs:
             exit 1
           fi
           "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging artifacts/ult-beta03-foss-arm64-unsigned.apk |
-            grep -F "package: name='com.yooshastan.ultmessenger.foss' versionCode='7183034' versionName='16.0.0-beta03.4.18'"
+            grep -F "package: name='com.yooshastan.ultmessenger.foss' versionCode='7183035' versionName='16.0.0-beta03.4.19'"
           if "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging artifacts/ult-beta03-foss-arm64-unsigned.apk | grep -q "application-debuggable"; then
             echo '::error::Unsigned release is unexpectedly debuggable'
             exit 1
@@ -191,8 +191,8 @@ jobs:
           # No echo of the configured value or private signing material.
           python3 scripts/verify-foss-release-apk.py \
             --apk artifacts/ult-beta03-foss-arm64-release.apk \
-            --version-code 7183034 \
-            --version-name 16.0.0-beta03.4.18 \
+            --version-code 7183035 \
+            --version-name 16.0.0-beta03.4.19 \
             --cert-sha256 "$ULT_RELEASE_CERT_SHA256" \
             --report artifacts/RELEASE_INFO.txt
           test -s artifacts/RELEASE_INFO.txt
