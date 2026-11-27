@@ -6,6 +6,10 @@ from pathlib import Path
 APP = Path("TMessagesProj/src/main/java/org/telegram/messenger/ApplicationLoader.java")
 STRICT = Path("TMessagesProj/src/main/java/org/telegram/tgnet/ConnectionsManager.java")
 GRADLE = Path("TMessagesProj/build.gradle")
+PROGUARD = Path("TMessagesProj/proguard-rules.pro")
+ZIP_KEEP = """# Ultgram: preserve Commons Compress ZIP extra fields instantiated by reflection.
+-keep class org.apache.commons.compress.archivers.zip.** { *; }
+"""
 MANIFEST = Path("TMessagesProj_App/src/main/AndroidManifest.xml")
 CHAT = Path("TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java")
 DEST = Path("TMessagesProj/src/main/java/com/yooshastan/ultmessenger/video")
@@ -102,6 +106,11 @@ def integrate(root: Path) -> None:
     strict = strict_file.read_text(encoding="utf-8")
     gradle_file, manifest_file = root / GRADLE, root / MANIFEST
     gradle = gradle_file.read_text(encoding="utf-8")
+    proguard_file = root / PROGUARD
+    proguard = proguard_file.read_text(encoding="utf-8")
+    if ZIP_KEEP in proguard:
+        raise ValueError("Video ZIP keep rules already integrated")
+    proguard_new = proguard.rstrip() + "\n\n" + ZIP_KEEP
     manifest = manifest_file.read_text(encoding="utf-8")
     if "UltVideoAutoSave.install()" in app:
         raise ValueError("Video links already integrated")
@@ -127,6 +136,7 @@ def integrate(root: Path) -> None:
     app_file.write_text(app_new, encoding="utf-8")
     strict_file.write_text(strict_new, encoding="utf-8")
     gradle_file.write_text(gradle_new, encoding="utf-8")
+    proguard_file.write_text(proguard_new, encoding="utf-8")
     manifest_file.write_text(manifest_new, encoding="utf-8")
     dest = root / DEST
     dest.mkdir(parents=True, exist_ok=True)

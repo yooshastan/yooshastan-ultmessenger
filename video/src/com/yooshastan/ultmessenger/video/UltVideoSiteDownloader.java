@@ -64,7 +64,7 @@ public final class UltVideoSiteDownloader {
             AtomicBoolean flag = ACTIVE.get(entry.getKey());
             if (flag != null) flag.set(true);
             try { YoutubeDL.getInstance().destroyProcessById(entry.getKey()); }
-            catch (Exception ignored) { }
+            catch (Exception | LinkageError ignored) { }
         }
     }
     // The extractor can block without generating a callback. Both limits
@@ -85,7 +85,7 @@ public final class UltVideoSiteDownloader {
             entry.getValue().set(true);
             try {
                 YoutubeDL.getInstance().destroyProcessById(entry.getKey());
-            } catch (Exception ignored) {
+            } catch (Exception | LinkageError ignored) {
                 // The process may not have started yet. The watchdog will retry.
             }
         }
@@ -197,7 +197,7 @@ public final class UltVideoSiteDownloader {
                 if (stopped.get()) {
                     try {
                         YoutubeDL.getInstance().destroyProcessById(processId);
-                    } catch (Exception ignored) { }
+                    } catch (Exception | LinkageError ignored) { }
                 }
             }, 0, 500, TimeUnit.MILLISECONDS);
 
@@ -242,7 +242,7 @@ public final class UltVideoSiteDownloader {
                         if (stopped.get()) {
                             try {
                                 YoutubeDL.getInstance().destroyProcessById(processId);
-                            } catch (Exception ignored) { }
+                            } catch (Exception | LinkageError ignored) { }
                         }
                         return Unit.INSTANCE;
                     });
@@ -278,6 +278,10 @@ public final class UltVideoSiteDownloader {
                 }
             }
             return true;
+        } catch (LinkageError failure) {
+            // Initialization/linkage failures must not terminate the messenger.
+            UltVideoAutoSave.noteResult(account, "Embedded extractor unavailable; update Ultgram and restart");
+            return false;
         } catch (Exception failure) {
             // Exceptions can contain private URLs or query tokens; never show raw text.
             if (!stopBeforeWork(account, stopped, stopReason, options, ownerId, requestCancelled)) {
@@ -289,7 +293,7 @@ public final class UltVideoSiteDownloader {
             if (guard != null) guard.cancel(true);
             try {
                 YoutubeDL.getInstance().destroyProcessById(processId);
-            } catch (Exception ignored) { }
+            } catch (Exception | LinkageError ignored) { }
             OWNERS.remove(processId);
             ACTIVE.remove(processId);
             STOP_REASONS.remove(processId);

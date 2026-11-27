@@ -28,6 +28,7 @@ public final class UltExtractorMaintenance {
     private static volatile String available = "";
     private static volatile String installed = "";
     private static volatile boolean runtimeInitialized;
+    private static volatile boolean runtimeLinkageFailed;
     public static boolean runtimeInitialized() { return runtimeInitialized; }
     public static void recordDetectedVersion(String value) {
         installed = UltExtractorPolicy.validVersion(value) ? value : "Unknown (local version probe failed)";
@@ -70,6 +71,7 @@ public final class UltExtractorMaintenance {
     }
     public static boolean hasBackup(Context c) { return new File(dir(c), "ult-previous").isFile(); }
     public static void maybeCheck(Context c) {
+        if (runtimeLinkageFailed) return;
         long last = prefs(c).getLong("last_check", 0);
         if (automatic(c) && !busy && System.currentTimeMillis() - last >= DAY
                 && networkBlock(c) == null) start(c, "check");
@@ -77,6 +79,10 @@ public final class UltExtractorMaintenance {
     }
     public static synchronized void start(Context context, String action) {
         if (busy) return;
+        if (runtimeLinkageFailed) {
+            status = "Embedded extractor unavailable; restart after updating Ultgram";
+            return;
+        }
         if (Build.VERSION.SDK_INT < 29) { status = "Maintenance requires Android 10+"; return; }
         if (!("check".equals(action) || "update".equals(action) || "rollback".equals(action)
                 || "bundled".equals(action) || "verify".equals(action) || "inspect".equals(action))) return;
@@ -92,6 +98,11 @@ public final class UltExtractorMaintenance {
                 if (!locked) { status = "Finish active site download before maintenance"; return; }
                 if (remote) checkNetwork(c);
                 run(c, action, channel);
+            } catch (LinkageError failure) {
+                // Failed class initialization can poison the class for this process.
+                runtimeLinkageFailed = true;
+                runtimeInitialized = false;
+                status = "Embedded extractor initialization failed; update Ultgram and restart";
             } catch (Exception ignored) {
                 // Never expose raw server responses, signed asset URLs or paths.
                 String blocked = remote ? networkBlock(c) : null;

@@ -19,6 +19,7 @@ class IntegrationTest(unittest.TestCase):
         app.write_text("before\n" + module.APP_ANCHOR + "after\n")
         strict.write_text("before\n" + module.STRICT_ANCHOR + "after\n")
         gradle.write_text("dependencies {\n" + module.GRADLE_ANCHOR + "}\n")
+        (root / module.PROGUARD).write_text("# upstream rules\n")
         manifest.write_text("<manifest>" + module.MANIFEST_ANCHOR + "</application></manifest>")
         chat = root / module.CHAT
         chat.parent.mkdir(parents=True, exist_ok=True)
@@ -34,6 +35,9 @@ class IntegrationTest(unittest.TestCase):
             self.assertIn("cancelPendingForStrict", strict.read_text())
             self.assertIn("youtubedl-android:library:0.18.1", gradle.read_text())
             self.assertIn("extractNativeLibs", manifest.read_text())
+            rules = (root / module.PROGUARD).read_text()
+            self.assertIn("# upstream rules", rules)
+            self.assertEqual(rules.count("-keep class org.apache.commons.compress.archivers.zip.** { *; }"), 1)
             chat = (root / module.CHAT).read_text()
             for label in ("ULT: Download video to chat", "ULT: Download audio to chat", "ULT: Add media with options", "ULT: Save to device", "ULT: Copy sanitized link"):
                 self.assertIn(label, chat)
@@ -55,6 +59,17 @@ class IntegrationTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 module.integrate(root)
             self.assertEqual(app.read_bytes(), before)
+
+    def test_release_extractor_initialization_failure_is_contained(self):
+        base = ROOT / "video/src/com/yooshastan/ultmessenger/video"
+        updater = (base / "UltExtractorMaintenance.java").read_text()
+        site = (base / "UltVideoSiteDownloader.java").read_text()
+        self.assertIn("catch (LinkageError failure)", updater)
+        self.assertIn("catch (LinkageError failure)", site)
+        self.assertIn("if (runtimeLinkageFailed) return;", updater)
+        self.assertIn("catch (Exception | LinkageError ignored)", site)
+        self.assertIn("if (locked) LOCK.unlock();", updater)
+        self.assertIn("UltExtractorMaintenance.endDownload();", site)
 
     def test_site_controls_and_confirmed_history(self):
         base = ROOT / "video/src/com/yooshastan/ultmessenger/video"
