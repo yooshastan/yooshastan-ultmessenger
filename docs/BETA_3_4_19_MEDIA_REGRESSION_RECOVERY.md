@@ -1,0 +1,8 @@
+# Beta 3.4.19 — media regression recovery
+
+VersionCode 7183035. Includes the previous R8 ZIP fix, no package or publisher-key changes.
+Pinned baseline 2026.11.23, official Unix zipimport asset SHA-256 e8665ed64d6b9172773e812f891fb707a0cb1ee8d9ef4fc1acb00cabee4c5256 (https://github.com/yt-dlp/yt-dlp/releases/tag/2026.11.23). All real builds embed it as a directly referenced raw resource; offline unit tests do not fetch it. Restore an older/unreadable runtime atomically after local version and digest validation; leave a newer working installation alone. Explicit rollback below baseline is refused. Review yt-dlp upstream source/license at that exact tag for distribution.
+
+The previously tested 3.4.17 native video and audio URI handoffs remain unchanged. Explicit Save to device and Download & send have separate queue keys; no-op selection of video no longer disables auto-post. Separate chat handoff result from local save history; Telegram's asynchronous acceptance does not establish delivery. No automatic sending of incoming links and no weakening of identity, protected-media, strict proxy, or network policy. 
+
+Required before publication: actual publisher-signed clean install and upgrade, extractor version read offline, standard YouTube and Shorts, Instagram Reel/post, sanitized X, manual video and all three audio formats actually delivered and playable, auto-post with confirmed outgoing link, explicit local save, protected chats and strict proxy, duplicate guard. If Telegram still fails asynchronously, gather Manager Chat handoff state and Android logs; this patch does not claim confirmed chat delivery or guarantee YouTube access.

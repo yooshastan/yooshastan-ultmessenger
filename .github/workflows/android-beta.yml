@@ -1,4 +1,4 @@
-name: Ultgram Beta 3.4.17 Audio URI Fix FOSS ARM64
+name: Ultgram Beta 3.4.19 Media Regression Recovery FOSS ARM64
 
 # One batched native APK for the combined beta 0.1–0.3 internal candidate.
 # Preflight: broad owned-settings and native proxy source contracts passed. Ordinary source commits run fast checks only.
@@ -247,7 +247,7 @@ jobs:
           set -euo pipefail
           if [[ "${{ matrix.variant }}" == 'foss' ]]; then
             cd .work/mercurygram-upstream
-            ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug -PMG_BUILD_TAG=16.0.0.0.10 -PMG_BETA_VERSION_CODE=7183033 -PMG_BETA_VERSION_NAME=16.0.0-beta03.4.17 --no-daemon --console=plain
+            ./gradlew :TMessagesProj_App:assembleAfatFdArm64Debug -PMG_BUILD_TAG=16.0.0.0.10 -PMG_BETA_VERSION_CODE=7183035 -PMG_BETA_VERSION_NAME=16.0.0-beta03.4.19 --no-daemon --console=plain
           else
             cd .work/telegram-upstream
             ./gradlew :TMessagesProj_App:assembleAfatDebug --no-daemon --console=plain
